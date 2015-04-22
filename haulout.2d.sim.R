@@ -52,11 +52,11 @@ table(apply(out1$z,1,sum)>out1$n.mcmc/2)
 sum(z)
 
 # Posterior of mu[t] and z[t]
-idx <- 5
+idx <- 90
 z[idx]
 table(out1$z[idx,])
 hist(out1$mu[idx,],col="gray80",breaks=seq(S[1],S[2],0.5))
-abline(v=mean(out1$mu[idx,]),col=3);abline(v=mu[idx,1],col=2)
+abline(v=mean(out1$mu[idx,]),col=3);abline(v=mu[idx,1],col=2);abline(v=s[idx,1],lty=2)
 hist(rtnorm(out1$n.mcmc,mu[idx,1],sigma,lower=S[1],upper=S[2]),add=TRUE,density=5,angle=45,breaks=seq(S[1],S[2],0.5))
 
 
