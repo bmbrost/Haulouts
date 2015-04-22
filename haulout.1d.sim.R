@@ -41,8 +41,8 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 ###
 
 source("haulout.1d.mcmc.R")
-out1 <- haulout.1d.mcmc(s[,1],mu[,1],S.tilde,S,priors=list(alpha=1,beta=1,q=3,r=2),
-  tune=list(mu=0.25,sigma=0.25),n.mcmc=20000)
+out1 <- haulout.1d.mcmc(s[,1],mu[,1],S.tilde,S,priors=list(alpha=1,beta=1,q=3,r=2,a=0,b=2),
+  tune=list(mu=0.25,sigma=0.25),n.mcmc=5000)
 
 plot(out1$p,type="l");
 abline(h=sum(z)/n,col=2)

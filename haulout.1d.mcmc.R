@@ -1,4 +1,4 @@
-haulout.1d.mcmc <- function(s,mu,S.tilde,S,priors=list(alpha=1,beta=1,r=0.1,q=0.1),tune=list(mu=0.1),n.mcmc){
+haulout.1d.mcmc <- function(s,mu,S.tilde,S,priors=list(alpha=1,beta=1,r=0.1,q=0.1,a=0,b=2),tune=list(mu=0.1,sigma=0.1),n.mcmc){
   
   library(pscl)  
   
@@ -89,7 +89,7 @@ haulout.1d.mcmc <- function(s,mu,S.tilde,S,priors=list(alpha=1,beta=1,r=0.1,q=0.
 
     # Use M-H update
     sigma.star <- rnorm(1,sigma,tune$sigma)
-    if(sigma.star>0&sigma.star<2){
+    if(sigma.star>priors$a&sigma.star<priors$b){
       mh.star.sigma <- sum(dnorm(s,mu,sigma.star,log=TRUE))
       mh.0.sigma <- sum(dnorm(s,mu,sigma,log=TRUE))
       if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
