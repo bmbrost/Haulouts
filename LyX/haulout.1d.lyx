@@ -1,0 +1,449 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\noindent
+\align center
+
+\shape smallcaps
+\size larger
+One-dimensional 
+\begin_inset Quotes eld
+\end_inset
+
+haul-out
+\begin_inset Quotes erd
+\end_inset
+
+ model
+\end_layout
+
+\begin_layout Standard
+\align center
+Brian M.
+ Brost
+\end_layout
+
+\begin_layout Standard
+\align center
+22 APR 2015
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset CommandInset line
+LatexCommand rule
+width "75col%"
+height "0.5pt"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Model implementation
+\end_layout
+
+\begin_layout Standard
+The file haulout.1d.sim.R simulates data according to the model statement presented
+ below, and haulout.1d.mcmc.R contains the MCMC algorithm for model fitting.
+\end_layout
+
+\begin_layout Subsubsection*
+Model statement
+\end_layout
+
+\begin_layout Standard
+Let 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ be the support of the movement process and 
+\begin_inset Formula $\tilde{S}$
+\end_inset
+
+ be
+\begin_inset Formula $ $
+\end_inset
+
+the support of haul-out sites.
+ Here, both are defined in 1-dimensional space along a line.
+ Let 
+\begin_inset Formula ${\cal \tilde{{\cal S}}}$
+\end_inset
+
+ exist over the interval 
+\begin_inset Formula $[x_{1},x_{2}]$
+\end_inset
+
+ and 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ exist over the interval 
+\begin_inset Formula $[x_{1},x_{3}]$
+\end_inset
+
+.
+ Note that 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ and 
+\begin_inset Formula $\tilde{S}$
+\end_inset
+
+ overlap, and that 
+\begin_inset Formula ${\cal S}\cap\tilde{S}=\tilde{{\cal S}}$
+\end_inset
+
+.
+ The domain defined by 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ therefore represents at-sea locations or locations of the individual while
+ milling adjacent to the haul-out site.
+ Also note that 
+\begin_inset Formula $\bar{{\cal S}}$
+\end_inset
+
+, the complement of 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+, represents inaccessible locations (i.e., land).
+ Let 
+\begin_inset Formula $s_{t}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mu_{t}$
+\end_inset
+
+, for 
+\begin_inset Formula $t=1,\ldots,T$
+\end_inset
+
+, be observed and true locations respectively.
+ 
+\begin_inset Formula 
+\begin{eqnarray*}
+s_{t} & \sim & \text{N}(\mu_{t},\sigma^{2})\\
+\mu_{t} & \sim & \begin{cases}
+\text{Unif}({\cal \tilde{{\cal S}}}), & z_{t}=1\\
+\text{Unif}({\cal S}), & z_{t}=0
+\end{cases}\\
+z_{t} & \sim & \text{Bern}(p)\\
+p & \sim & \text{Beta}(\alpha,\beta)\\
+\sigma^{2} & \sim & \text{IG}(r,q)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Full conditional distributions
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+True locations (
+\begin_inset Formula $\mu_{t}$
+\end_inset
+
+):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+[\mu_{t}|\cdot] & \propto & [s_{t}|\mu_{t},\sigma^{2}][\mu_{t}|z_{t},{\cal S},\tilde{{\cal S}}]\\
+ & \propto & [s_{t}|\mu_{t},\sigma^{2}][\mu_{t}|\tilde{{\cal S}}]^{z_{t}}[\mu_{t}|{\cal S}]^{1-z_{t}}.
+\end{eqnarray*}
+
+\end_inset
+
+For 
+\begin_inset Formula $z_{t}=1$
+\end_inset
+
+, 
+\begin_inset Formula 
+\begin{eqnarray*}
+[\mu_{t}|\cdot] & \propto & [s_{t}|\mu_{t},\sigma^{2}][\mu_{t}|\tilde{{\cal S}}]^{z_{t}}\\
+ & \propto & [s_{t}|\mu_{t},\sigma^{2}]\\
+ & \propto & \exp\left\{ -\frac{1}{2\sigma^{2}}(s_{t}-\mu_{t})^{2}\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2\sigma^{2}}(s_{t}^{2}-2s_{t}\mu_{t}+\mu_{t}^{2})\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2\sigma^{2}}(2s_{t}\mu_{t}+\mu_{t}^{2})\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\frac{2s_{t}\mu_{t}}{\sigma^{2}}+\mu_{t}^{2}\left(\frac{1}{\sigma^{2}}\right)\right)\right\} \\
+ & \propto & \text{N}(A^{-1}b,A^{-1})
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $A=1/\sigma^{2}$
+\end_inset
+
+ and 
+\begin_inset Formula $b=s_{t}/\sigma^{2}$
+\end_inset
+
+; therefore, 
+\begin_inset Formula $[\mu_{t}|\cdot]=\text{N}(s_{t},\sigma^{2})$
+\end_inset
+
+ for 
+\begin_inset Formula $z_{t}=1$
+\end_inset
+
+.
+ Note that proposed values for 
+\begin_inset Formula $\mu_{t}$
+\end_inset
+
+ not in 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ are rejected.
+ For 
+\begin_inset Formula $z_{t}=0$
+\end_inset
+
+,
+\begin_inset Formula 
+\[
+[\mu_{t}|\cdot]=\text{N}(s_{t},\sigma^{2}).
+\]
+
+\end_inset
+
+In this case, note that proposed values for 
+\begin_inset Formula $\mu_{t}$
+\end_inset
+
+ not in 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ are rejected.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+Haul-out indicator variable (
+\begin_inset Formula $z_{t}$
+\end_inset
+
+):
+\emph default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+[z_{t}|\cdot] & \propto & [\mu_{t}|\tilde{{\cal S}}]^{z_{t}}[\mu_{t}|{\cal S}[z_{t}|p].
+\end{eqnarray*}
+
+\end_inset
+
+For all 
+\begin_inset Formula $\mu_{t}\notin\tilde{{\cal S}}$
+\end_inset
+
+, let 
+\begin_inset Formula $z_{t}=0$
+\end_inset
+
+.
+ For all 
+\begin_inset Formula $\mu_{t}\in\tilde{{\cal S}}$
+\end_inset
+
+, sample 
+\begin_inset Formula $z_{t}$
+\end_inset
+
+ from
+\begin_inset Formula 
+\begin{eqnarray*}
+[z_{t}|\cdot] & \propto & [\mu_{t}|\tilde{{\cal S}}]^{z_{t}}[\mu_{t}|{\cal S}]^{1-z_{t}}[z_{t}|p]\\
+ & = & \text{Bern}(\tilde{p}),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula 
+\begin{eqnarray*}
+\tilde{p} & = & \frac{p[\mu_{t}|\tilde{{\cal S}}]}{p[\mu_{t}|\tilde{{\cal S}}]+(1-p)[\mu_{t}|{\cal S}]}\\
+ & = & \frac{p(x_{2}-x_{1})^{-1}}{p(x_{2}-x_{1})^{-1}+(1-p)(x_{3}-x_{1})^{-1}}.
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+Probability of being hauled-out (
+\begin_inset Formula $p$
+\end_inset
+
+):
+\emph default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+[p|\cdot] & \propto & \prod_{t=1}^{T}[z_{t}|p][p]\\
+ & \propto & \prod_{t=1}^{T}p^{z_{t}}(1-p)^{1-z_{t}}p^{\alpha-1}(1-p)^{\beta-1}\\
+ & \propto & p^{\sum_{t=1}^{T}z_{t}}(1-p)^{\sum_{t=1}^{T}(1-z_{t})}p^{\alpha-1}(1-p)^{\beta-1}\\
+ & = & \text{Beta}\left(\sum_{t=1}^{T}z_{t}+\alpha,\sum_{t=1}^{T}(1-z_{t})+\beta\right)
+\end{eqnarray*}
+
+\end_inset
+
+
+\emph on
+
+\begin_inset VSpace bigskip
+\end_inset
+
+Error in the observation process (
+\begin_inset Formula $\sigma^{2}$
+\end_inset
+
+):
+\emph default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+[\sigma^{2}|\cdot] & \propto & \prod_{t=1}^{T}[s_{t}|\mu_{t},\sigma^{2}][\sigma^{2}]\\
+ & \propto & \prod_{t=1}^{T}(\sigma^{2})^{-(T/2+q+1)}\exp\left\{ -\frac{1}{\sigma^{2}}\left(\frac{\sum_{t=1}^{T}(s_{t}-\mu_{t})^{2}}{2}+\frac{1}{r}\right)\right\} \\
+ & = & \text{IG}\left(\left(\frac{\sum_{t=1}^{T}(s_{t}-\mu_{t})^{2}}{2}+\frac{1}{r}\right)^{-1},\frac{T}{2}+q\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the current version of haulout.1d.mcmc.R contains code for the conjugate
+ update of 
+\begin_inset Formula $\sigma^{2}$
+\end_inset
+
+ presented above, but this code is currently 'commented' out.
+ Instead, error is modeled as 
+\begin_inset Formula $[\sigma|\cdot]\sim\text{Unif}(a,b)$
+\end_inset
+
+, and the update for 
+\begin_inset Formula $\sigma$
+\end_inset
+
+ proceeds using Metropolis-Hastings.
+ 
+\end_layout
+
+\end_body
+\end_document
