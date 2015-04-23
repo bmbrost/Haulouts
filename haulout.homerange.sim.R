@@ -17,9 +17,13 @@ S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2]) # Su
 T <- 100 # Number of locations
 p <- 0.5 # Probability of being on the haul-out
 z <- rbinom(T,1,p)
-mu <- cbind(0,runif(T,0,20))
-mu[z==1,1] <- runif(sum(z),S.tilde[1,1],S.tilde[2,1])
-mu[z==0,1] <- runif(T-sum(z),S[1,1],S[2,1])
+mu.0 <- c(runif(1,S.tilde[1,1],S.tilde[2,1]),runif(1,S.tilde[1,2],S.tilde[3,2])) # Homerange center
+sigma.mu <- 5
+
+mu <- matrix(0,T,2)
+mu[z==1,] <- cbind(runif(sum(z),S.tilde[1,1],S.tilde[2,1]),runif(sum(z),0,20))
+mu[z==0,] <- cbind(rtnorm(T-sum(z),mu.0[1],sigma.mu,lower=S[1,1],upper=S[2,1]),
+                   rtnorm(T-sum(z),mu.0[2],sigma.mu,lower=S[1,2],upper=S[3,2]))
 
 # Observation process
 sigma <- 1 # Observation error
@@ -35,6 +39,7 @@ polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
 
 # Plot true and observed locations
 points(mu) # All true locations
+points(mu.0[1],mu.0[2],pch=17)
 points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
 points(s,col=2,pch=3) # Observed locations
 segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
@@ -44,11 +49,11 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 ### Fit model
 ###
 
-source("haulout.2d.mcmc.R")
+source("haulout.homerange.mcmc.R")
 priors <- list(alpha=1,beta=1,q=3,r=2,a=0,b=2)
-tune <- list(mu=0.25,sigma=0.25)
-start <- list(mu=mu,sigma=sigma)
-out1 <- haulout.2d.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=5000)
+tune <- list(mu=0.25,sigma=0.25,sigma.mu=0.25)
+start <- list(mu=mu,sigma=sigma,mu.0=mu.0,sigma.mu=sigma.mu)
+out1 <- haulout.homerange.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=5000)
 
 plot(out1$p,type="l");
 abline(h=sum(z)/T,col=2)

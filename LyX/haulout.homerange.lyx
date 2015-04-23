@@ -87,7 +87,7 @@ haul-out
 \begin_inset Quotes erd
 \end_inset
 
- model
+ model with homerange
 \end_layout
 
 \begin_layout Standard
@@ -315,7 +315,7 @@ Haul-out indicator variable (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[z_{t}|\cdot] & \propto & [\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}[\boldsymbol{\mu}_{t}|{\cal S}[z_{t}|p].
+[z_{t}|\cdot] & \propto & [\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}[\boldsymbol{\mu}_{t}|{\cal S}]^{1-z_{t}}[z_{t}|p].
 \end{eqnarray*}
 
 \end_inset

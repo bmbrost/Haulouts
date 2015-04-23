@@ -141,7 +141,7 @@ Let
 \begin_inset Formula $ $
 \end_inset
 
-the support of haul-out sites.
+ the support of haul-out sites.
  Here, both are defined in 2-dimensional space.
  Note that 
 \begin_inset Formula ${\cal S}$
@@ -170,7 +170,8 @@ the support of haul-out sites.
 \begin_inset Formula ${\cal S}$
 \end_inset
 
-, represents inaccessible locations (i.e., land).
+, represents inaccessible locations (i.e., terrestrial sites that are not
+ haul-outs).
  Let 
 \begin_inset Formula $\mathbf{s}_{t}=(s_{1,t},s_{2,t})^{\prime}$
 \end_inset
@@ -260,7 +261,7 @@ where
 
 .
  Note that proposed values for 
-\begin_inset Formula $\mu_{t}$
+\begin_inset Formula $\boldsymbol{\mu}_{t}$
 \end_inset
 
  not in 
@@ -314,7 +315,7 @@ Haul-out indicator variable (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[z_{t}|\cdot] & \propto & [\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}[\boldsymbol{\mu}_{t}|{\cal S}[z_{t}|p].
+[z_{t}|\cdot] & \propto & [\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}[\boldsymbol{\mu}_{t}|{\cal S}]^{1-z_{t}}[z_{t}|p].
 \end{eqnarray*}
 
 \end_inset

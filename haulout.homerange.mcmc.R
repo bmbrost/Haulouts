@@ -1,6 +1,7 @@
-haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
+haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   
   library(pscl) #Inverse-gamma random number generator 
+  library(mvtnorm)
   
   ###
   ###  Setup Variables 
@@ -9,9 +10,12 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   T <- nrow(mu)
   z.save <- matrix(0,T,n.mcmc)
   mu.save <- array(0,dim=c(T,2,n.mcmc))
+  mu.0.save <- matrix(0,n.mcmc,2)
   p.save <- numeric(n.mcmc)
   sigma.save <- numeric(n.mcmc)
-# browser()    
+  sigma.mu.save <- numeric(n.mcmc)
+  
+  # browser()    
   fS.tilde <- 1/(max(dist(S.tilde[,1]))*max(dist(S.tilde[,2]))) # Density of S.tilde
   fS <- 1/(max(dist(S[,1]))*max(dist(S[,2]))) # Density of S
 
@@ -21,6 +25,10 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   
   # Starting values for mu
   mu <- start$mu
+  sigma <- start$sigma
+  mu.0 <- start$mu.0
+  sigma.mu <- start$sigma.mu
+
 #   idx <- which(s<S.tilde[1])
 #   mu[idx] <-  S.tilde[1]
 #   idx <- which(s>S[2])
@@ -33,7 +41,7 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   z <- numeric(T)
   z[idx] <- 1
   
-  sigma <- start$sigma
+
   keep <- list(mu=0,sigma=0)
   
   ###
@@ -42,7 +50,7 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   
   for(k in 1:n.mcmc){
     if(k%%100==0) cat(k,"");flush.console()
-    
+
     ###
     ### Sample z (haul-out indicator variable)
     ###
@@ -52,7 +60,10 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     n.tmp <- sum(idx)
     z[!idx] <- 0
     #    browser()
-    p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fS)    
+    fmu <- dnorm(mu[idx,1],mu.0[1],sigma.mu,log=FALSE)*dnorm(mu[idx,2],mu.0[2],sigma.mu,log=FALSE)
+#     dmvnorm(mu,mu.0,sigma.mu^2*diag(2),log=FALSE) # Same as fmu; note Sigma, not sigma
+    p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fmu)    
+#     p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fS)    
     z[idx] <- rbinom(n.tmp,1,p.tmp)
     
     ###
@@ -62,14 +73,20 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
 #     browser()
     
     # Using full-conditional distribution for mu
-    mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
 
     # Update mu[t] for z[t]==1
+    mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
                    mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
     mu[idx] <- mu.star[idx]
 
     # Update mu[t] for z[t]==0
+    b <- s%*%solve(sigma^2*diag(2))+matrix(mu.0%*%solve(sigma.mu^2*diag(2)),T,2,byrow=TRUE)
+    A <- solve(sigma^2*diag(2))+solve(sigma.mu^2*diag(2))    
+    A.inv <- solve(A)
+
+    mu.tmp <- t(apply(b,1,function(x) x%*%A.inv))
+    mu.star <- cbind(rnorm(T,mu.tmp[,1],sqrt(A.inv[1,1])),rnorm(T,mu.tmp[,2],sqrt(A.inv[2,2])))
     idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
                   mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
     mu[idx] <- mu.star[idx]
@@ -102,6 +119,16 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     }
 
     ###
+    ### Sample mu.0 (homerange center)
+    ###
+
+
+    ###
+    ### Sample sigma.mu (disperson around homerange center)
+    ###
+
+    
+    ###
     ### Sample p (probability of hauled out)
     ###
     
@@ -116,6 +143,8 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     sigma.save[k] <- sigma
     z.save[,k] <- z
     mu.save[,,k] <- mu
+    mu.0.save[k,] <- mu.0
+    sigma.mu.save[k] <- sigma
   }
     
   ###
@@ -126,5 +155,5 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   keep$sigma <- keep$sigma/n.mcmc
   cat(paste("\nmu acceptance rate:",keep$mu))  
   cat(paste("\nsigma acceptance rate:",keep$sigma))    
-  list(z=z.save,p=p.save,mu=mu.save,sigma=sigma.save,keep=keep,n.mcmc=n.mcmc)
+  list(z=z.save,p=p.save,mu=mu.save,sigma=sigma.save,mu.0=mu.0.save,sigma.mu=sigma.mu.save,keep=keep,n.mcmc=n.mcmc)
 }
