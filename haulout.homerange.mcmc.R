@@ -78,7 +78,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
                    mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
-    mu[idx] <- mu.star[idx]
+    mu[idx,] <- mu.star[idx,]
 
     # Update mu[t] for z[t]==0
     b <- s%*%solve(sigma^2*diag(2))+matrix(mu.0%*%solve(sigma.mu^2*diag(2)),T,2,byrow=TRUE)
@@ -89,7 +89,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     mu.star <- cbind(rnorm(T,mu.tmp[,1],sqrt(A.inv[1,1])),rnorm(T,mu.tmp[,2],sqrt(A.inv[2,2])))
     idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
                   mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
-    mu[idx] <- mu.star[idx]
+    mu[idx,] <- mu.star[idx,]
     
     ###
     ### Sample sigma (observation error)

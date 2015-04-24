@@ -64,8 +64,19 @@ sum(z)
 
 # Posterior of mu[t] and z[t]
 idx <- 90
+plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
+polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
+polygon(x=S[,1],y=S[,2],col="gray85")
+polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
+
 z[idx]
 table(out1$z[idx,])
+points(t(out1$mu[idx,,]),pch=19,cex=0.5,col=rgb(0,0,1,0.05))
+points(mu[idx,1],mu[idx,2],pch=19,col=2)
+
+
+image(t(out1$mu[idx,,]),xlim=c(-10,10),ylim=c(0,20))
+?image
 image(out1$mu[idx,,],col="gray80",breaks=seq(S[1],S[2],0.5))
 image(t(out1$mu[idx,,]))
 abline(v=mean(out1$mu[idx,]),col=3);abline(v=mu[idx,1],col=2);abline(v=s[idx,1],lty=2)
