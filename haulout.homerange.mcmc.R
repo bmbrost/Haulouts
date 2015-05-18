@@ -2,6 +2,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   
   library(pscl) #Inverse-gamma random number generator 
   library(mvtnorm)
+  library(msm)  #Truncated normal density (dtnorm)
   
   ###
   ###  Setup Variables 
@@ -41,7 +42,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   z <- numeric(T)
   z[idx] <- 1
   
-  keep <- list(mu=0,sigma=0)
+  keep <- list(mu=0,sigma=0,mu.0=0,sigma.mu=0)
   
   ###
   ### Begin MCMC look
@@ -71,23 +72,23 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     
     # Using full-conditional distribution for mu
     mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
-    
+
     # Update mu[t] for z[t]==1
     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
-       mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
+      mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
     mu[idx,] <- mu.star[idx,]
 
     # Update mu[t] for z[t]==0
     b <- s%*%solve(sigma^2*diag(2))+matrix(mu.0%*%solve(sigma.mu^2*diag(2)),T,2,byrow=TRUE)
     A <- solve(sigma^2*diag(2))+solve(sigma.mu^2*diag(2))    
     A.inv <- solve(A)
-
     mu.tmp <- t(apply(b,1,function(x) x%*%A.inv))
     mu.star <- cbind(rnorm(T,mu.tmp[,1],sqrt(A.inv[1,1])),rnorm(T,mu.tmp[,2],sqrt(A.inv[2,2])))
     idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
       mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
     mu[idx,] <- mu.star[idx,]
-    
+
+  
     ###
     ### Sample sigma (observation error)
     ###
@@ -119,11 +120,36 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     ### Sample mu.0 (homerange center)
     ###
 
+    mu.0.star <- rnorm(2,mu.0,tune$mu.0)
+    if(mu.0.star[1]>S.tilde[1,1]&mu.0.star[1]<S.tilde[2,1]& #Reject proposals for mu.0 not in S.tilde
+      mu.0.star[2]>S.tilde[1,2]&mu.0.star[2]<S.tilde[3,2]){
+      idx <- which(z==0) #Update using z==0 only
+      mh.star.mu.0 <- sum(dtnorm(mu[idx,1],mu.0.star[1],sigma.mu,lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+        dtnorm(mu[idx,2],mu.0.star[2],sigma.mu,lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      mh.0.mu.0 <- sum(dtnorm(mu[idx,1],mu.0[1],sigma.mu,lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+        dtnorm(mu[idx,2],mu.0[2],sigma.mu,lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      if(exp(mh.star.mu.0-mh.0.mu.0)>runif(1)){
+        mu.0 <- mu.0.star
+        keep$mu.0 <- keep$mu.0+1
+      } 
+    }    
 
+    
     ###
     ### Sample sigma.mu (disperson around homerange center)
     ###
 
+    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
+    if(sigma.mu.star>0){
+      mh.star.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0[1],sigma.mu.star,lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+        dtnorm(mu[idx,2],mu.0[2],sigma.mu.star,lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      mh.0.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0[1],sigma.mu,lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+        dtnorm(mu[idx,2],mu.0[2],sigma.mu,lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
+        sigma.mu <- sigma.mu.star
+        keep$sigma.mu <- keep$sigma.mu+1
+      } 
+    }    
     
     ###
     ### Sample p (probability of hauled out)
@@ -141,7 +167,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     z.save[,k] <- z
     mu.save[,,k] <- mu
     mu.0.save[k,] <- mu.0
-    sigma.mu.save[k] <- sigma
+    sigma.mu.save[k] <- sigma.mu
   }
     
   ###
@@ -150,7 +176,11 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
 
   keep$mu <- keep$mu/(n.mcmc*T)
   keep$sigma <- keep$sigma/n.mcmc
+  keep$mu.0 <- keep$mu.0/n.mcmc
+  keep$sigma.mu <- keep$sigma.mu/n.mcmc
   cat(paste("\nmu acceptance rate:",keep$mu))  
   cat(paste("\nsigma acceptance rate:",keep$sigma))    
+  cat(paste("\nmu.0 acceptance rate:",keep$mu.0))    
+  cat(paste("\nsigma.mu acceptance rate:",keep$sigma.mu))    
   list(z=z.save,p=p.save,mu=mu.save,sigma=sigma.save,mu.0=mu.0.save,sigma.mu=sigma.mu.save,keep=keep,n.mcmc=n.mcmc)
 }

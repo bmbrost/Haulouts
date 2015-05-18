@@ -14,7 +14,7 @@ S.tilde <- cbind(c(max(S.bar[,1]),2,2,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2]) 
 S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2]) # Support of movement process (marine and haul-out environments)
 
 # Biological process
-T <- 100 # Number of locations
+T <- 500 # Number of locations
 p <- 0.5 # Probability of being on the haul-out
 z <- rbinom(T,1,p)
 mu.0 <- c(runif(1,S.tilde[1,1],S.tilde[2,1]),runif(1,S.tilde[1,2],S.tilde[3,2])) # Homerange center
@@ -51,15 +51,16 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 
 source("/Users/brost/Documents/git/Haulouts/haulout.homerange.mcmc.R")
 priors <- list(alpha=1,beta=1,q=3,r=2,a=0,b=2)
-tune <- list(mu=0,sigma=0.1,sigma.mu=0.5)
+tune <- list(mu=0,sigma=0.1,sigma.mu=0.75,mu.0=1.5)
 start <- list(mu=mu,sigma=sigma,mu.0=mu.0,sigma.mu=sigma.mu)
-out1 <- haulout.homerange.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=10000)
+out1 <- haulout.homerange.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=5000)
 
 mod <- out1
 plot(mod$p,type="l");abline(h=p,col=2)
 abline(h=sum(z)/T,col=2)
 abline(h=mean(mod$p),lty=2,col=3)
 plot(mod$sigma,type="l");abline(h=sigma,col=2)
+plot(mod$sigma.mu,type="l");abline(h=sigma.mu,col=2)
 table(apply(mod$z,1,sum)>out1$n.mcmc/2)
 
 sum(z)
@@ -67,6 +68,7 @@ sum(z)
 idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&
   mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
 sum(idx)
+
 
 # Posterior of mu[t] and z[t]
 mu.hat <- apply(mod$mu,c(1,2),mean)
@@ -88,13 +90,10 @@ plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt
 polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
 polygon(x=S[,1],y=S[,2],col="gray85")
 polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
-
-points(mod$mu.0,col=rgb(0,0,0,0.1),pch=19)
+points(mod$mu.0,col=rgb(0,0,0,0.1),pch=19,cex=0.5)
 mu.0.hat <- apply(mod$mu.0,2,mean)
-points(mu.0.hat[1],mu.0.hat[2],col=3,pch=19)
-
-
-str(mod)
+points(mu.0.hat[1],mu.0.hat[2],col=2,pch=19)
+points(mu.0[1],mu.0[2],pch=17,col=4)
 
 
 
