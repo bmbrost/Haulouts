@@ -41,7 +41,6 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   z <- numeric(T)
   z[idx] <- 1
   
-
   keep <- list(mu=0,sigma=0)
   
   ###
@@ -54,16 +53,14 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     ###
     ### Sample z (haul-out indicator variable)
     ###
-    
+#     browser()
     idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&
       mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
     n.tmp <- sum(idx)
     z[!idx] <- 0
-    #    browser()
-    fmu <- dnorm(mu[idx,1],mu.0[1],sigma.mu,log=FALSE)*dnorm(mu[idx,2],mu.0[2],sigma.mu,log=FALSE)
-#     dmvnorm(mu,mu.0,sigma.mu^2*diag(2),log=FALSE) # Same as fmu; note Sigma, not sigma
+    fmu <- dtnorm(mu[idx,1],mu.0[1],sigma.mu,lower=min(S[,1]),upper=max(S[,1]),log=FALSE)*
+      dtnorm(mu[idx,2],mu.0[2],sigma.mu,lower=min(S[,2]),upper=max(S[,2]),log=FALSE)
     p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fmu)    
-#     p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fS)    
     z[idx] <- rbinom(n.tmp,1,p.tmp)
     
     ###
@@ -73,11 +70,11 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
 #     browser()
     
     # Using full-conditional distribution for mu
-
-    # Update mu[t] for z[t]==1
     mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
+    
+    # Update mu[t] for z[t]==1
     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
-                   mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
+       mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
     mu[idx,] <- mu.star[idx,]
 
     # Update mu[t] for z[t]==0
@@ -88,7 +85,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     mu.tmp <- t(apply(b,1,function(x) x%*%A.inv))
     mu.star <- cbind(rnorm(T,mu.tmp[,1],sqrt(A.inv[1,1])),rnorm(T,mu.tmp[,2],sqrt(A.inv[2,2])))
     idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
-                  mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
+      mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
     mu[idx,] <- mu.star[idx,]
     
     ###

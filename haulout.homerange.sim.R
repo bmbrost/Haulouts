@@ -26,7 +26,7 @@ mu[z==0,] <- cbind(rtnorm(T-sum(z),mu.0[1],sigma.mu,lower=S[1,1],upper=S[2,1]),
                    rtnorm(T-sum(z),mu.0[2],sigma.mu,lower=S[1,2],upper=S[3,2]))
 
 # Observation process
-sigma <- 1 # Observation error
+sigma <- 0.5 # Observation error
 s <- mu
 s <- s+rnorm(T*2,0,sigma) # Add error to true locations
 
@@ -49,38 +49,54 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 ### Fit model
 ###
 
-source("haulout.homerange.mcmc.R")
+source("/Users/brost/Documents/git/Haulouts/haulout.homerange.mcmc.R")
 priors <- list(alpha=1,beta=1,q=3,r=2,a=0,b=2)
-tune <- list(mu=0.25,sigma=0.25,sigma.mu=0.25)
+tune <- list(mu=0,sigma=0.1,sigma.mu=0.5)
 start <- list(mu=mu,sigma=sigma,mu.0=mu.0,sigma.mu=sigma.mu)
-out1 <- haulout.homerange.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=5000)
+out1 <- haulout.homerange.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=10000)
 
-plot(out1$p,type="l");
+mod <- out1
+plot(mod$p,type="l");abline(h=p,col=2)
 abline(h=sum(z)/T,col=2)
-abline(h=mean(out1$p),lty=2,col=3)
-plot(out1$sigma,type="l");abline(h=sigma,col=2)
-table(apply(out1$z,1,sum)>out1$n.mcmc/2)
+abline(h=mean(mod$p),lty=2,col=3)
+plot(mod$sigma,type="l");abline(h=sigma,col=2)
+table(apply(mod$z,1,sum)>out1$n.mcmc/2)
+
 sum(z)
 
+idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&
+  mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
+sum(idx)
+
 # Posterior of mu[t] and z[t]
-idx <- 90
+mu.hat <- apply(mod$mu,c(1,2),mean)
+idx <- 39
+z[idx]
+table(mod$z[idx,])
+plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
+polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
+polygon(x=S[,1],y=S[,2],col="gray85")
+polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
+points(t(mod$mu[idx,,]),col=rgb(0,0,0,0.1),pch=19)
+points(mu.hat[idx,1],mu.hat[idx,2],col=3,pch=19)
+points(mu[idx,1],mu[idx,2],col=2,pch=19)
+points(s[idx,1],s[idx,2],col=4,pch=19)
+
+
+# Posterior of mu.0
 plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
 polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
 polygon(x=S[,1],y=S[,2],col="gray85")
 polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
 
-z[idx]
-table(out1$z[idx,])
-points(t(out1$mu[idx,,]),pch=19,cex=0.5,col=rgb(0,0,1,0.05))
-points(mu[idx,1],mu[idx,2],pch=19,col=2)
+points(mod$mu.0,col=rgb(0,0,0,0.1),pch=19)
+mu.0.hat <- apply(mod$mu.0,2,mean)
+points(mu.0.hat[1],mu.0.hat[2],col=3,pch=19)
 
 
-image(t(out1$mu[idx,,]),xlim=c(-10,10),ylim=c(0,20))
-?image
-image(out1$mu[idx,,],col="gray80",breaks=seq(S[1],S[2],0.5))
-image(t(out1$mu[idx,,]))
-abline(v=mean(out1$mu[idx,]),col=3);abline(v=mu[idx,1],col=2);abline(v=s[idx,1],lty=2)
-hist(rtnorm(out1$n.mcmc,mu[idx,1],sigma,lower=S[1],upper=S[2]),add=TRUE,density=5,angle=45,breaks=seq(S[1],S[2],0.5))
+str(mod)
+
+
 
 
 ###
