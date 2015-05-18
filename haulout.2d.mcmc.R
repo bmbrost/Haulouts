@@ -51,7 +51,6 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
       mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
     n.tmp <- sum(idx)
     z[!idx] <- 0
-    #    browser()
     p.tmp <- (p*fS.tilde)/(p*fS.tilde+(1-p)*fS)    
     z[idx] <- rbinom(n.tmp,1,p.tmp)
     
@@ -59,21 +58,44 @@ haulout.2d.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     ### Sample mu (true location)
     ###
     
-#     browser()
+    # browser()
     
-    # Using full-conditional distribution for mu
+    ### Using full-conditional distribution for mu
     mu.star <- matrix(rnorm(T*2,s,sigma),T,2,byrow=FALSE) # 'Proposed' mu aren't necessarily in S
-
-    # Update mu[t] for z[t]==1
+      
+    # Update mu[t] for z[t]==1 using full-conditional distribution for mu
     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
-                   mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
-    mu[idx] <- mu.star[idx]
-
-    # Update mu[t] for z[t]==0
-    idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
-                  mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
-    mu[idx] <- mu.star[idx]
+      mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
+    mu[idx,] <- mu.star[idx,] 
     
+    # Update mu[t] for z[t]==0 using full-conditional distribution for mu
+    idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
+       mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
+    mu[idx,] <- mu.star[idx,]
+
+    
+    ### Using MH update
+#     mu.star <- matrix(rnorm(T*2,mu,tune$mu),T,2,byrow=FALSE)
+#     
+#     # Update mu[t] for z[t]==1 using full-conditional distribution for mu
+#     idx <- which(z==1&mu.star[,1]>S.tilde[1,1]&mu.star[,1]<S.tilde[2,1]&
+#       mu.star[,2]>S.tilde[1,2]&mu.star[,2]<S.tilde[3,2]) # z[t]==1 and mu.star in S.tilde
+#     mh.star.mu <- rowSums(dnorm(s[idx,],mu.star[idx,],sigma,log=TRUE))
+#     mh.0.mu <- rowSums(dnorm(s[idx,],mu[idx,],sigma,log=TRUE))
+#     idx.keep <- idx[exp(mh.star.mu-mh.0.mu)>runif(length(idx))]
+#     mu[idx.keep,] <- mu.star[idx.keep,]
+#     keep$mu <- keep$mu+length(idx.keep)
+#     
+#     # Update mu[t] for z[t]==0 using full-conditional distribution for mu
+#     idx <- which(z==0&mu.star[,1]>S[1,1]&mu.star[,1]<S[2,1]&
+#       mu.star[,2]>S[1,2]&mu.star[,2]<S[3,2]) # z[t]==0 and mu.star in S
+#     mh.star.mu <- rowSums(dnorm(s[idx,],mu.star[idx,],sigma,log=TRUE))
+#     mh.0.mu <- rowSums(dnorm(s[idx,],mu[idx,],sigma,log=TRUE))
+#     idx.keep <- idx[exp(mh.star.mu-mh.0.mu)>runif(length(idx))]
+#     mu[idx.keep,] <- mu.star[idx.keep,]
+#     keep$mu <- keep$mu+length(idx.keep)
+#   
+
     ###
     ### Sample sigma (observation error)
     ###

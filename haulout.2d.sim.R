@@ -44,27 +44,33 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 ### Fit model
 ###
 
-source("haulout.2d.mcmc.R")
+source("/Users/brost/Documents/git/Haulouts/haulout.2d.mcmc.R")
 priors <- list(alpha=1,beta=1,q=3,r=2,a=0,b=2)
-tune <- list(mu=0.25,sigma=0.25)
+tune <- list(mu=1.5,sigma=0.2)
 start <- list(mu=mu,sigma=sigma)
 out1 <- haulout.2d.mcmc(s,S.tilde,S,priors,tune,start,n.mcmc=5000)
 
-plot(out1$p,type="l");
+mod <- out1
+# mod <- out2
+plot(mod$p,type="l");abline(h=p,col=4)
 abline(h=sum(z)/T,col=2)
-abline(h=mean(out1$p),lty=2,col=3)
-plot(out1$sigma,type="l");abline(h=sigma,col=2)
-table(apply(out1$z,1,sum)>out1$n.mcmc/2)
+abline(h=mean(mod$p),lty=2,col=3)
+plot(mod$sigma,type="l");abline(h=sigma,col=2)
+table(apply(mod$z,1,sum)>out1$n.mcmc/2)
 sum(z)
 
 # Posterior of mu[t] and z[t]
-idx <- 90
+mu.hat <- apply(mod$mu,c(1,2),mean)
+idx <- 50
 z[idx]
-table(out1$z[idx,])
-image(out1$mu[idx,,],col="gray80",breaks=seq(S[1],S[2],0.5))
-image(t(out1$mu[idx,,]))
-abline(v=mean(out1$mu[idx,]),col=3);abline(v=mu[idx,1],col=2);abline(v=s[idx,1],lty=2)
-hist(rtnorm(out1$n.mcmc,mu[idx,1],sigma,lower=S[1],upper=S[2]),add=TRUE,density=5,angle=45,breaks=seq(S[1],S[2],0.5))
+table(mod$z[idx,])
+plot(t(mod$mu[idx,,]),col=rgb(0,0,0,0.1),pch=19)
+# points(t(mod$mu[idx,,]),col=rgb(1,0,0,0.1),pch=3,cex=0.5)
+points(mu.hat[idx,1],mu.hat[idx,2],col=3,pch=19)
+
+points(mu[idx,1],mu[idx,2],col=2,pch=19)
+points(s[idx,1],s[idx,2],col=4,pch=19)
+
 
 
 ###
