@@ -196,9 +196,9 @@ Let
 \end{cases}\\
 z_{t} & \sim & \text{Bern}(p)\\
 p & \sim & \text{Beta}(\alpha,\beta)\\
-\sigma^{2} & \sim & \text{IG}(r,q)\\
+\sigma^{2} & \sim & \text{IG}(r_{s},q_{s})\\
 \boldsymbol{\mu}_{0} & \sim & \text{Unif}(\tilde{{\cal S}})\\
-\sigma_{\mu} & \sim & \text{Unif}(a,b)
+\sigma_{\mu}^{2} & \sim & \text{IG}(r_{\mu},q_{\mu})
 \end{eqnarray*}
 
 \end_inset
@@ -382,7 +382,7 @@ where
 \begin_inset Formula 
 \begin{eqnarray*}
 \tilde{p} & = & \frac{p[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]}{p[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]+(1-p)[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]}\\
- & = & \frac{p\left(|\tilde{{\cal S}}|^{-1}\right)}{p\left(|\tilde{{\cal S}}|^{-1}\right)+(1-p){\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}}.
+ & = & \frac{p\left(|\tilde{{\cal S}}|^{-1}\right)}{p\left(|\tilde{{\cal S}}|^{-1}\right)+(1-p)\left({\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}\right)}.
 \end{eqnarray*}
 
 \end_inset
@@ -492,7 +492,7 @@ Homerange center (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{0}|\cdot] & \propto & \prod_{t=1}^{T}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\boldsymbol{\mu}_{0}]\\
- & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}
+ & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})
 \end{eqnarray*}
 
 \end_inset
@@ -501,59 +501,7 @@ The update for
 \begin_inset Formula $\boldsymbol{\mu}_{0}$
 \end_inset
 
- proceeds using  Metropolis-Hastings.
- Note that the product is over all 
-\begin_inset Formula $\boldsymbol{\mu}_{t}$
-\end_inset
-
- for which 
-\begin_inset Formula $z_{t}=0$
-\end_inset
-
-.
- 
-\emph on
-
-\begin_inset VSpace bigskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\noindent
-
-\emph on
-Movement about homerange center (
-\begin_inset Formula $\sigma_{\mu}^{2}$
-\end_inset
-
-):
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\begin{eqnarray*}
-[\sigma_{\mu}^{2}|\cdot] & \propto & \prod_{t=1}^{T}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\sigma_{\mu}^{2}]\\
- & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}
-\end{eqnarray*}
-
-\end_inset
-
-The update for 
-\begin_inset Formula $\sigma_{\mu}^{2}$
-\end_inset
-
- proceeds using Metropolis-Hastings.
- Note that the product is over all 
-\begin_inset Formula $\boldsymbol{\mu}_{t}$
-\end_inset
-
- for which 
-\begin_inset Formula $z_{t}=0$
-\end_inset
-
-.
+ proceeds using a Metropolo
 \end_layout
 
 \end_body
