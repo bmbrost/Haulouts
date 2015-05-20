@@ -152,8 +152,8 @@ Let
 \begin_inset Formula $\tilde{S}$
 \end_inset
 
- overlap, and that 
-\begin_inset Formula ${\cal S}\cap\tilde{S}=\tilde{{\cal S}}$
+ overlap, i.e., 
+\begin_inset Formula $\tilde{{\cal S}}\subset{\cal S}$
 \end_inset
 
 .
@@ -250,10 +250,10 @@ For
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{t}|\cdot] & \propto & \mathbf{[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]}[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}\\
  & \propto & [\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]\\
- & \propto & \exp\left\{ -\frac{1}{2}\left((\mathbf{s}_{t}-\boldsymbol{\mu}_{t})^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}(\mathbf{s}_{t}-\boldsymbol{\mu}_{t})\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\textbf{I}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \\
- & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})
+ & \propto & \exp\left\{ -\frac{1}{2}\left((\mathbf{s}_{t}-\boldsymbol{\mu}_{t})^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}(\mathbf{s}_{t}-\boldsymbol{\mu}_{t})\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\textbf{I}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -275,7 +275,7 @@ where
 \end_inset
 
 .
- Note that proposed values for 
+ Note that 'proposed' values for 
 \begin_inset Formula $\boldsymbol{\mu}_{t}$
 \end_inset
 
@@ -296,11 +296,11 @@ where
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{t}|\cdot] & \propto & [\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}][\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)\right\} \exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0}\right)^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)\right\} \exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0}\right)^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
  & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \times\\
- &  & \qquad\qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}-2\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}+\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}\right)\right\} \\
- & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})
+ &  & \qquad\qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}-2\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}+\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -501,7 +501,7 @@ The update for
 \begin_inset Formula $\boldsymbol{\mu}_{0}$
 \end_inset
 
- proceeds using  Metropolis-Hastings.
+ proceeds using Metropolis-Hastings.
  Note that the product is over all 
 \begin_inset Formula $\boldsymbol{\mu}_{t}$
 \end_inset

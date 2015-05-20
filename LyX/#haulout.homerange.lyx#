@@ -152,8 +152,8 @@ Let
 \begin_inset Formula $\tilde{S}$
 \end_inset
 
- overlap, and that 
-\begin_inset Formula ${\cal S}\cap\tilde{S}=\tilde{{\cal S}}$
+ overlap, i.e., 
+\begin_inset Formula $\tilde{{\cal S}}\subset{\cal S}$
 \end_inset
 
 .
@@ -196,9 +196,9 @@ Let
 \end{cases}\\
 z_{t} & \sim & \text{Bern}(p)\\
 p & \sim & \text{Beta}(\alpha,\beta)\\
-\sigma^{2} & \sim & \text{IG}(r_{s},q_{s})\\
+\sigma^{2} & \sim & \text{IG}(r,q)\\
 \boldsymbol{\mu}_{0} & \sim & \text{Unif}(\tilde{{\cal S}})\\
-\sigma_{\mu}^{2} & \sim & \text{IG}(r_{\mu},q_{\mu})
+\sigma_{\mu} & \sim & \text{Unif}(a,b)
 \end{eqnarray*}
 
 \end_inset
@@ -250,10 +250,10 @@ For
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{t}|\cdot] & \propto & \mathbf{[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]}[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]^{z_{t}}\\
  & \propto & [\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]\\
- & \propto & \exp\left\{ -\frac{1}{2}\left((\mathbf{s}_{t}-\boldsymbol{\mu}_{t})^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}(\mathbf{s}_{t}-\boldsymbol{\mu}_{t})\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\textbf{I}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \\
- & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})
+ & \propto & \exp\left\{ -\frac{1}{2}\left((\mathbf{s}_{t}-\boldsymbol{\mu}_{t})^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}(\mathbf{s}_{t}-\boldsymbol{\mu}_{t})\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{\text{\textbf{I}}}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{\textbf{I}}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}\\
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -275,7 +275,7 @@ where
 \end_inset
 
 .
- Note that proposed values for 
+ Note that 'proposed' values for 
 \begin_inset Formula $\boldsymbol{\mu}_{t}$
 \end_inset
 
@@ -300,7 +300,7 @@ where
  & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \times\\
  &  & \qquad\qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}-2\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0}\right)\right\} \\
  & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}+\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}\right)\right\} \\
- & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -382,7 +382,7 @@ where
 \begin_inset Formula 
 \begin{eqnarray*}
 \tilde{p} & = & \frac{p[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]}{p[\boldsymbol{\mu}_{t}|\tilde{{\cal S}}]+(1-p)[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]}\\
- & = & \frac{p\left(|\tilde{{\cal S}}|^{-1}\right)}{p\left(|\tilde{{\cal S}}|^{-1}\right)+(1-p)\left({\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}\right)}.
+ & = & \frac{p\left(|\tilde{{\cal S}}|^{-1}\right)}{p\left(|\tilde{{\cal S}}|^{-1}\right)+(1-p){\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}}.
 \end{eqnarray*}
 
 \end_inset
@@ -492,7 +492,7 @@ Homerange center (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{0}|\cdot] & \propto & \prod_{t=1}^{T}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\boldsymbol{\mu}_{0}]\\
- & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})
+ & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}
 \end{eqnarray*}
 
 \end_inset
@@ -501,7 +501,59 @@ The update for
 \begin_inset Formula $\boldsymbol{\mu}_{0}$
 \end_inset
 
- proceeds using a Metropolo
+ proceeds using Metropolis-Hastings.
+ Note that the product is over all 
+\begin_inset Formula $\boldsymbol{\mu}_{t}$
+\end_inset
+
+ for which 
+\begin_inset Formula $z_{t}=0$
+\end_inset
+
+.
+ 
+\emph on
+
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+Movement about homerange center (
+\begin_inset Formula $\sigma_{\mu}^{2}$
+\end_inset
+
+):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+[\sigma_{\mu}^{2}|\cdot] & \propto & \prod_{t=1}^{T}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\sigma_{\mu}^{2}]\\
+ & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}
+\end{eqnarray*}
+
+\end_inset
+
+The update for 
+\begin_inset Formula $\sigma_{\mu}^{2}$
+\end_inset
+
+ proceeds using Metropolis-Hastings.
+ Note that the product is over all 
+\begin_inset Formula $\boldsymbol{\mu}_{t}$
+\end_inset
+
+ for which 
+\begin_inset Formula $z_{t}=0$
+\end_inset
+
+.
 \end_layout
 
 \end_body

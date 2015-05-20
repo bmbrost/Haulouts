@@ -501,7 +501,7 @@ The update for
 \begin_inset Formula $\boldsymbol{\mu}_{0}$
 \end_inset
 
- proceeds using a Metropolis-Hastings.
+ proceeds using  Metropolis-Hastings.
  Note that the product is over all 
 \begin_inset Formula $\boldsymbol{\mu}_{t}$
 \end_inset
