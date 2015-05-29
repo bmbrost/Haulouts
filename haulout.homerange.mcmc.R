@@ -45,7 +45,7 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
   keep <- list(mu=0,sigma=0,mu.0=0,sigma.mu=0)
   
   ###
-  ### Begin MCMC look
+  ### Begin MCMC loop
   ###
   
   for(k in 1:n.mcmc){
