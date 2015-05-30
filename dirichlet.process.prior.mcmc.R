@@ -28,17 +28,17 @@ dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
     ### Sample a0
     ###
     
-#     a0.star <- rnorm(1,a0,tune$a0)
-#     if (a0.star >= 0) {
-#       p.star <- rep(a0.star*F,q.P0) + y.tab
-#       mh.star.a0 <- log(ddirichlet(y.tab/100,p.star))+dgamma(a0.star,priors$a,priors$b,log=TRUE)
-#       mh.0.a0 <- log(ddirichlet(y.tab/100,p))+dgamma(a0,priors$a,priors$b,log=TRUE)
-#       if (exp(mh.star.a0-mh.0.a0)>runif(1)) {
-#         a0 <- a0.star
-#         p <- p.star
-#         keep$a0 <- keep$a0+1
-#       }  
-#     }
+    a0.star <- rnorm(1,a0,tune$a0)
+    if (a0.star >= 0) {
+      p.star <- rep((a0.star*F)/(a0.star+n-1),q.k)+y.tab
+      mh.star.a0 <- log(ddirichlet(y.tab/100,p.star))+dgamma(a0.star,priors$a,priors$b,log=TRUE)
+      mh.0.a0 <- log(ddirichlet(y.tab/100,p))+dgamma(a0,priors$a,priors$b,log=TRUE)
+      if (exp(mh.star.a0-mh.0.a0)>runif(1)) {
+        a0 <- a0.star
+        p <- p.star
+        keep$a0 <- keep$a0+1
+      }  
+    }
     
     
     ###
@@ -61,6 +61,7 @@ dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
   ###
   
   keep$a0 <- keep$a0/n.mcmc
+  cat(paste("\na0 acceptance rate:",round(keep$a0,2)))  
   list(P=P.save,a0=a0.save,keep=keep,n.mcmc=n.mcmc)
   
 }
