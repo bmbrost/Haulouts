@@ -3,18 +3,32 @@
 ###
 
 # Using blocked Gibbs sampler per Gelman et al. 2014, section 23.2
-a0 <- 2  # concentration parameter
-P0 <- seq(1,100,1)  # base probability measure; discrete uniform distribution 
-N <- 20  # maximum number of clusters for truncation approximation to DPM
+a0 <- 1  # concentration parameter
+P0 <- seq(0,100,1)  # base probability measure; discrete uniform distribution 
 n <- 100  # number of observations
 
 # Generate data according to stick-breaking process
+
+# Discrete uniform base distribution
+N <- 20  # maximum number of clusters for truncation approximation to DPM
+v <- c(rbeta(N-1,1,a0),1)
+pie <- v*c(1,cumprod((1-v[-N])))
+theta <- sample(P0,N,replace=FALSE)  # clusters randomly drawn from P0
+k <- sample(theta,n,replace=TRUE,prob=pie)  # cluster assignments of observations
+hist(k,breaks=P0)
+tab.k <- table(k)
+
+# Continuous uniform base distribution
+N <- 20  # maximum number of clusters for truncation approximation to DPM
 v <- c(rbeta(N-1,1,a0),1)
 pie <- v*c(1,cumprod((1-v[-N])))
 
-theta <- sample(P0,N,replace=FALSE)  # clusters randomly drawn from P0
+theta <- runif(N,min(P0),max(P0))  # clusters randomly drawn from P0
 k <- sample(theta,n,replace=TRUE,prob=pie)  # cluster assignments of observations
-hist(k,breaks=c(0,P0))
+hist(k,breaks=1000)
+# hist(k,breaks=P0)  # for comparison to discrete base distribution
+k.tab <- table(k)
+
 
 
 ###
