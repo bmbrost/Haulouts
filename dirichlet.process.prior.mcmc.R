@@ -3,18 +3,17 @@ dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
   library(MCMCpack)  # for Dirichlet distribution functions
   
   a0 <- start$a0
-  q.P0 <- length(P0)
-  F <- 1/q.P0
+  F <- 1/(max(P0)-min(P0))
+  n <- length(y)
   
-#   browser()
-  tmp <- table(y)
-  idx <- as.numeric(names(tmp))
-  y.tab <- numeric(q.P0)
-  y.tab[idx] <- tmp
-  y.tab <- y.tab #/q.P0
-  p <- rep(a0*F,q.P0) + y.tab
+  y.tab <- table(y)
+  k <- as.numeric(names(y.tab))
+  q.k <- length(k)
+  
+#   browser() 
+  p <- rep((a0*F)/(a0+n-1),q.k)+y.tab
       
-  P.save <- matrix(0,q.P0,n.mcmc)
+  P.save <- matrix(0,q.k,n.mcmc)
   a0.save <- numeric(n.mcmc)
   
   keep <- list(a0=0)
