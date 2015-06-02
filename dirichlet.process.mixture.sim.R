@@ -7,9 +7,9 @@ rm(list=ls())
 
 # Following Escobar (1994)
 
-a0 <- 5  # concentration parameter
+a0 <- 2  # concentration parameter
 P0 <- c(0,100)  # upper and lower limits to base probability measure
-n <- 100  # number of observations
+n <- 1000  # number of observations
 
 N <- 50  # maximum number of clusters for truncation approximation to DPM
 v <- c(rbeta(N-1,1,a0),1)
@@ -48,6 +48,7 @@ out1 <- dirichlet.process.mixture.mcmc(y,P0,priors=list(a=0.01,b=0.1),tune=list(
 hist(out1$z,breaks=1000,ylim=c(0,1000))
 points(y,rep(-15,n),col=rgb(0,0,0,0.25),pch="|",cex=0.75)
 points(z,rep(-15,n),col="red",pch="|",cex=0.75)
+
 
 
 
