@@ -1,24 +1,26 @@
-dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
+dirichlet.process.mixture.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
   
   library(MCMCpack)  # for Dirichlet distribution functions
   
+# browser()
   a0 <- start$a0
+  z <- start$z
   N <- priors$N  # maximum number of clusters
   q.P0 <- length(P0)
   F <- 1/q.P0
+  n <- length(y)
   
 #   browser()
-  tab <- table(y)
-  idx <- as.numeric(names(tmp))
-  y.tab <- numeric(q.P0)
-  y.tab[idx] <- tmp
-  p <- rep(a0*F,q.P0) + y.tab
+#   tab <- table(y)
+#   idx <- as.numeric(names(tmp))
+#   y.tab <- numeric(q.P0)
+#   y.tab[idx] <- tmp
+#   p <- rep(a0*F,q.P0) + y.tab
   
   
-
   P.save <- matrix(0,q.P0,n.mcmc)
   a0.save <- numeric(n.mcmc)
-  k.save <- matrix(0,q.P0,n.mcmc)
+  z.save <- matrix(0,n,n.mcmc)
 
   keep <- list(a0=0)
 
@@ -45,34 +47,44 @@ dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
 #     }
     
     ###
-    ### Sample k (cluster assignments for observations)
+    ### Sample z (cluster assignments for observations)
     ###
     
-    p 
+    for(i in 1:n){
+      y.tmp <- y[i]
+      theta.tmp <- setdiff(z,z[i])
+      denom <- a0+sum(dnorm(y.tmp,theta.tmp,1))
+      p <- c(dnorm(y[idx],theta.tmp,1)/denom,a0/denom)
+      z[i] <- sample(c(theta.tmp,rnorm(1,y.tmp,1)),1,prob=p)  
+    }
+    
+    
     
     
     ###
     ### Sample v
     ###
 
-    v <- c(rbeta(N-1,1,a0),1)
-    pie <- v*c(1,cumprod((1-v[-N])))
-    
+#     v <- c(rbeta(N-1,1,a0),1)
+#     pie <- v*c(1,cumprod((1-v[-N])))
+#     
     
     
     ###
     ### Sample P
     ###
     
-    P <- rdirichlet(1,p)
+#     P <- rdirichlet(1,p)
     
       
     ###
     ###  Save samples 
     ###
 
-    P.save[, k] <- P
-    a0.save[k] <- a0
+    
+#     P.save[, k] <- P
+      z.save[,k] <- z
+      a0.save[k] <- a0
   }
   
   ###
@@ -80,6 +92,6 @@ dirichlet.process.prior.mcmc <- function(y,P0,priors,tune,start,n.mcmc){
   ###
   
   keep$a0 <- keep$a0/n.mcmc
-  list(P=P.save,a0=a0.save,keep=keep,n.mcmc=n.mcmc)
+  list(P=P.save,a0=a0.save,z=z.save,keep=keep,n.mcmc=n.mcmc)
   
 }

@@ -1,6 +1,63 @@
+rm(list=ls())
+
 ###
 ### Simulation 1-dimensional Dirichlet process mixture
 ###
+
+
+# Following Escobar (1994)
+
+a0 <- 5  # concentration parameter
+P0 <- c(0,100)  # upper and lower limits to base probability measure
+n <- 100  # number of observations
+
+N <- 50  # maximum number of clusters for truncation approximation to DPM
+v <- c(rbeta(N-1,1,a0),1)
+pie <- v*c(1,cumprod((1-v[-N])))
+plot(pie)
+
+theta <- runif(N,min(P0),max(P0))  # clusters randomly drawn from P0
+# z <- sample(1:length(theta),n,replace=TRUE,prob=pie)  # cluster assignments for observations
+z <- sample(theta,n,replace=TRUE,prob=pie)  # cluster assignments for observations
+# hist(theta[z],breaks=1000)
+hist(z,breaks=1000)
+
+z.tab <- table(z)
+z.tab
+
+# Generate observations condition on theta, i.e., [y_i|theta_i]
+y <- rnorm(n,z,1)
+plot(y,rep(1,n),col=rgb(0,0,0,0.25),pch=19)
+points(z,rep(1,n),col="red",pch=19)
+
+# Make sure P0 contains support of y; redefine P0 if necessary
+range(y)
+# P0 <- range(y) + c(-5,5)
+
+idx <- 1
+y.tmp <- y[idx]
+theta.tmp <- setdiff(z,z[idx])
+denom <- a0+sum(dnorm(y[idx],theta.tmp,1))
+p <- c(dnorm(y[idx],theta.tmp,1)/denom,a0/denom)
+z[idx] <- sample(c(theta.tmp,rnorm(1,y[idx],1)),1,prob=p)
+
+
+source("/Users/brost/Documents/git/Haulouts/dirichlet.process.mixture.mcmc.R")
+out1 <- dirichlet.process.mixture.mcmc(y,P0,priors=list(a=0.01,b=0.1),tune=list(a0=0.1),
+  start=list(a0=a0,z=y),n.mcmc=1000)
+hist(out1$z,breaks=1000,ylim=c(0,1000))
+points(y,rep(-15,n),col=rgb(0,0,0,0.25),pch="|",cex=0.75)
+points(z,rep(-15,n),col="red",pch="|",cex=0.75)
+
+
+
+
+
+
+
+
+
+
 
 # Using blocked Gibbs sampler per Gelman et al. 2014, section 23.2
 a0 <- 1  # concentration parameter
