@@ -136,7 +136,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
     ###
 
 	idx.cls <- as.numeric(names(tab.cls))
-	
+			
 	mu.0.tmp <- t(sapply(idx.cls,function(x) 
 		get.mu.0(x,h.idx,z,s,mu,sigma,sigma.mu,S.tilde)))  # proposals for mu.0	
 	idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
