@@ -20,7 +20,7 @@ S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # s
 # Simulate cluster locations and assignments using stick-breaking process 
 # See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
 T <- 1000  # number of locations to simulate
-a0 <- 1.5  # concentration parameter
+a0 <- 2  # concentration parameter
 H <- 50  # maximum number of clusters for truncation approximation
 
 # mu.0 <- cbind(runif(H,min(S.tilde[,1]),max(S.tilde[,1])),
@@ -90,10 +90,8 @@ out1 <- haulout.dpmixture.mcmc(s,S.tilde,S,priors=priors,
   tune=list(z=0.5,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=1000)
 # out1$h <- out1$mu
 
-hist(out1$a0,breaks=100);abline(v=a0,col=2,lty=2) 
-hist(out1$sigma,breaks=100);abline(v=sigma,col=2,lty=2)
-
-
+hist(out2$a0,breaks=100);abline(v=a0,col=2,lty=2) 
+hist(out2$sigma,breaks=100);abline(v=sigma,col=2,lty=2)
 
 
 source("/Users/brost/Documents/git/DPMixtures/dp.mixture.blocked.2d.mcmc.R")
