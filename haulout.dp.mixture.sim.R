@@ -39,6 +39,13 @@ mu[z==1,] <- h[z==1,]
 mu[z==0,] <- cbind(rtnorm(T-sum(z),h[z==0,1],sigma.mu,lower=S[1,1],upper=S[2,1]),
 	rtnorm(T-sum(z),h[z==0,2],sigma.mu,lower=S[1,2],upper=S[3,2]))
 
+
+S.tilde <- S
+p <- 1
+z <- rep(1,T)
+mu <- h
+
+
 # Observation process
 sigma <- 0.5 # Observation error
 s <- mu
@@ -86,9 +93,9 @@ polygon(x=S[,1],y=S[,2],col="gray85")
 polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
 points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
 points(s,pch=19,cex=0.2,col=3)
-points(h,pch=19,cex=0.5,col=rgb(1,0,0,1))
+points(h,pch=1,cex=1,col=rgb(1,0,0,1))
 
-pt.idx <- 50
+pt.idx <- 5
 points(mod$mu[pt.idx,1,idx],mod$mu[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(0,0,1,0.25))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
