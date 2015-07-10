@@ -65,20 +65,26 @@ haulout.dpmixture.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc,n.cores=
   # browser() 
   T <- nrow(s)  # number of observations
   mu.0 <- unique(h)  # unique cluster locations
+# browser()
   n.cls <- nrow(mu.0)  # number of clusters
   h.idx <- c(1:n.cls)[match(start$h[,1],mu.0[,1])]  # cluster membership indicator
   tab.cls <- table(h.idx)  # tabulate cluster membership
+ 
+  # Order by decreasing membership
+  ord <- order(tab.cls,decreasing=TRUE) # sort clusters by membership
+  mu.0 <- mu.0[ord,]
+  h.idx <- c(1:n.cls)[match(start$h[,1],mu.0[,1])]  # cluster membership indicator
+  tab.cls <- table(h.idx)  # tabulate cluster membership
+  
+  # Add proposals for mu.0	
   n.cls.star <- H-n.cls  # number of new clusters to propose
   mu.0 <- rbind(mu.0, cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
       runif(n.cls.star,S.tilde[1,2],S.tilde[3,2])))  # update mu.0 with mu.star
 
-  # Sort in order of decreasing cluster membership
-  ord <- order(tab.cls,decreasing=TRUE) # sort clusters by membership
-  tab.cls <- tab.cls[ord]
-  idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters
-  samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
+  # idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters
+  # samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
   
-    
+  
   ###
   ### Create receptacles for output
   ###
@@ -122,21 +128,28 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 		  # dnorm(mu[x,2],mu.0[samp.cls,2],sigma.mu))^(1-z[x])))
 
 		# Sampled with truncated normal density
-	   	h.idx <- sapply(1:T,function(x) sample(samp.cls,1,
-	      prob=pie*(dnorm(s[x,1],mu.0[samp.cls,1],sigma)*
-	      dnorm(s[x,2],mu.0[samp.cls,2],sigma))^z[x]*
-		  (dtnorm(rep(mu[x,1],H),mu.0[samp.cls,1],sigma.mu,
-		  lower=min(S[,1]),upper=max(S[,1]))*
-		  dtnorm(rep(mu[x,2],H),mu.0[samp.cls,2],sigma.mu,lower=min(S[,2]),
-		  upper=max(S[,2])))^(1-z[x])))
+	   	h.idx <- sapply(1:T,function(x) sample(1:H,1,
+	      prob=pie*(dnorm(s[x,1],mu.0[,1],sigma)*
+	      dnorm(s[x,2],mu.0[,2],sigma))^z[x]))
+
+	   	# h.idx <- sapply(1:T,function(x) sample(samp.cls,1,
+	      # prob=pie*(dnorm(s[x,1],mu.0[samp.cls,1],sigma)*
+	      # dnorm(s[x,2],mu.0[samp.cls,2],sigma))^z[x]*
+		  # (dtnorm(rep(mu[x,1],H),mu.0[samp.cls,1],sigma.mu,
+		  # lower=min(S[,1]),upper=max(S[,1]))*
+		  # dtnorm(rep(mu[x,2],H),mu.0[samp.cls,2],sigma.mu,lower=min(S[,2]),
+		  # upper=max(S[,2])))^(1-z[x])))
 		tab.cls <- table(h.idx)  # tabulate cluster membership
 		n.cls <- length(tab.cls)  # number of clusters
 	
 	  	# Sort in order of decreasing cluster membership
 		ord <- order(tab.cls,decreasing=TRUE) # sort clusters by membership
 		tab.cls <- tab.cls[ord]
-	    idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters
-		samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
+		idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters
+		mu.0 <- mu.0[idx.cls,]
+		h.idx <- c(1:n.cls)[match(h.idx,idx.cls)]  # cluster membership indicator
+
+		# samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
   
  	    ### Sample pie (stick-breaking process)
     
@@ -154,21 +167,42 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
     ###
 	   
 	# Sampling order does not matter here
-# browser()	
-# plot(mu.0[1:4,],pch=as.character(1:4))
 
-	mu.0.tmp <- t(sapply(idx.cls,function(x) 
+	get.mu.0 <- function(x,h.idx,z,s,mu,sigma,sigma.mu,S.tilde){
+		idx.0 <- which(h.idx==x&z==0)
+		idx.1 <- which(h.idx==x&z==1)
+		n.0 <- length(idx.0)
+		n.1 <- length(idx.1)
+		Sigma.inv <- solve(sigma^2*diag(2))
+		Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
+		b <- colSums(s[idx.1,]%*%Sigma.inv)+colSums(mu[idx.0,]%*%Sigma.mu.inv)
+		A <- n.1*Sigma.inv+n.0*Sigma.mu.inv
+		A.inv <- solve(A)
+		mu.0.tmp <- rnorm(2,A.inv%*%b,sqrt(diag(A.inv)))	# proposal for mu.0	
+		# mu.0.tmp <- rnorm(2,A.inv%*%b,sigma/sqrt(n.1))	# proposal for mu.0	
+		mu.0.tmp
+	}
+
+# browser()	
+	mu.0.tmp <- t(sapply(1:n.cls,function(x) 
 		get.mu.0(x,h.idx,z,s,mu,sigma,sigma.mu,S.tilde)))  # proposals for mu.0	
+
+	# mu.0.tmp <- t(sapply(idx.cls,function(x) 
+		# get.mu.0(x,h.idx,z,s,mu,sigma,sigma.mu,S.tilde)))  # proposals for mu.0	
 # points(mu.0.tmp,pch=as.character(1:4),col=2)
 	idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
 		mu.0.tmp[,2]>S.tilde[1,2]&mu.0.tmp[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde	
+	mu.0[idx,] <- mu.0.tmp[idx,]
 	
-	mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # update mu.0
-
+	# mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # update mu.0
 	# mu.0[idx.cls,] <- mu.0.tmp  # update mu.0
+
 	n.cls.star <- H-n.cls  # number of new clusters to propose
-	mu.0 <- rbind(mu.0[idx.cls,], cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
+	mu.0 <- rbind(mu.0, cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
       runif(n.cls.star,S.tilde[1,2],S.tilde[3,2])))  # update mu.0 with mu.star
+
+	# mu.0 <- rbind(mu.0[idx.cls,], cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
+      # runif(n.cls.star,S.tilde[1,2],S.tilde[3,2])))  # update mu.0 with mu.star
 
     ###
     ### Sample mu (true location of individual)
