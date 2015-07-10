@@ -120,6 +120,8 @@ haulout.homerange.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc){
     ### Sample mu.0 (homerange center)
     ###
 
+	# Could sample using Gibbs and then throw out proposals not in S.tilde?
+
     mu.0.star <- rnorm(2,mu.0,tune$mu.0)
     if(mu.0.star[1]>S.tilde[1,1]&mu.0.star[1]<S.tilde[2,1]& #Reject proposals for mu.0 not in S.tilde
       mu.0.star[2]>S.tilde[1,2]&mu.0.star[2]<S.tilde[3,2]){
