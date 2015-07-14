@@ -11,8 +11,8 @@ library(MCMCpack)  # for rdirichlet(...)
 ###
 
 # Define 2-dimensional rectangular support for mu, the true harbor seal locations
-S.bar <- cbind(c(-10,-1,-1,-10,-10),c(0,0,20,20,0))  # complement of S, i.e., the land domain
-S.tilde <- cbind(c(max(S.bar[,1]),1,1,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # support 
+S.bar <- cbind(c(-10,-0.5,-0.5,-10,-10),c(0,0,20,20,0))  # complement of S, i.e., the land domain
+S.tilde <- cbind(c(max(S.bar[,1]),0,0,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # support 
 	# of haul out process
 S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # support of
 	# movement process (marine and haul-out environments)
@@ -39,11 +39,10 @@ mu[z==1,] <- h[z==1,]
 mu[z==0,] <- cbind(rtnorm(T-sum(z),h[z==0,1],sigma.mu,lower=S[1,1],upper=S[2,1]),
 	rtnorm(T-sum(z),h[z==0,2],sigma.mu,lower=S[1,2],upper=S[3,2]))
 
-
-S.tilde <- S
-p <- 1
-z <- rep(1,T)
-mu <- h
+# S.tilde <- S
+# p <- 1
+# z <- rep(1,T)
+# mu <- h
 
 
 # Observation process
@@ -72,17 +71,17 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
 # Fit model using blocked Gibbs sampler 
 source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.mcmc.R")
 start <- list(a0=a0,h=h,mu=mu,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=4,q=1,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
+  sigma=sigma,sigma.mu=sigma.mu*10-6,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
+priors <- list(H=H,r=1,q=0.25,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 	alpha=1,beta=1)
-# hist(rgamma(1000,4,1))
+# hist(rgamma(1000,2,0.5))
 out1 <- haulout.dpmixture.mcmc(s,S.tilde,S,priors=priors,
-  tune=list(z=0.5,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=1000)
+  tune=list(z=0.5,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=2000)
 
-mod <- out1
+mod <- out1 
 # idx <- 1:100
 idx <- 1:1000
-idx <- 1:5000
+idx <- 1:2000
 idx <- 1:10000
 
 # True clusters
@@ -95,10 +94,11 @@ points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
 points(s,pch=19,cex=0.2,col=3)
 points(h,pch=1,cex=1,col=rgb(1,0,0,1))
 
-pt.idx <- 5
-points(mod$mu[pt.idx,1,idx],mod$mu[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(0,0,1,0.25))
-points(mu[pt.idx,1],mu[pt.idx,2],pch=19)
+pt.idx <- 4
+points(mod$mu[pt.idx,1,idx],mod$mu[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(0,1,0,0.25))
+points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.57)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
+table(mod$z[pt.idx,idx])
 z[pt.idx]
 
 # Concentration parameter
@@ -117,10 +117,6 @@ mean(mod$sigma.mu[idx])
 hist(mod$p[idx],breaks=100);abline(v=p,col=2,lty=2)
 
 # Haul-out indicator variable
-pt.idx <- 302
-points(s[pt.idx,1],s[pt.idx,2])
-table(mod$z[pt.idx,idx])
-
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
 boxplot(z.hat~z)
 plot(s[,1],z.hat)
@@ -129,12 +125,11 @@ plot(s[,1],z.hat)
 str(mod)
 # Modeled number of clusters
 nclust <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
-plot(mod$sigma[idx],nclust)
-head(nclust)
 plot(nclust,type="l")
 abline(h=nrow(unique(h)),col=2,lty=2)  # true number of clusters  
 barplot(table(nclust))
 
+plot(mod$sigma[idx],nclust)
 
 
 
