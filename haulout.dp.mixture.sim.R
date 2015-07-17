@@ -20,7 +20,7 @@ S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # s
 # Simulate cluster locations and assignments using stick-breaking process 
 # See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
 T <- 1000  # number of locations to simulate
-a0 <- 1  # concentration parameter
+a0 <- 2  # concentration parameter
 H <- 50  # maximum number of clusters for truncation approximation
 
 mu.0 <- cbind(runif(H,min(S.tilde[,1]),max(S.tilde[,1])),
@@ -32,7 +32,7 @@ h <- mu.0[h.idx,]  # latent clusters
 
 # Simulate true locations
 p <- 0.5  # probability of being hauled-out
-z <- rbinom(T,1,p)  # haulout indicator variable
+z <- rbinom(T,1,p)  # haulout indicator variable: 1=hauled-out, 0=at-sea
 sigma.mu <- 2  # dispersion about haul-out for at-sea locations
 mu <- matrix(0,T,2)
 mu[z==1,] <- h[z==1,]
@@ -71,7 +71,7 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
 # Fit model using blocked Gibbs sampler 
 source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.mcmc.R")
 start <- list(a0=a0,h=h,mu=mu,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu*10-6,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
+  sigma=sigma,sigma.mu=sigma.mu,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=1,q=0.25,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 	alpha=1,beta=1)
 # hist(rgamma(1000,2,0.5))
