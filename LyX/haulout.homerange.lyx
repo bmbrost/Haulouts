@@ -492,7 +492,7 @@ Homerange center (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{0}|\cdot] & \propto & \prod_{t=1}^{T}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\boldsymbol{\mu}_{0}]\\
- & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{\tilde{{\cal S}}}
+ & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}1_{\{\boldsymbol{\mu}_{0}\in\tilde{{\cal S}}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -510,7 +510,11 @@ The update for
 \begin_inset Formula $z_{t}=0$
 \end_inset
 
-.
+ and proposal not in 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ are automatically rejected.
  
 \emph on
 
