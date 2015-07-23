@@ -19,9 +19,9 @@ S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # s
 
 # Simulate cluster locations and assignments using stick-breaking process 
 # See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
-T <- 1000  # number of locations to simulate
-a0 <- 2  # concentration parameter
-H <- 50  # maximum number of clusters for truncation approximation
+T <- 500  # number of locations to simulate
+a0 <- 1.0  # concentration parameter
+H <- 25  # maximum number of clusters for truncation approximation
 
 mu.0 <- cbind(runif(H,min(S.tilde[,1]),max(S.tilde[,1])),
 	runif(H,min(S.tilde[,2]),max(S.tilde[,2])))  # clusters randomly drawn from S.tilde
@@ -33,6 +33,7 @@ h <- mu.0[h.idx,]  # latent clusters
 # Simulate true locations
 p <- 0.5  # probability of being hauled-out
 z <- rbinom(T,1,p)  # haulout indicator variable: 1=hauled-out, 0=at-sea
+table(z)
 sigma.mu <- 2  # dispersion about haul-out for at-sea locations
 mu <- matrix(0,T,2)
 mu[z==1,] <- h[z==1,]
@@ -76,7 +77,7 @@ priors <- list(H=H,r=1,q=0.25,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 	alpha=1,beta=1)
 # hist(rgamma(1000,2,0.5))
 out1 <- haulout.dpmixture.mcmc(s,S.tilde,S,priors=priors,
-  tune=list(z=0.5,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=2000)
+  tune=list(z=0.5,mu.0=0.15,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=2000)
 
 mod <- out1 
 # idx <- 1:100
@@ -115,21 +116,20 @@ mean(mod$sigma.mu[idx])
 
 # Haul-out probability
 hist(mod$p[idx],breaks=100);abline(v=p,col=2,lty=2)
+abline(v=sum(z)/T,col=3,lty=2)
 
 # Haul-out indicator variable
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
-boxplot(z.hat~z)
-plot(s[,1],z.hat)
+boxplot(z.hat~z,ylim=c(0,1))
+plot(s[,1],z.hat,ylim=c(0,1))
 
-
-str(mod)
 # Modeled number of clusters
-nclust <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
-plot(nclust,type="l")
+# n.cls <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
+plot(mod$n.cls,type="l")
 abline(h=nrow(unique(h)),col=2,lty=2)  # true number of clusters  
-barplot(table(nclust))
+barplot(table(mod$n.cls))
 
-plot(mod$sigma[idx],nclust)
+
 
 
 
