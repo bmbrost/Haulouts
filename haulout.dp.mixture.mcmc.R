@@ -25,6 +25,24 @@ haulout.dpmixture.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc,n.cores=
 		rnorm(2,A.inv%*%b,sqrt(diag(A.inv)))	# proposal for mu.0	
 	}
   
+	# get.mu.0 <- function(x,idx.cls,h.idx,z,s,mu.0,mu.0.star,sigma,sigma.mu,S){
+		# # browser()
+		# # x <- 1
+		# idx <- idx.cls[x]
+		# idx.0 <- which(h.idx==idx&z==0)
+		# idx.1 <- which(h.idx==idx&z==1)
+		# mh.star.mu.0 <- sum(dnorm(s[idx.1,1],mu.0.star[x,1],sigma,log=TRUE),
+			# dnorm(s[idx.1,2],mu.0.star[x,2],sigma,log=TRUE),
+			# dtnorm(mu[idx.0,1],mu.0.star[x,1],sigma.mu,lower=S[1,1],upper=S[2,1]),
+			# dtnorm(mu[idx.0,2],mu.0.star[x,2],sigma.mu,lower=S[1,2],upper=S[3,2]),
+			# na.rm=TRUE)
+		# mh.0.mu.0 <- sum(dnorm(s[idx.1,1],mu.0[idx,1],sigma,log=TRUE),
+			# dnorm(s[idx.1,2],mu.0[idx,2],sigma,log=TRUE),
+			# dtnorm(mu[idx.0,1],mu.0[idx,1],sigma.mu,lower=S[1,1],upper=S[2,1]),
+			# dtnorm(mu[idx.0,2],mu.0[idx,2],sigma.mu,lower=S[1,2],upper=S[3,2]),
+			# na.rm=TRUE)
+		# exp(mh.star.mu.0-mh.0.mu.0)>runif(1)
+	# }
   
   ###
   ###  Create cluster for parallel processing
@@ -111,8 +129,9 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
   p.save <- numeric(n.mcmc)  # probability of being hauled-out
   z.save <- matrix(0,T,n.mcmc)  # haul-out indicator variable
   mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
+  n.cls.save <- numeric(n.mcmc)
   
-  keep <- list(mu=0,sigma=0,sigma.mu=0)
+  keep <- list(mu=0,mu.0=0,sigma=0,sigma.mu=0)
 
     
   ###
@@ -122,6 +141,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
   for (k in 1:n.mcmc) {
     if(k%%1000==0) cat(k,"");flush.console()
 
+
 	###
     ### Sample z (haul-out indicator variable)
     ###
@@ -130,59 +150,78 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
     idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&
     	mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
 	n.tmp <- sum(idx)
+	# print(n.tmp)
+	mu.0.tmp <- mu.0[h.idx[idx],]
+
+# plot(s,col=z+1)
+# abline(v=range(S.tilde[,1]))
+# points(mu,col=z+1,pch=19,cex=0.5)
+# segments(s[,1],s[,2],mu[,1],mu[,2],col="lightblue")
+# segments(mu.0[h.idx,1],mu.0[h.idx,2],mu[,1],mu[,2],col="lightgreen")
+
+# plot(s[idx,],col=z[idx]+1)
+# abline(v=range(S.tilde[,1]))
+# points(mu[idx,],col=z[idx]+1,pch=19,cex=0.5)
+# segments(s[idx,1],s[idx,2],mu[idx,1],mu[idx,2],col="lightblue")
+# segments(mu.0.tmp[,1],mu.0.tmp[,2],mu[idx,1],mu[idx,2],col="lightgreen")
+
+# table(z)
+# table(z[!idx])
+# table(z[idx])
+# 48/n.tmp
+
 	z[!idx] <- 0
-	h.idx.tmp <- h.idx[idx]
-	# mu.0.tmp <- mu.0[h.idx[idx],]
+
 	
-# points(mu[idx,],cex=p.tmp1)
-# points(s[idx,],cex=p.tmp1,col=2)
-# plot(mu,col=idx+1)
-
 # browser()
-
 	# p.tmp1 <- p*dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
 		# dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE)
-
-	p.tmp1 <- p*dnorm(s[idx,1],mu.0[h.idx.tmp,1],sigma,log=FALSE)*
-		dnorm(s[idx,2],mu.0[h.idx.tmp,2],sigma,log=FALSE)
-
+	p.tmp1 <- p*dnorm(s[idx,1],mu.0.tmp[,1],sigma,log=FALSE)*
+		dnorm(s[idx,2],mu.0.tmp[,2],sigma,log=FALSE)
 	# p.tmp1 <- p
-
-# plot(p.tmp1,col=z[idx]+1)
-# head(h.idx)
-# hist(p.tmp,breaks=50)
-# points(mu[idx,], cex=p.tmp)
-# points(s[idx,], cex=p.tmp,col=2)
-
 	p.tmp2 <- (1-p)*dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
 		dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE)*
-		dtnorm(mu[idx,1],mu.0[h.idx.tmp,1],sigma.mu,
+		dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu,
 			lower=min(S[,1]),upper=max(S[,1]),log=FALSE)*
-		dtnorm(mu[idx,2],mu.0[h.idx.tmp,2],sigma.mu,
+		dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu,
 			lower=min(S[,2]),upper=max(S[,2]),log=FALSE)
-
 	# p.tmp2 <- (1-p)*(0.5*(dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
 		# dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE))+
 		# (0.5*dtnorm(mu[idx,1],mu.0[h.idx.tmp,1],sigma.mu,
 			# lower=min(S[,1]),upper=max(S[,1]),log=FALSE)*
 		# dtnorm(mu[idx,2],mu.0[h.idx.tmp,2],sigma.mu,
 			# lower=min(S[,2]),upper=max(S[,2]),log=FALSE)))
-
 	# p.tmp2 <- (1-p)*dnorm(s[idx,1],mu.0[h.idx.tmp,1],sqrt(sigma^2+sigma.mu^2),log=FALSE)*
 		# dnorm(s[idx,2],mu.0[h.idx.tmp,2],sqrt(sigma^2+sigma.mu^2),log=FALSE)
-
-# plot(p.tmp20,p.tmp2,col=z[idx]+1)
-# plot(mu[idx,1],mu.0[h.idx.tmp,1],col=z[idx]+1)
-# abline(a=0,b=1)
-# plot(p.tmp,col=z[idx]+1)
-# plot(p.tmp,p.tmp2,col=z[idx]+1)
-# plot(mu[idx,],col=idx+1,cex=p.tmp+1)
-# points(mu.0[h.idx.tmp,],col=3,pch=19,cex=0.5)
-
 	p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
-	z[idx] <- rbinom(n.tmp,1,p.tmp)
 
+# plot(s[idx,],col=z[idx]+1,cex=(p.tmp1+0.75)^2)
+# abline(v=range(S.tilde[,1]))
+# points(unique(h),pch=19)
+# points(mu[idx,],col=z[idx]+1,pch=19,cex=0.5)
+# segments(s[idx,1],s[idx,2],mu[idx,1],mu[idx,2],col="lightblue")
+# segments(mu.0.tmp[,1],mu.0.tmp[,2],mu[idx,1],mu[idx,2],col="lightgreen")
+
+# hist(p.tmp,breaks=100)
+
+# plot(s[idx,],cex=(p.tmp1+0.75)^2)
+
+# plot(rowSums(sqrt((s[idx,]-mu.0.tmp)^2)),p.tmp)
+# mean(p.tmp)
+# plot(p.tmp,(p.tmp+0.75)^2)
+# boxplot(p.tmp1)
+
+
+	z[idx] <- rbinom(n.tmp,1,p.tmp)
 # z <- start$z
+	
+	# ###
+    # ### Sample p (probability of hauled out)
+    # ###
+    
+    sumz <- sum(z)
+    p <- rbeta(1,sumz+priors$alpha,T-sumz+priors$beta)
+# p <- start$p
 
 	###
     ### Sample mu (true location of individual)
@@ -210,7 +249,91 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 	mu[idx[idx.tmp],] <- mu.star[idx.tmp,]
 # mu <- start$mu
 
+    ###
+    ### Sample sigma (observation error)
+    ###
+# browser()
+    sigma.star <- rnorm(1,sigma,tune$sigma)
+    if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
+      mh.star.sigma <- sum(dnorm(s[,1],mu[,1],sigma.star,log=TRUE)+
+	      dnorm(s[,2],mu[,2],sigma.star,log=TRUE))
+      mh.0.sigma <- sum(dnorm(s[,1],mu[,1],sigma,log=TRUE)+
+	      dnorm(s[,2],mu[,2],sigma,log=TRUE))
+      # mh.star.sigma <- sum(sapply(1:T, function(x) 
+      	# dmvnorm(s[x,],mu[x,],sigma.star^2*diag(2),log=TRUE)))
+      # mh.0.sigma <- sum(sapply(1:T, function(x) 
+      	# dmvnorm(s[x,],mu[x,],sigma^2*diag(2),log=TRUE)))
+      if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
+        sigma <- sigma.star
+        Sigma.inv <- solve(sigma^2*diag(2))
+        keep$sigma <- keep$sigma+1
+      } 
+    }
+# sigma <- start$sigma
 
+	###
+    ### Sample mu.0 (true location of occupied clusters)
+    ###
+	   
+	# Sampling order does not matter here
+	# browser()	
+
+	# Use for data.table functionality
+	# mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0
+		# get.mu.0(x,dt.h.idx[1:T,h.idx],z,s,mu,sigma,sigma.mu,S.tilde)))
+	
+	# Use for base functionality	
+	mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0	
+		get.mu.0(x,h.idx,z,s,mu,Sigma.inv,Sigma.mu.inv)))  
+	idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
+		mu.0.tmp[,2]>S.tilde[1,2]&mu.0.tmp[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde	
+	mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # accept proposals in S.tilde
+	n.cls.star <- H-n.cls  # number of new clusters to propose
+	mu.0[-idx.cls,] <- cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
+      runif(n.cls.star,S.tilde[1,2],S.tilde[3,2]))  # update mu.0 with mu.star
+
+	# M-H update
+# browser()
+	# mu.0.star <- matrix(rnorm(n.cls*2,0,tune$mu.0),,2)+mu.0[idx.cls,]
+	# idx <- which(mu.0.star[,1]>S.tilde[1,1]&mu.0.star[,1]<S.tilde[2,1]&
+		# mu.0.star[,2]>S.tilde[1,2]&mu.0.star[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde
+	# if(length(idx)>0){
+		# mh.ratio <- sapply(idx,function(x) get.mu.0(x,idx.cls,h.idx,z,s,mu.0,
+			# mu.0.star,sigma,sigma.mu,S))
+		# idx <- idx[mh.ratio]  # accepted proposals
+		# mu.0[idx.cls[idx],] <- mu.0.star[idx,]  # update mu.0 with proposals
+		# keep$mu.0 <- keep$mu.0+length(idx)
+	# }
+	# n.cls.star <- H-n.cls  # number of new clusters to propose
+	# mu.0[-idx.cls,] <- cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
+      # runif(n.cls.star,S.tilde[1,2],S.tilde[3,2]))  # update mu.0 with mu.star
+
+
+    ###
+    ### Sample sigma.mu (disperson around homerange center)
+    ###
+# browser()
+
+    # Sample with truncated normal density
+    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
+    if(sigma.mu.star>priors$sigma.mu.l & sigma.star<priors$sigma.mu.u){
+	  idx <- which(z==0)
+	  mu.0.tmp <- mu.0[h.idx[idx],]
+      mh.star.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu.star,
+	      lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+	      dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu.star,
+	      lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      mh.0.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu,
+	      lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
+	      dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu,
+	      lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
+      if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
+        sigma.mu <- sigma.mu.star
+        Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
+        keep$sigma.mu <- keep$sigma.mu+1
+      } 
+    }
+# sigma.mu <- start$sigma.mu
 
 	###
 	### Dirichlet process parameters
@@ -272,91 +395,8 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 	    ### Sample a0 (concentration parameter); See Gelman section 23.3
        
     	a0 <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-v[-H])))  
-# a0 <- start$a0
-
-
-    # ###
-    # ### Sample mu.0 (true location of occupied clusters)
-    # ###
-	   
-	# Sampling order does not matter here
-	# browser()	
-
-	# Use for data.table functionality
-	# mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0
-		# get.mu.0(x,dt.h.idx[1:T,h.idx],z,s,mu,sigma,sigma.mu,S.tilde)))
+a0 <- start$a0
 	
-	# Use for base functionality	
-	mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0	
-		get.mu.0(x,h.idx,z,s,mu,Sigma.inv,Sigma.mu.inv)))  
-	idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
-		mu.0.tmp[,2]>S.tilde[1,2]&mu.0.tmp[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde	
-	mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # accept proposals in S.tilde
-	n.cls.star <- H-n.cls  # number of new clusters to propose
-	mu.0[-idx.cls,] <- cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
-      runif(n.cls.star,S.tilde[1,2],S.tilde[3,2]))  # update mu.0 with mu.star
-
-
-       
-    ###
-    ### Sample sigma (observation error)
-    ###
-# browser()
-    sigma.star <- rnorm(1,sigma,tune$sigma)
-    if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
-      mh.star.sigma <- sum(dnorm(s[,1],mu[,1],sigma.star,log=TRUE)+
-	      dnorm(s[,2],mu[,2],sigma.star,log=TRUE))
-      mh.0.sigma <- sum(dnorm(s[,1],mu[,1],sigma,log=TRUE)+
-	      dnorm(s[,2],mu[,2],sigma,log=TRUE))
-      # mh.star.sigma <- sum(sapply(1:T, function(x) 
-      	# dmvnorm(s[x,],mu[x,],sigma.star^2*diag(2),log=TRUE)))
-      # mh.0.sigma <- sum(sapply(1:T, function(x) 
-      	# dmvnorm(s[x,],mu[x,],sigma^2*diag(2),log=TRUE)))
-      if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
-        sigma <- sigma.star
-        Sigma.inv <- solve(sigma^2*diag(2))
-        keep$sigma <- keep$sigma+1
-      } 
-    }
-# sigma <- start$sigma
-    
-    ###
-    ### Sample sigma.mu (disperson around homerange center)
-    ###
-# browser()
-
-    # Sample with truncated normal density
-    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
-    if(sigma.mu.star>priors$sigma.mu.l & sigma.star<priors$sigma.mu.u){
-	  idx <- which(z==0)
-	  mu.0.tmp <- mu.0[h.idx[idx],]
-      mh.star.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu.star,
-	      lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
-	      dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu.star,
-	      lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
-      mh.0.sigma.mu <- sum(dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu,
-	      lower=min(S[,1]),upper=max(S[,1]),log=TRUE)+
-	      dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu,
-	      lower=min(S[,2]),upper=max(S[,2]),log=TRUE))
-      if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
-        sigma.mu <- sigma.mu.star
-        Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
-        keep$sigma.mu <- keep$sigma.mu+1
-      } 
-    }
-
-
-# sigma.mu <- start$sigma.mu
-
-	
-	# ###
-    # ### Sample p (probability of hauled out)
-    # ###
-    
-    sumz <- sum(z)
-    p <- rbeta(1,sumz+priors$alpha,T-sumz+priors$beta)
-# p <- start$p
-
     ###
     ###  Save samples 
     ###
@@ -376,6 +416,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
     mu.save[,,k] <- mu
     p.save[k] <- p
 	z.save[,k] <- z
+	n.cls.save[k] <- n.cls
   }
   
   ###
@@ -384,11 +425,13 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
   
   keep$sigma <- keep$sigma/n.mcmc
   keep$sigma.mu <- keep$sigma.mu/n.mcmc
-  cat(paste("\nsigma acceptance rate:",keep$sigma)) 
-  cat(paste("\nsigma.mu acceptance rate:",keep$sigma.mu)) 
+  keep$mu.0 <- sum(keep$mu.0)/sum(n.cls.save)
+  cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
+  cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
+  cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
   cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
   list(h.idx=h.idx.save,h=h.save,mu.0=mu.0.save,mu=mu.save,a0=a0.save,sigma=sigma.save,
-  	sigma.mu=sigma.mu.save,p=p.save,z=z.save,keep=keep,n.mcmc=n.mcmc)
+  	sigma.mu=sigma.mu.save,p=p.save,z=z.save,n.cls=n.cls.save,keep=keep,n.mcmc=n.mcmc)
   
 }
 
