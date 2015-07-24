@@ -82,8 +82,8 @@ hanging
 
 \shape smallcaps
 \size larger
-Haul-out Site Estimation using a Blocked Gibbs Sampler Implentation of a
- Dirichlet Process Mixture Model
+Haul-out Site Estimation using a Truncation Approximation of a Dirichlet
+ Process Mixture Model
 \end_layout
 
 \begin_layout Standard
@@ -118,8 +118,8 @@ Implementation
 The file haulout.dp.mixture.sim.R simulates data according to the model statement
  presented below, and haulout.dp.mixture.mcmc.R contains the MCMC algorithm
  for model fitting.
- Model implementation follows the blocked Gibbs sampler approach of Ishwaran
- and James (2001) and Gelman et al.
+ Model implementation follows the blocked Gibbs sampler truncation approximation
+ of Ishwaran and James (2001) and Gelman et al.
  (2014).
 \end_layout
 
@@ -155,11 +155,29 @@ Let
 
  is the maximum number of haul-outs allowed per the truncation approximation
  of the Dirichlet process mixture model.
- Note that when an individual is hauled-out, 
+ Let 
+\begin_inset Formula $z_{t}$
+\end_inset
+
+ be a latent indicator variable that denotes when locations are on a haul-out
+ site (
+\begin_inset Formula $z_{t}=1$
+\end_inset
+
+) or not (
+\begin_inset Formula $z_{t}=0$
+\end_inset
+
+).
+ Note that when an individual is hauled-out (i.e, 
+\begin_inset Formula $z_{t}=1$
+\end_inset
+
+), 
 \begin_inset Formula $\boldsymbol{\mu}_{t}=\boldsymbol{\mu}_{0,h_{t}}$
 \end_inset
 
-, where the 
+, where 
 \begin_inset Formula $h_{t}$
 \end_inset
 
@@ -184,7 +202,8 @@ Let
 \begin_inset Formula $ $
 \end_inset
 
- the support of the Dirichlet process (i.e., all possible 
+ the support of the haul-out sites (i.e., the Dirichlet process and all possible
+ 
 \begin_inset Formula $\boldsymbol{\mu}_{0,h}$
 \end_inset
 
@@ -229,15 +248,12 @@ Let
 \boldsymbol{\mu}_{0,h_{t}}1_{\{\boldsymbol{\mu}_{t}\in\tilde{{\cal S}}\}} & z_{t}=1\\
 {\cal TN}(\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2}\mathbf{I})_{{\cal S}}1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}, & z_{t}=0
 \end{cases}\\
-\boldsymbol{\mu}_{0,h} & \sim & \mathbf{G}\\
-\mathbf{G} & \sim & \text{DP}(\theta,\mathbf{G}_{0})\\
 z_{t} & \sim & \text{Bern}(p)\\
-h_{t} & \sim & \text{Multin}(H,\pi_{h}\delta_{h}(\cdot))\\
+h_{t} & \sim & \frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{z_{t}}[\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{z_{t}}[\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}}\\
 \pi_{h} & = & v_{h}\prod_{\tilde{h}<h}(1-v_{\tilde{h}})\\
 v_{h} & \sim & \text{Beta}(1,\theta)\\
-\mathbf{G}_{0} & \sim & \text{Unif}(\tilde{{\cal S}})\\
-\boldsymbol{\mu}_{t} & \sim & \text{Unif}({\cal S})\\
-\theta & \sim & \text{gamma}(r,q)\\
+\boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
+\theta & \sim & \text{Gamma}(r,q)\\
 p & \sim & \text{Beta}(\alpha,\beta)\\
 \sigma & \sim & \text{Unif}(l_{\sigma},u_{\sigma})\\
 \sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})
@@ -275,20 +291,7 @@ p & \sim & \text{Beta}(\alpha,\beta)\\
 
 \end_inset
 
-The latent variable 
-\begin_inset Formula $z_{t}$
-\end_inset
-
- indicates when locations are on a haul-out site (
-\begin_inset Formula $z_{t}=1$
-\end_inset
-
-) or not (
-\begin_inset Formula $z_{t}=0$
-\end_inset
-
-).
- The concentration parameter 
+The concentration parameter 
 \begin_inset Formula $\theta$
 \end_inset
 
@@ -359,7 +362,7 @@ For
  & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{t}\right)\right\} \exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0,h_{t}}\right)^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0,h_{t}}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
  & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}\right)\right\} \times\\
  &  & \qquad\qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}-2\boldsymbol{\mu}_{t}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h_{t}}+\boldsymbol{\mu}_{0,h_{t}}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h_{t}}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\boldsymbol{\mu}_{0}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}+\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\boldsymbol{\mu}_{0,h_{t}}^{\prime}\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}+\boldsymbol{\mu}_{t}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}+\left(\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{t}\right)\right\} 1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}\\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}
 \end{eqnarray*}
 
@@ -447,8 +450,8 @@ Haul-out site locations (
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{z_{t}}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}]\\
- & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})^{z_{t}}{\cal TN}(\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2})_{{\cal S}}^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}
+[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{z_{t}}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}]\\
+ & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2})^{z_{t}}{\cal TN}(\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,h},\sigma_{\mu}^{2})_{{\cal S}}^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}
 \end{eqnarray*}
 
 \end_inset
@@ -541,8 +544,8 @@ For all
 where 
 \begin_inset Formula 
 \begin{eqnarray*}
-\tilde{p} & = & \frac{p[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z_{t}}}{p[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z_{t}}+(1-p)[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}]^{1-z_{t}}}\\
- & = & \frac{p{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})}{p{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})+(1-p){\cal TN}(\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2})_{{\cal S}}}.
+\tilde{p} & = & \frac{p[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]}{p[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]+(1-p)[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z_{t}}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}]}\\
+ & = & \frac{p{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})}{p{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})+(1-p){\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}){\cal TN}(\mathbf{\boldsymbol{\mu}}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2})_{{\cal S}}}.
 \end{eqnarray*}
 
 \end_inset
@@ -587,8 +590,8 @@ This update proceeds just as in multinomial sampling; see page 552 in Gelman
 \noindent
 
 \emph on
-Probability mass for cluster 
-\begin_inset Formula $h$
+Probability mass for haul-out location 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
 \end_inset
 
  (
@@ -640,9 +643,7 @@ and
 \end_inset
 
 .
- This representations the stick-breaking construction of the Dirichlet process
- and provides insight into what realizations of the Dirichlet process actually
- look like.
+ This represents the stick-breaking construction of the Dirichlet process.
  The parameter 
 \begin_inset Formula $n_{h}$
 \end_inset
@@ -785,8 +786,8 @@ Error in the observation process (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\sigma|\cdot] & \propto & \prod_{t=1}^{T}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}]^{1-z_{t}}[\sigma]\\
- & \propto & \prod_{t=1}^{T}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2})^{1-z_{t}}
+[\sigma|\cdot] & \propto & \prod_{t=1}^{T}[\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2}][\sigma]\\
+ & \propto & \prod_{t=1}^{T}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{t},\sigma^{2})
 \end{eqnarray*}
 
 \end_inset
@@ -796,6 +797,15 @@ The update for
 \end_inset
 
  proceeds using Metropolis-Hastings.
+ Recall that 
+\begin_inset Formula $\boldsymbol{\mu}_{t}=\boldsymbol{\mu}_{0,h_{t}}$
+\end_inset
+
+ when 
+\begin_inset Formula $z_{t}=1$
+\end_inset
+
+.
  
 \emph on
 
@@ -818,8 +828,8 @@ Homerange dispersion parameter (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\sigma_{\mu}|\cdot] & \propto & \prod_{\{z_{t}=0\}}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}][\sigma_{\mu}]\\
- & \propto & \prod_{\{z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2})_{{\cal S}}
+[\sigma_{\mu}|\cdot] & \propto & \prod_{\{t:z_{t}=0\}}[\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2},{\cal S}][\sigma_{\mu}]\\
+ & \propto & \prod_{\{t:z_{t}=0\}}{\cal TN}(\boldsymbol{\mu}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2})_{{\cal S}}
 \end{eqnarray*}
 
 \end_inset
