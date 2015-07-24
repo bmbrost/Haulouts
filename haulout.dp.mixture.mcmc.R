@@ -152,66 +152,22 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 	n.tmp <- sum(idx)
 	# print(n.tmp)
 	mu.0.tmp <- mu.0[h.idx[idx],]
-
-# plot(s,col=z+1)
-# abline(v=range(S.tilde[,1]))
-# points(mu,col=z+1,pch=19,cex=0.5)
-# segments(s[,1],s[,2],mu[,1],mu[,2],col="lightblue")
-# segments(mu.0[h.idx,1],mu.0[h.idx,2],mu[,1],mu[,2],col="lightgreen")
-
-# plot(s[idx,],col=z[idx]+1)
-# abline(v=range(S.tilde[,1]))
-# points(mu[idx,],col=z[idx]+1,pch=19,cex=0.5)
-# segments(s[idx,1],s[idx,2],mu[idx,1],mu[idx,2],col="lightblue")
-# segments(mu.0.tmp[,1],mu.0.tmp[,2],mu[idx,1],mu[idx,2],col="lightgreen")
-
-# table(z)
-# table(z[!idx])
-# table(z[idx])
-# 48/n.tmp
-
 	z[!idx] <- 0
-
 	
 # browser()
 	# p.tmp1 <- p*dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
 		# dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE)
 	p.tmp1 <- p*dnorm(s[idx,1],mu.0.tmp[,1],sigma,log=FALSE)*
 		dnorm(s[idx,2],mu.0.tmp[,2],sigma,log=FALSE)
-	# p.tmp1 <- p
-	p.tmp2 <- (1-p)*dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
-		dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE)*
-		dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu,
+	p.tmp2 <- (1-p)*dtnorm(mu[idx,1],mu.0.tmp[,1],sigma.mu,
 			lower=min(S[,1]),upper=max(S[,1]),log=FALSE)*
 		dtnorm(mu[idx,2],mu.0.tmp[,2],sigma.mu,
 			lower=min(S[,2]),upper=max(S[,2]),log=FALSE)
-	# p.tmp2 <- (1-p)*(0.5*(dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
-		# dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE))+
-		# (0.5*dtnorm(mu[idx,1],mu.0[h.idx.tmp,1],sigma.mu,
-			# lower=min(S[,1]),upper=max(S[,1]),log=FALSE)*
-		# dtnorm(mu[idx,2],mu.0[h.idx.tmp,2],sigma.mu,
-			# lower=min(S[,2]),upper=max(S[,2]),log=FALSE)))
+			# *dnorm(s[idx,1],mu[idx,1],sigma,log=FALSE)*
+			# dnorm(s[idx,2],mu[idx,2],sigma,log=FALSE)*
 	# p.tmp2 <- (1-p)*dnorm(s[idx,1],mu.0[h.idx.tmp,1],sqrt(sigma^2+sigma.mu^2),log=FALSE)*
 		# dnorm(s[idx,2],mu.0[h.idx.tmp,2],sqrt(sigma^2+sigma.mu^2),log=FALSE)
 	p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
-
-# plot(s[idx,],col=z[idx]+1,cex=(p.tmp1+0.75)^2)
-# abline(v=range(S.tilde[,1]))
-# points(unique(h),pch=19)
-# points(mu[idx,],col=z[idx]+1,pch=19,cex=0.5)
-# segments(s[idx,1],s[idx,2],mu[idx,1],mu[idx,2],col="lightblue")
-# segments(mu.0.tmp[,1],mu.0.tmp[,2],mu[idx,1],mu[idx,2],col="lightgreen")
-
-# hist(p.tmp,breaks=100)
-
-# plot(s[idx,],cex=(p.tmp1+0.75)^2)
-
-# plot(rowSums(sqrt((s[idx,]-mu.0.tmp)^2)),p.tmp)
-# mean(p.tmp)
-# plot(p.tmp,(p.tmp+0.75)^2)
-# boxplot(p.tmp1)
-
-
 	z[idx] <- rbinom(n.tmp,1,p.tmp)
 # z <- start$z
 	
