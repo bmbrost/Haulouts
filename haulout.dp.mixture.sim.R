@@ -83,13 +83,13 @@ priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 # hist(rgamma(1000,4,2))
 # hist(rgamma(1000,5,2.5))
 out1 <- haulout.dpmixture.mcmc(s,W,S.tilde,S,priors=priors,
-  tune=list(sigma=0.05,sigma.mu=0.25,a0=0.25),start=start,n.mcmc=2000)
+  tune=list(sigma=0.05,sigma.mu=0.25,a0=0.25),start=start,n.mcmc=10000)
 
 mod <- out1 
 # idx <- 1:100
 idx <- 1:1000
 idx <- 1:2000
-idx <- 1:20000
+idx <- 1:10000
 
 # True clusters
 b <- 3*c(-sigma,sigma) # Plot buffer for errors

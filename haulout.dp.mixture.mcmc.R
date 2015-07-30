@@ -58,8 +58,6 @@ haulout.dpmixture.mcmc <- function(s,W,S.tilde,S,priors,tune,start,n.mcmc,n.core
   alpha <- start$alpha
   # p <- start$p
 
-
-
  #Starting values for p and z
   # idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
   # p <- sum(idx)/T
@@ -131,7 +129,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
   n.cls.save <- numeric(n.mcmc)
   alpha.save <- matrix(0,n.mcmc,qW)
 
-  keep <- list(sigma=0,sigma.mu=0,a0=0)
+  keep <- list(sigma=0,sigma.mu=0)
 
     
   ###
@@ -356,12 +354,8 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
   
   keep$sigma <- keep$sigma/n.mcmc
   keep$sigma.mu <- keep$sigma.mu/n.mcmc
-  keep$a0 <- sum(keep$a0)/n.mcmc
-  # keep$mu.0 <- sum(keep$mu.0)/sum(n.cls.save)
   cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
   cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
-  cat(paste("\na.0 acceptance rate:",round(keep$a0,2))) 
-  # cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
   cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
   list(h.idx=h.idx.save,h=h.save,mu.0=mu.0.save,a0=a0.save,sigma=sigma.save,
   	sigma.mu=sigma.mu.save,alpha=alpha.save,z=z.save,n.cls=n.cls.save,keep=keep,n.mcmc=n.mcmc)
