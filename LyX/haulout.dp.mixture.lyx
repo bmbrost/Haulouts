@@ -364,11 +364,11 @@ Haul-out site locations (
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{z_{t}}\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\mu}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{z_{t}}\times\\
- &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{t}-2\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z_{t}}\times\\
+ &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\mathbf{s}_{t}-2\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z_{t}}\times\\
  &  & \qquad1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=1\}}+\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=0\}}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
+ & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=1\}}+\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=0\}}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
  &  & \qquad\left.\left.\boldsymbol{\mu}_{0,h}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=1\}}+\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z_{t}=0\}}\right)\boldsymbol{\mu}_{0,h}\right)\right\} 1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\sum_{\{t:h_{t}=0,z_{t=1}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=0,z_{t=0}\}}\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\sum_{\{t:h_{t}=h,z_{t=1}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=h,z_{t=0}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
  &  & \qquad\left.\left.\boldsymbol{\mu}_{0,h}^{\prime}\left(n_{h,1}\left(\sigma^{2}\mathbf{I}\right)^{-1}+n_{h,0}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}\right)\right\} 1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}
 \end{eqnarray*}
@@ -380,7 +380,7 @@ where
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}=\sum_{\{t:h_{t}=0,z_{t=1}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=0,z_{t=0}\}}\boldsymbol{\mu}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{b}=\sum_{\{t:h_{t}=h,z_{t=1}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=h,z_{t=0}\}}\mathbf{s}_{t}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
 .
