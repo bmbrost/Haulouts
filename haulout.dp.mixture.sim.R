@@ -31,10 +31,7 @@ h.idx <- sample(1:H,T,replace=TRUE,prob=pie)  # latent cluster assignments
 h <- mu.0[h.idx,]  # latent clusters
 
 # Probability of being hauled-out
-W <- matrix(cbind(1,rnorm(T)),T,2)
-alpha <- matrix(c(0,0.5),2,1)  # c(0,0) yields p=0.5
-p <- pnorm(W%*%alpha)  # probability of being hauled-out
-hist(p);summary(p)
+p <- 0.5
 z <- rbinom(T,1,p)  # haulout indicator variable: 1=hauled-out, 0=at-sea
 table(z)
 
@@ -77,13 +74,13 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
 # Fit model using blocked Gibbs sampler 
 source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.mcmc.R")
 start <- list(a0=a0,h=h,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu,pie=pie,alpha=alpha)  # rdirichlet(1,rep(1/H,H))) 
+  sigma=sigma,sigma.mu=sigma.mu,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 	alpha=1,beta=1,sigma.alpha=1)
 # hist(rgamma(1000,4,2))
 # hist(rgamma(1000,5,2.5))
-out1 <- haulout.dpmixture.mcmc(s,W,S.tilde,S,priors=priors,
-  tune=list(sigma=0.05,sigma.mu=0.25,a0=0.25),start=start,n.mcmc=10000)
+out1 <- haulout.dpmixture.mcmc(s,S.tilde,S,priors=priors,
+  tune=list(sigma=0.05,sigma.mu=0.25,a0=0.25),start=start,n.mcmc=2000)
 
 mod <- out1 
 # idx <- 1:100
@@ -107,10 +104,6 @@ points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.57)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
 table(mod$z[pt.idx,idx])
 z[pt.idx]
-
-# Haul-out probability covariates
-matplot(mod$alpha[idx,],type="l")
-abline(h=alpha,col=c(1,2),lty=2) 
 
 # Concentration parameter
 hist(mod$a0[idx],breaks=100);abline(v=a0,col=2,lty=2) 
@@ -136,8 +129,11 @@ abline(h=nrow(unique(h)),col=2,lty=2)  # true number of clusters
 barplot(table(mod$n.cls)) 
 
 # # Haul-out probability
-# hist(mod$p[idx],breaks=100);abline(v=p,col=2,lty=2)
-# abline(v=sum(z)/T,col=3,lty=2)
+hist(mod$p[idx],breaks=100);abline(v=p,col=2,lty=2)
+abline(v=sum(z)/T,col=3,lty=2)
+
+
+
 
 
 
