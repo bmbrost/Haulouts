@@ -161,8 +161,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 		alpha <- A%*%b+t(chol(A))%*%matrix(rnorm(qW),qW,1)
 		# beta <- t(rmvnorm(1,A%*%b,A))
 		p <- pnorm(W%*%alpha)
-
-
+		
 	###
 	### Dirichlet process parameters
 	###
