@@ -132,11 +132,11 @@ Description
 \begin_layout Standard
 A Dirichlet process mixture model for haul-out site estimation.
  Unlike the model implemented in haulout.dp.mixture.mcmc.R, this version uses
- a probit link in the estimation the haul-out indicator variable, 
+ a probit link for estimating the haul-out indicator variable, 
 \begin_inset Formula $z_{t}$
 \end_inset
 
-, , such that incorporation of covariates in efficient.
+, such that incorporation of covariates in efficient.
  
 \end_layout
 
