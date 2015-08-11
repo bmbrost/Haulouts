@@ -111,6 +111,19 @@ height "0.5pt"
 \end_layout
 
 \begin_layout Subsubsection*
+Description
+\end_layout
+
+\begin_layout Standard
+A Dirichlet process mixture model for haul-out site estimation.
+ This version estimates 
+\begin_inset Formula $\boldsymbol{\mu}_{t}$
+\end_inset
+
+, the true locations.
+\end_layout
+
+\begin_layout Subsubsection*
 Implementation
 \end_layout
 

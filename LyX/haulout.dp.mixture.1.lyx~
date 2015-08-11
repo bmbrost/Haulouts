@@ -126,6 +126,21 @@ height "0.5pt"
 \end_layout
 
 \begin_layout Subsubsection*
+Description
+\end_layout
+
+\begin_layout Standard
+A Dirichlet process mixture model for haul-out site estimation.
+ Unlike the model implemented in haulout.dp.mixture.mcmc.R, this version uses
+ a probit link in the estimation the haul-out indicator variable, 
+\begin_inset Formula $z_{t}$
+\end_inset
+
+, , such that incorporation of covariates in efficient.
+ 
+\end_layout
+
+\begin_layout Subsubsection*
 Implementation
 \end_layout
 
@@ -473,7 +488,11 @@ Haul-out indicator variable (
 
 \end_inset
 
-where
+where 
+\begin_inset Formula $\Phi^{-1}(p_{t})=\mathbf{w}_{t}^{\prime}\boldsymbol{\alpha}$
+\end_inset
+
+ and 
 \begin_inset Formula 
 \[
 \tilde{p}=\frac{p_{t}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})}{p_{t}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})+(1-p_{t}){\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})}.
@@ -481,11 +500,13 @@ where
 
 \end_inset
 
-Note that 
-\begin_inset Formula $\Phi^{-1}(p_{t})=\mathbf{w}_{t}^{\prime}\boldsymbol{\alpha}$
+
+\emph on
+
+\begin_inset VSpace bigskip
 \end_inset
 
-.
+
 \end_layout
 
 \begin_layout Standard

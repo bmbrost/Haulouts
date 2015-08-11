@@ -115,9 +115,9 @@ Implementation
 \end_layout
 
 \begin_layout Standard
-The file haulout.dp.mixture.sim.R simulates data according to the model statement
- presented below, and haulout.dp.mixture.mcmc.R contains the MCMC algorithm
- for model fitting.
+The file haulout.dp.mixture.mu_t.sim.R simulates data according to the model
+ statement presented below, and haulout.dp.mixture.mu_t.mcmc.R contains the MCMC
+ algorithm for model fitting.
  Model implementation follows the blocked Gibbs sampler truncation approximation
  of Ishwaran and James (2001) and Gelman et al.
  (2014).
