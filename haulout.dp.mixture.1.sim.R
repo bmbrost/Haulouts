@@ -109,8 +109,7 @@ table(mod$z[pt.idx,idx])
 z[pt.idx]
 
 # Haul-out probability covariates
-matplot(mod$alpha[idx,],type="l")
-abline(h=alpha,col=c(1,2),lty=2) 
+matplot(mod$alpha[idx,],type="l"); abline(h=alpha,col=c(1,2),lty=2) 
 
 # Concentration parameter
 hist(mod$a0[idx],breaks=100);abline(v=a0,col=2,lty=2) 
