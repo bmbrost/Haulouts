@@ -1,157 +1,125 @@
-haulout.dpmixture.mcmc <- function(s,P0,priors,tune,start,n.mcmc,n.cores=NULL){
-  
-  ###
-  ### Libraries and Subroutines
-  ###
-  
-  library(MCMCpack)  # for Dirichlet distribution functions
-  library(data.table)  # for tabulating and summing
-  library(dplyr)  # dense_rank() for ranking clusters smallest to largest
-  library(doParallel) #For parallel processing
-  library(foreach) #For parallel processing  
-  
-  get.mu.0 <- function(x,dt,tab,sigma){
- # browser()
-    y.tmp <- dt[mux==tab[x,mux]&muy==tab[x,muy],.(sx,sy)]
-    y.tmp <- as.matrix(y.tmp)
-    A <- solve(sigma^2*diag(2))*tab[x,N]
-   	A.inv <- solve(A)
-    b <- colSums(y.tmp%*%solve(sigma^2*diag(2)))
-    # t(solve(A)%*%b)
-    rnorm(2,A.inv%*%b,sqrt(diag(A.inv)))
-    # rnorm(2,A.inv%*%b,sigma^2/tab[x,N])
+testing.mcmc <- function(y,X,Z,priors,start,sigma.alpha,n.mcmc){
+	
+	###
+	### Brian M. Brost (10 AUG 2015)
+	### Semiparametric regression for binary data using probit link
+	###
 
-  }
-  
-  
-  ###
-  ###  Create cluster for parallel processing
-  ###
-  
-  #   if(is.null(n.cores)) n.cores <- detectCores() - 1
-  #   if(n.cores==1) registerDoSEQ() else registerDoParallel(cores=n.cores) # multicore functionality	
-  #   mcoptions <- list(preschedule=TRUE)
-  #   cat(paste("\nUsing",n.cores,"cores for parallel processing."))
-  
-  
-  ###
-  ### Starting values and priors
-  ###
-  
-  a0 <- start$a0
-  mu <- start$mu
-  sigma <- start$sigma
-  pie <- start$pie
-  H <- priors$H
-  
-  
-  ###
-  ###  Setup Variables 
-  ###
-  
-  #   browser()  
-  n <- nrow(s)  # number of observations
-  dt <- as.data.table(cbind(sx=s[,1],sy=s[,2],mux=mu[,1],muy=mu[,2]))
-  tab <- dt[,.N,by=.(mux,muy)]  
-  setkey(tab ,N)
-  n.cluster <- tab[,.N]  
-  ord <- n.cluster:1
-  
-  mu.save <- array(0,dim=c(n,2,n.mcmc))
-  a0.save <- numeric(n.mcmc)
-  sigma.save <- numeric(n.mcmc)  
-  keep <- list(sigma=0)
+	###
+	### Model statement:
+	### y=0,u_t<=0
+	### y=1,u_t>0
+	### u_t~N(x*beta+z*alpha,1)
+	### beta~N(0,sigma.beta^2*I)
+	### alpha~N(0,sigma.alpha^2*I)
+	###	
+	
+	###
+	### Libraries and Subroutines
+	###
 
-    
-  ###
-  ### Begin MCMC loop
-  ###
+	truncnormsamp <- function(mu,sig2,low,high,nsamp){
+	  flow=pnorm(low,mu,sqrt(sig2)) 
+	  fhigh=pnorm(high,mu,sqrt(sig2)) 
+	  u=runif(nsamp) 
+	  tmp=flow+u*(fhigh-flow)
+	  x=qnorm(tmp,mu,sqrt(sig2))
+	  x
+	}
+
+	###
+	###  Setup Variables 
+	###
   
-  for (k in 1:n.mcmc) {
-    if(k%%1000==0) cat(k,"");flush.console()
-    
-    # Following Ishwaran and James (2001); Also Gelman et al. (2014), Section 23.3
-    
-    ###
-    ### Sample theta (cluster parameter)
-    ###
-    
-    # Sampler currently disregards support P0
+	n <- length(y)  # number of observations
+	qX <- ncol(X)  # number of 'fixed' effects
+	qZ <- ncol(Z)  # number of 'random' effects
+	y1 <- (y==1)
+	y0 <- (y==0)
+	y1.sum <- sum(y1)
+	y0.sum <- sum(y0)
+	u <- numeric(n)
+	
+	###
+	### Starting values and priors
+ 	###
+
+	# browser()
+	beta <- matrix(start$beta,qX)
+	alpha <- matrix(start$alpha,qZ)
+
+	mu.beta <- priors$mu.beta
+	Sigma.beta <- diag(qX)*priors$sigma.beta^2
+	Sigma.beta.inv <- solve(Sigma.beta)
+	
+	mu.alpha <- rep(0,qZ)
+	Sigma.alpha <- diag(qZ)*sigma.alpha^2
+	Sigma.alpha.inv <- solve(Sigma.alpha)
+
+	###
+	### Create receptacles for output
+	###
+  
+	beta.save <- matrix(0,n.mcmc,qX)  # coefficients for 'fixed' effects
+	alpha.save <- matrix(0,n.mcmc,qZ)  # coefficients for 'random' effects
+	sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
+	u.save <- matrix(0,n.mcmc,n)
+	D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
+		
+	###
+	### Begin MCMC loop
+	###
+  
+	for (k in 1:n.mcmc) {
+    	if(k%%1000==0) cat(k,"");flush.console()
+
 # browser()
-    mu.0 <- t(sapply(1:n.cluster,function(x) get.mu.0(x,dt,tab,sigma)))
-    # mu.0 <- cbind(rnorm(n.cluster,mu.0[ord,1],sigma/sqrt(tab[ord,N])),
-      # rnorm(n.cluster,mu.0[ord,2],sigma/sqrt(tab[ord,N])))  
-    n.cluster.new <- H-n.cluster
-    mu.0 <- rbind(mu.0[ord,],cbind(runif(n.cluster.new,P0[1,1],P0[2,1]),
-      runif(n.cluster.new,P0[1,2],P0[3,2])))
-       
+###
+		### Sample u (auxilliary variable for probit regression)
+	  	###
+	 
+		linpred <- X%*%beta+Z%*%alpha
+	  	u[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
+	  	u[y0] <- truncnormsamp(linpred[y0],1,-Inf,0,y0.sum)
+
+		###
+		###  Sample alpha ('random' effects) 
+		###
+# browser()
+		A.inv <- solve(t(Z)%*%Z+Sigma.alpha.inv)
+		b <- t(Z)%*%(u-X%*%beta)  # +mu.alpha%*%Sigma.alpha.inv
+		alpha <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qZ),qZ,1)
+
+		###
+		###  Sample beta ('fixed' effects) 
+		###
+
+	 	A.inv <- solve(t(X)%*%X+Sigma.beta.inv)
+	  	b <- t(X)%*%(u-Z%*%alpha)  # +mu.beta%*%Sigma.beta.inv
+	  	beta <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qX),qX,1)
+		
+		###
+		###  Save samples 
+	    ###
+
+		beta.save[k,] <- beta
+		alpha.save[k,] <- alpha
+		u.save[k,] <- u
+	  	D.bar.save[k] <- -2*(sum(dbinom(y,1,pnorm(u),log=TRUE)))
+	}
+
+	#  Calculate DIC
+	if(qX==1)  postbetamn <- mean(beta.save)
+	if(qX>1)  postbetamn <- apply(beta.save,2,mean)
+	postumn <- apply(u.save,2,mean)
+	D.hat=-2*(sum(dbinom(y,1,pnorm(postumn),log=TRUE)))
+	D.bar <- mean(D.bar.save)
+	pD <- D.bar-D.hat
+	DIC <- D.hat+2*pD
+
+	###
+	### Write output
+	###
   
-    ###
-    ### Sample h.t (cluster assignments)
-    ###
-    
-    # browser()
-    h.t <- sapply(1:n,function(x) sample(1:H,1,
-      prob=pie*dnorm(s[x,1],mu.0[,1],sigma)*dnorm(s[x,2],mu.0[,2],sigma)))
-    dt[,mux:=mu.0[h.t,1]]
-    dt[,muy:=mu.0[h.t,2]]    
-
-
-    ###
-    ### Sample sigma (observation error)
-    ###
-
-    sigma.star <- rnorm(1,sigma,tune$sigma)
-    if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
-      mh.star.sigma <- sum(dnorm(dt[,sx],dt[,mux],sigma.star,log=TRUE)+
-        dnorm(dt[,sy],dt[,muy],sigma.star,log=TRUE))
-      mh.0.sigma <- sum(dnorm(dt[,sx],dt[,mux],sigma,log=TRUE)+
-        dnorm(dt[,sy],dt[,muy],sigma,log=TRUE))
-      if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
-        sigma <- sigma.star
-        keep$sigma <- keep$sigma+1
-      } 
-    }
-
-
-    ###
-    ### Sample p (stick-breaking process)
-    ###
-
-    tab <- dt[,.N,by=.(mux,muy)]  
-    setkey(tab ,N)
-    n.cluster <- tab[,.N]  
-    ord <- n.cluster:1
-    tab.tmp <- c(tab[ord,N],rep(0,H-n.cluster-1))
-
-    # Update stick-breaking weights
-    v <- c(rbeta(H-1,1+tab.tmp,a0+n-cumsum(tab.tmp)),1)
-    pie <- v*c(1,cumprod((1-v[-H])))  # mixture component probabilities
-
-    
-    ###
-    ### Sample a0 (concentration parameter); See Gelman section 23.3
-    ###
-    
-    a0 <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-v[-H])))  
-    # a0 <- start$a0
-
-    ###
-    ###  Save samples 
-    ###
-
-    mu.save[,1,k] <- dt[,mux]
-    mu.save[,2,k] <- dt[,muy]
-    a0.save[k] <- a0    
-    sigma.save[k] <- sigma
-  }
-  
-  ###
-  ### Write output
-  ###
-  
-  keep$sigma <- keep$sigma/n.mcmc
-  cat(paste("\nsigma acceptance rate:",keep$sigma)) 
-  list(mu=mu.save,a0=a0.save,sigma=sigma.save,keep=keep,n.mcmc=n.mcmc)
-  
+	list(beta=beta.save,alpha=alpha.save,u=u.save,DIC=DIC,n.mcmc=n.mcmc)
 }

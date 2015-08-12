@@ -1,180 +1,181 @@
 rm(list=ls())
 
-# library(cluster)
-library(msm)  # for simulating mu
-# library(pscl)
-library(MCMCpack)  # for rdirichlet(...)
+library(splines)
+# library(lmer)
+# library(nlme)
+# library(lme4)
+
+T <- 100  # number of observations
+
+# Define covariates
+time <- c(0,cumsum(rgamma(T-1,shape=1.1,scale=4.5)))  # time covariate
+hr <- ((time)-24*floor(time/24))
+day <- ceiling(time/24)
+X <- cbind(1,day,hr)
+X[,-1] <- scale(X[,-1])
+qX <- ncol(X)
+
+# beta <- c(-0.1,1.25,0.5)  # Coefficients on X
+beta <- c(-0.5,1.25,0.5)  # Coefficients on X
 
 
 ###
-### Simulate 2-dimensional haul out data using a Dirichlet process mixture 
+### Confirm MCMC algorithm recovers alphas used for simulation
 ###
 
-# Define 2-dimensional rectangular support for mu, the true harbor seal locations
-S.bar <- cbind(c(-10,-1,-1,-10,-10),c(0,0,20,20,0))  # complement of S, i.e., the land domain
-S.tilde <- cbind(c(max(S.bar[,1]),1,1,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # support 
-	# of haul out process
-S <- cbind(c(max(S.bar[,1]),10,10,max(S.bar[,1]),max(S.bar[,1])),S.bar[,2])  # support of
-	# movement process (marine and haul-out environments)
+# Basis expansion
+int <- 10  # interval between knots
+knots <- seq(0,max(time),by=int)
+Z <- bs(time,knots=knots,degree=3,intercept=FALSE)  # cubic spline
+qZ <- ncol(Z)
 
-# Simulate cluster locations and assignments using stick-breaking process 
-# See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
-T <- 1000  # number of locations to simulate
-a0 <- 2  # concentration parameter
-H <- 50  # maximum number of clusters for truncation approximation
+sigma.alpha <- 5
+alpha <- rnorm(qZ,0,sigma.alpha)
+trend <- Z%*%alpha
 
-# mu.0 <- cbind(runif(H,min(S.tilde[,1]),max(S.tilde[,1])),
-	# runif(H,min(S.tilde[,2]),max(S.tilde[,2])))  # clusters randomly drawn from S.tilde
-# v <- c(rbeta(H-1,1,a0),1)  # stick-breaking weights
-# pie <- v*c(1,cumprod((1-v[-H])))  # probability mass
-# h.idx <- sample(1:H,T,replace=TRUE,prob=pie)  # latent cluster assignments
-# h <- mu.0[h.idx,]  # latent clusters
+p <- pnorm(X%*%beta+trend)  # probability of being hauled-out
+hist(p);summary(p)
+y <- rbinom(T,1,p)  # haulout indicator variable: 1=hauled-out, 0=at-sea
+table(y)
 
-# Simulate true locations
-# p <- 0.5  # probability of being hauled-out
-# z <- rbinom(T,1,p)  # haulout indicator variable
-# sigma.mu <- 2  # dispersion about haul-out for at-sea locations
-# mu <- matrix(0,T,2)
-# mu[z==1,] <- h[z==1,]
-# mu[z==0,] <- cbind(rtnorm(T-sum(z),h[z==0,1],sigma.mu,lower=S[1,1],upper=S[2,1]),
-	# rtnorm(T-sum(z),h[z==0,2],sigma.mu,lower=S[1,2],upper=S[3,2]))
+plot(time,y,ylim=range(c(trend,y,X%*%beta)))
+lines(time,X%*%beta,col=2)
+lines(time,trend,col=3)
+lines(time,X%*%beta+trend,col=4)
 
+source('~/Documents/git/SemiparametricRegression/probit.semipar.mcmc.R', chdir = TRUE)
+start <- list(beta=beta,alpha=alpha)
+# hist(sqrt(1/rgamma(1000,1,,2)))
+priors <- list(mu.beta=rep(0,qX),sigma.beta=10)
+out1 <- probit.semipar.mcmc(y,X,Z,priors=priors,start=start,sigma.alpha=sigma.alpha,
+	n.mcmc=10000)
+out1$DIC
 
+matplot(out1$beta,type="l",lty=1);abline(h=beta,col=1:3,lty=2)
 
-S.tilde <- S
-mu.0 <- cbind(runif(H,min(S.tilde[,1]),max(S.tilde[,1])),
-	runif(H,min(S.tilde[,2]),max(S.tilde[,2])))  # clusters randomly drawn from S.tilde
-v <- c(rbeta(H-1,1,a0),1)  # stick-breaking weights
-pie <- v*c(1,cumprod((1-v[-H])))  # probability mass
-h.idx <- sample(1:H,T,replace=TRUE,prob=pie)  # latent cluster assignments
-h <- mu.0[h.idx,]  # latent clusters
-mu <- h
+beta.hat <- apply(out1$beta,2,mean)
+beta.quant <- t(apply(out1$beta,2,quantile,c(0.025,0.975)))
+plot(beta.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(beta.quant)))
+abline(h=0,col=2,lty=2)
+segments(1:qX,beta.quant[,1],1:qX,beta.quant[,2],col="lightgrey")
+points(beta.hat,pch=19,col=rgb(0,0,0,0.25))
+points(beta,pch=19)
 
-z <- rep(1,T)
-p <- 1
-sigma.mu <- 0.0000000001
+alpha.hat <- apply(out1$alpha,2,mean)
+alpha.quant <- t(apply(out1$alpha,2,quantile,c(0.025,0.975)))
+plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
+abline(h=0,col=2,lty=2)
+segments(1:qZ,alpha.quant[,1],1:qZ,alpha.quant[,2],col="lightgrey")
+points(alpha.hat,pch=19,col=rgb(0,0,0,0.25))
+points(alpha,pch=19,col=3)
 
+boxplot(pnorm(out1$u),col=8,outline=FALSE)
+points(y,col=3,pch=19,cex=0.5)
 
-# Observation process
-sigma <- 0.5 # Observation error
-s <- mu
-s <- s+rnorm(T*2,0,sigma) # Add error to true locations
+u.inv <- matrix(pnorm(out1$u),,T)
+u.inv.mean <- apply(u.inv,2,mean)
+u.inv.quant <- t(apply(u.inv,2,quantile,c(0.025,0.975)))
+plot(u.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
+segments(1:T,u.inv.quant[,1],1:T,u.inv.quant[,2],col=rgb(0,0,0,0.15))
+points(y,col=3,pch=19,cex=0.5)
 
-# Plot support
-b <- 3*c(-sigma,sigma) # Plot buffer for errors
-plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
-polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
-polygon(x=S[,1],y=S[,2],col="gray85")
-polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
-
-# Plot true and observed locations
-segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
-points(s,col=2,pch=3,cex=0.5) # Observed locations
-points(mu,pch=19,cex=0.5) # All true locations
-# points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
+par(mfrow=c(2,1))
+plot(time,trend,type="l")
+plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
+lines(alpha.hat,col=rgb(0,0,0,0.25))
+abline(h=0,col=2,lty=2)
 
 
 ###
-### Fit models
+### Fit model with 'unknown' non-linear trend
 ###
 
-# Fit model using blocked Gibbs sampler 
-source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.mcmc.R")
-# source("/Users/brost/Documents/git/haulouts/testing.mcmc.R")
-start <- list(a0=a0,h=h,mu=mu,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=2,q=0.5,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
-	alpha=1,beta=1)
-# hist(rgamma(1000,2,0.5))
-out1 <- haulout.dpmixture.mcmc(s,S.tilde,S,priors=priors,
-  tune=list(z=0.5,sigma=0.05,sigma.mu=0.25),start=start,n.mcmc=1000)
-# out1$h <- out1$mu
+# Define non-linear trend to model non-parametrically 
+trend <- 0.5*sin(0.1*time)  # non-linear pattern
+trend <- 2*sin(0.1*time)  # non-linear pattern
+plot(time,trend,type="l")
 
-hist(out2$a0,breaks=100);abline(v=a0,col=2,lty=2) 
-hist(out2$sigma,breaks=100);abline(v=sigma,col=2,lty=2)
+# Simulate data
+p <- pnorm(X%*%beta+trend)  # probability of being hauled-out
+hist(p);summary(p)
+y <- rbinom(T,1,p)  # haulout indicator variable: 1=hauled-out, 0=at-sea
+table(y)
 
+plot(time,y,ylim=range(c(trend,y,X%*%beta)))
+lines(time,X%*%beta,col=2)
+lines(time,trend,col=3)
+lines(time,X%*%beta+trend,col=4)
 
-source("/Users/brost/Documents/git/DPMixtures/dp.mixture.blocked.2d.mcmc.R")
-# hist(rgamma(1000,2,2),breaks=100)
-# hist(rgamma(1000,1,1),breaks=100)
-start <- list(a0=a0,h=h,mu=mu,z=mu,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu,pie=pie)  # rdirichlet(1,rep(1/H,H))) 
-out2 <- dpmixture.blocked.2d.mcmc(s,S.tilde,
-  priors=list(H=H,r=2,q=0.5,sigma.l=0,sigma.u=5),
-  tune=list(z=0.5,sigma=0.05),start=start,n.mcmc=1000)
-out2$h <- out2$z
+# Basis expansion
+int <- 10  # interval between knots
+knots <- seq(0,max(time),by=int)
+Z <- bs(time,knots=knots,degree=3,intercept=FALSE)  # cubic spline
+matplot(Z,type="l")
+qZ <- ncol(Z)
 
-mod <- out1
-mod <- out2
-# idx <- 1:100
-idx <- 1:1000
-idx <- 1:2000
-idx <- 1:5000
-idx <- 1:10000
+source('~/Documents/git/SemiparametricRegression/probit.semipar.mcmc.R', chdir = TRUE)
+start <- list(beta=beta,alpha=rep(0,qZ))
+# hist(sqrt(1/rgamma(1000,1,,2)))
+priors <- list(mu.beta=rep(0,qX),sigma.beta=10)
+out1 <- probit.semipar.mcmc(y,X,Z,priors=priors,start=start,sigma.alpha=1,n.mcmc=1000)
+out1$DIC
 
-# True clusters
-b <- 3*c(-sigma,sigma) # Plot buffer for errors
-plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
-polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
-polygon(x=S[,1],y=S[,2],col="gray85")
-polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
-points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
-points(s,pch=19,cex=0.2,col=3)
-points(h,pch=1,cex=1,col=rgb(1,0,0,1))
+matplot(out1$beta,type="l",lty=1);abline(h=beta,col=1:3,lty=2)
 
-pt.idx <- 50
-points(mod$mu[pt.idx,1,idx],mod$mu[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(0,0,1,0.25))
-points(mu[pt.idx,1],mu[pt.idx,2],pch=19)
-points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
-z[pt.idx]
+beta.hat <- apply(out1$beta,2,mean)
+beta.quant <- t(apply(out1$beta,2,quantile,c(0.025,0.975)))
+plot(beta.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(beta.quant)))
+abline(h=0,col=2,lty=2)
+segments(1:qX,beta.quant[,1],1:qX,beta.quant[,2],col="lightgrey")
+points(beta.hat,pch=19,col=rgb(0,0,0,0.25))
+points(beta,pch=19)
 
-# Concentration parameter
-hist(mod$a0[idx],breaks=100);abline(v=a0,col=2,lty=2) 
-mean(mod$a0[idx])*log(T)
+alpha.hat <- apply(out1$alpha,2,mean)
+alpha.quant <- t(apply(out1$alpha,2,quantile,c(0.025,0.975)))
+plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
+abline(h=0,col=2,lty=2)
+segments(1:qZ,alpha.quant[,1],1:qZ,alpha.quant[,2],col="lightgrey")
+points(alpha.hat,pch=19,col=rgb(0,0,0,0.25))
 
-# Observation error
-hist(mod$sigma[idx],breaks=100);abline(v=sigma,col=2,lty=2)
-mean(mod$sigma[idx])
+boxplot(pnorm(out1$u),col=8,outline=FALSE)
+points(y,col=3,pch=19,cex=0.5)
 
-# Dispersion about haul-out for at-sea locations
-hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
-mean(mod$sigma.mu[idx])
+u.inv <- matrix(pnorm(out1$u),,T)
+u.inv.mean <- apply(u.inv,2,mean)
+u.inv.quant <- t(apply(u.inv,2,quantile,c(0.025,0.975)))
+plot(u.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
+segments(1:T,u.inv.quant[,1],1:T,u.inv.quant[,2],col=rgb(0,0,0,0.15))
+points(y,col=3,pch=19,cex=0.5)
 
-# Haul-out probability
-hist(mod$p[idx],breaks=100);abline(v=p,col=2,lty=2)
-
-# Haul-out indicator variable
-pt.idx <- 302
-points(s[pt.idx,1],s[pt.idx,2])
-table(mod$z[pt.idx,idx])
-
-z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
-boxplot(z.hat~z)
-plot(s[,1],z.hat)
-
-# Modeled number of clusters
-nclust <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
-plot(mod$sigma[idx],nclust)
-plot(nclust,type="l")
-abline(h=nrow(unique(h)),col=2,lty=2)  # true number of clusters  
-barplot(table(nclust))
+par(mfrow=c(2,1))
+plot(time,trend,type="l")
+plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
+lines(alpha.hat,col=rgb(0,0,0,0.25))
+abline(h=0,col=2,lty=2)
 
 
+###
+### Regularization (selection of sigma.alpha)
+###
 
+coarse.grid <- seq(0.01,2,0.1)  # coarse grid for sigma.alpha
+l.coarse <- length(coarse.grid)
+DIC.coarse <- numeric(l.coarse)
+for(i in 1:l.coarse){
+	DIC.coarse[i] <- probit.semipar.mcmc(y,X,Z,priors=priors,start=start,
+		sigma.alpha=coarse.grid[i],n.mcmc=1000)$DIC
+}
 
-plot(apply(mod$z[,idx],2,max),type="l")
-cl.ranks <- apply(mod$z[,idx],2,dense_rank)
-plot(c(mod$z[,idx])[c(cl.ranks)==8],type="l")
+plot(coarse.grid,DIC.coarse,type="l")
+idx <- which.min(DIC.coarse)
 
-hist(c(mod$z[,idx])[c(test)==1],breaks=500,xlim=range(mod$z[idx]),ylim=c(0,5),prob=TRUE)  
-hist(c(mod$z[,idx])[c(test)==5],col=5,breaks=500,add=TRUE,prob=TRUE)  
+l.fine <- 10
+fine.grid <- seq(coarse.grid[idx-1],coarse.grid[idx+1],length.out=10)
+DIC.fine <- numeric(l.fine)
+for(i in 1:l.fine){
+	DIC.fine[i] <- probit.semipar.mcmc(y,X,Z,priors=priors,start=start,
+		sigma.alpha=fine.grid[i],n.mcmc=1000)$DIC
+}
 
-pt.idx <- 94
-plot(mod$z[pt.idx,idx],type="l");abline(h=z[pt.idx],col="red",lty=2)
-hist(mod$z[,idx],breaks=5000,xlim=c(range(mod$z[pt.idx,])+c(-10,10)),prob=TRUE)
-hist(mod$z[pt.idx,idx],breaks=50,col="red",add=TRUE,border="red",prob=TRUE);abline(v=z[pt.idx],col="red",lty=2)
-points(y[pt.idx],-0.010,pch=19)
-
-which.max(apply(mod$z,1,var))
-abline(v=29.75)
-which.min(sapply(y,function(x) dist(c(x,29.75))))
+plot(fine.grid,DIC.fine,type="l")
+fine.grid[which.min(DIC.fine)]

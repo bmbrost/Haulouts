@@ -1,4 +1,5 @@
-haulout.dpmixture.1.mcmc <- function(s,W,S.tilde,S,priors,tune,start,n.mcmc,n.cores=NULL){
+haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
+	priors,tune,start,n.mcmc,n.cores=NULL){
   
   t.start <- Sys.time()
 
@@ -34,51 +35,62 @@ haulout.dpmixture.1.mcmc <- function(s,W,S.tilde,S,priors,tune,start,n.mcmc,n.co
 		x <- qnorm(tmp,mu,sqrt(sig2))
 		x
 	}
+	
+	###
+	###  Create cluster for parallel processing
+	###
   
-  ###
-  ###  Create cluster for parallel processing
-  ###
+	# if(is.null(n.cores)) n.cores <- detectCores() - 1
+	# if(n.cores==1) registerDoSEQ() else registerDoParallel(cores=n.cores) # multicore functionality	
+	# mcoptions <- list(preschedule=TRUE)
+	# cat(paste("\nUsing",n.cores,"cores for parallel processing."))
   
-  #   if(is.null(n.cores)) n.cores <- detectCores() - 1
-  #   if(n.cores==1) registerDoSEQ() else registerDoParallel(cores=n.cores) # multicore functionality	
-  #   mcoptions <- list(preschedule=TRUE)
-  #   cat(paste("\nUsing",n.cores,"cores for parallel processing."))
+	###
+	### Starting values and priors
+	###
   
-  
-  ###
-  ### Starting values and priors
-  ###
-  
-  a0 <- start$a0
-  z <- start$z
-  sigma <- start$sigma
-  sigma.mu <- start$sigma.mu
-  pie <- start$pie
-  H <- priors$H
-  alpha <- start$alpha
-  # p <- start$p
+	a0 <- start$a0
+	z <- start$z
+	sigma <- start$sigma
+	sigma.mu <- start$sigma.mu
+	pie <- start$pie
+	H <- priors$H
+	beta <- matrix(start$beta,qX)
+	alpha <- start$alpha
+	# p <- start$p
 
- #Starting values for p and z
-  # idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] #mu located within intersection(S,S.tilde)
-  # p <- sum(idx)/T
-  # z <- numeric(T)
-  # z[idx] <- 1
+	# Starting values for p and z
+	# idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] 		# mu located within intersection(S,S.tilde)
+	# p <- sum(idx)/T
+	# z <- numeric(T)
+	# z[idx] <- 1
 
   
-  ###
-  ###  Setup Variables 
-  ###
+	###
+	###  Setup Variables 
+	###
   
-  # browser() 
-	T <- nrow(s)  # number of observations
+	# browser() 
+	T <- nrow(s)  # number of telemetry locations
+	n <- length(y)  # number of wet/dry observations
+	qX <- ncol(X)
 	qW <- ncol(W)
-	u <- numeric(T)
-	alpha.var <- diag(qW)*priors$sigma.alpha
-  	alpha.mn <- matrix(0,qW,1)
+	y1 <- (y==1)
+	y0 <- (y==0)
+	y1.sum <- sum(y1)
+	y0.sum <- sum(y0)
+	u <- numeric(n)
 
-  Sigma.inv <- solve(sigma^2*diag(2))
-  Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
+	mu.alpha <- matrix(0,qW,1)
+	Sigma.alpha <- diag(qW)*priors$sigma.alpha^2
+  	Sigma.alpha.inv <- solve(Sigma.alpha)
 
+  	mu.beta <- matrix(0,qX,1)
+	Sigma.beta <- diag(qX)*priors$sigma.beta^2
+	Sigma.beta.inv <- solve(Sigma.beta)
+
+	Sigma.inv <- solve(sigma^2*diag(2))
+	Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
 
 	mu.0 <- unique(h)  # unique cluster location s
 	n.cls <- nrow(mu.0)  # number of clusters
@@ -114,53 +126,74 @@ haulout.dpmixture.1.mcmc <- function(s,W,S.tilde,S,priors,tune,start,n.mcmc,n.co
 
 
 
-  ###
-  ### Create receptacles for output
-  ###
+  	###
+	### Create receptacles for output
+	###
   
-  h.idx.save <- matrix(0,T,n.mcmc)  # cluster assignment indicator variable
-h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
-  a0.save <- numeric(n.mcmc)  # concentration parameter
-  sigma.save <- numeric(n.mcmc)  # telemetry measurement error
-  sigma.mu.save <- numeric(n.mcmc)  # dispersion about haul-out site
-  # p.save <- numeric(n.mcmc)  # probability of being hauled-out
-  z.save <- matrix(0,T,n.mcmc)  # haul-out indicator variable
-  mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
-  n.cls.save <- numeric(n.mcmc)
-  alpha.save <- matrix(0,n.mcmc,qW)
+	h.idx.save <- matrix(0,T,n.mcmc)  # cluster assignment indicator variable
+	h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
+	a0.save <- numeric(n.mcmc)  # concentration parameter
+	sigma.save <- numeric(n.mcmc)  # telemetry measurement error
+	sigma.mu.save <- numeric(n.mcmc)  # dispersion about haul-out site
+	z.save <- matrix(0,T,n.mcmc)  # haul-out indicator variable
+	mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
+	n.cls.save <- numeric(n.mcmc)
+	alpha.save <- matrix(0,n.mcmc,qW)
+	beta.save <- matrix(0,n.mcmc,qX)
+	u.save <- matrix(0,n.mcmc,n)
+	D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
 
-  keep <- list(sigma=0,sigma.mu=0)
-
+	keep <- list(sigma=0,sigma.mu=0)
     
-  ###
-  ### Begin MCMC loop
-  ###
+	###
+	### Begin MCMC loop
+	###
   
-  for (k in 1:n.mcmc) {
-    if(k%%1000==0) cat(k,"");flush.console()
+	for (k in 1:n.mcmc) {
+    	if(k%%1000==0) cat(k,"");flush.console()
 
 		###
 		###  Sample u (auxilliary variable for z) 
 		###
 # browser()		
-		z0 <- z==0
-		z1 <- z==1
-		u[z1] <- truncnormsamp(matrix(W[z1,],,qW)%*%alpha,1,0,Inf,sum(z1))
-		u[z0] <- truncnormsamp(matrix(W[z0,],,qW)%*%alpha,1,-Inf,0,sum(z0))
+		# z0 <- z==0
+		# z1 <- z==1
+		# u[z1] <- truncnormsamp(matrix(W[z1,],,qW)%*%alpha,1,0,Inf,sum(z1))
+		# u[z0] <- truncnormsamp(matrix(W[z0,],,qW)%*%alpha,1,-Inf,0,sum(z0))
 
-		# library(msm)	
-		# v[z1] <- rtnorm(sum(z1),(X%*%beta)[z1],lower=0)
-		# v[z0] <- rtnorm(sum(z0),(X%*%beta)[z0],upper=0)		
+		linpred <- X.tilde%*%beta+W.tilde%*%alpha
+	  	u[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
+	  	u[y0] <- truncnormsamp(linpred[y0],1,-Inf,0,y0.sum)
 
 		###
-		###  Sample p (alpha) 
+		###  Sample alpha (coefficients on basis expansion W)
 		###
 # browser()				
-		A <- solve(t(W)%*%W+solve(alpha.var))
-		b <- t(W)%*%u+solve(alpha.var)%*%alpha.mn
-		alpha <- A%*%b+t(chol(A))%*%matrix(rnorm(qW),qW,1)
-		# beta <- t(rmvnorm(1,A%*%b,A))
-		p <- pnorm(W%*%alpha)
+		# A <- solve(t(W)%*%W+Sigma.alpha.inv)
+		# b <- t(W)%*%u+Sigma.alpha.inv%*%mu.alpha
+		# alpha <- A%*%b+t(chol(A))%*%matrix(rnorm(qW),qW,1)
+		# p <- pnorm(W%*%alpha)
+
+		A.inv <- solve(t(W.tilde)%*%W.tilde+Sigma.alpha.inv)
+		b <- t(W.tilde)%*%(u-X.tilde%*%beta)  # +Sigma.alpha.inv%*%mu.alpha
+		alpha <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qW),qW,1)
+		# p <- pnorm(W%*%alpha)
+
+		###
+		###  Sample beta (coefficients on covariates influencing P(y==1))
+		###
+
+	 	A.inv <- solve(t(X.tilde)%*%X.tilde+Sigma.beta.inv)
+	  	b <- t(X.tilde)%*%(u-W.tilde%*%alpha)  # +mu.beta%*%Sigma.beta.inv
+	  	beta <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qX),qX,1)
+		
+		###
+		### Prediction for z_t, haul-out indicator for telemetry locations
+		###
+		
+		# p.tmp <- pnorm(X%*%beta+W%*%alpha)
+		# z <- rbinom(T,1,p.tmp)
+
 		
 	###
 	### Dirichlet process parameters
@@ -305,9 +338,10 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
 	
 
 	###
-    ### Sample z (haul-out indicator variable)
+    ### Sample z (prediction of haul-out indicator variable)
     ###
 
+	p <- pnorm(X%*%beta+W%*%alpha)
 	p.tmp1 <- p*dnorm(s[,1],mu.0[h.idx,1],sigma,log=FALSE)*
 		dnorm(s[,2],mu.0[h.idx,2],sigma,log=FALSE)
 	p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.idx,1],sqrt(sigma^2+sigma.mu^2),log=FALSE)*
@@ -333,7 +367,7 @@ h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
     sigma.save[k] <- sigma
     sigma.mu.save[k] <- sigma.mu
 	alpha.save[k,] <- alpha
-    # p.save[k] <- p
+	beta.save[k,] <- beta
 	z.save[,k] <- z
 	n.cls.save[k] <- n.cls
   }

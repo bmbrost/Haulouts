@@ -75,14 +75,14 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6)) # Haul out locations
 ###
 
 # Fit model using blocked Gibbs sampler 
-source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.1.mcmc.R")
+source("/Users/brost/Documents/git/haulouts/haulout.dp.mixture.2.mcmc.R")
 start <- list(a0=a0,h=h,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,alpha=alpha)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=5,sigma.mu.l=0,sigma.mu.u=5,
 	alpha=1,beta=1,sigma.alpha=1)
 # hist(rgamma(1000,4,2))
 # hist(rgamma(1000,5,2.5))
-out1 <- haulout.dpmixture.1.mcmc(s,W,S.tilde,S,priors=priors,
+out1 <- haulout.dpmixture.2.mcmc(s,W,S.tilde,S,priors=priors,
   tune=list(sigma=0.05,sigma.mu=0.25,a0=0.25),start=start,n.mcmc=2000)
 
 mod <- out1 

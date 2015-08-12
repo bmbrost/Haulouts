@@ -280,23 +280,38 @@ Let
 \end_layout
 
 \begin_layout Standard
+\begin_inset Formula $\left[\right]$
+\end_inset
+
+
 \begin_inset Formula 
 \begin{eqnarray*}
-\mathbf{s}_{t} & \sim & \begin{cases}
-{\cal N}(\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}), & z_{t}=1\\
-{\cal N}(\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}), & z_{t}=0
+\mathbf{s}(t) & \sim & \begin{cases}
+{\cal N}(\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}), & z(t)=1\\
+{\cal N}(\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}), & z(t)=0
 \end{cases}\\
-z_{t} & \sim & \begin{cases}
-0, & u_{t}\le0\\
-1, & u_{t}>0
+z(t) & \sim & \begin{cases}
+0, & u(t)\le0\\
+1, & u(t)>0
 \end{cases}\\
-u_{t} & \sim & {\cal N}(\mathbf{w}_{t}^{\prime}\boldsymbol{\alpha},\mathbf{1})\\
+y(\tilde{t}) & \sim & \begin{cases}
+0, & u(\tilde{t})\le0\\
+1, & u(\tilde{t})>0
+\end{cases}\\
+\left(\begin{array}{c}
+u(t)\\
+u(\tilde{t})
+\end{array}\right) & \sim & {\cal N}\left(\left(\begin{array}{c}
+\mathbf{x}(t)^{\prime}\boldsymbol{\beta}+\mathbf{w}^{\prime}(t)\boldsymbol{\alpha}\\
+\mathbf{x}(\tilde{t})^{\prime}\boldsymbol{\beta}+\mathbf{w}^{\prime}(\tilde{t})\boldsymbol{\alpha}
+\end{array}\right),\mathbf{I}\right)\\
 h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
 \pi_{h} & = & v_{h}\prod_{\tilde{h}<h}(1-v_{\tilde{h}})\\
 v_{h} & \sim & \text{Beta}(1,\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
 \theta & \sim & \text{Gamma}(r,q)\\
-\boldsymbol{\alpha} & \sim & {\cal N}(\boldsymbol{\mu}_{\alpha},\Sigma_{\alpha})\\
+\boldsymbol{\beta} & \sim & {\cal N}(\mathbf{0},\sigma_{\beta}^{2}\mathbf{I})\\
+\boldsymbol{\alpha} & \sim & {\cal N}(\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\\
 \sigma & \sim & \text{Unif}(l_{\sigma},u_{\sigma})\\
 \sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})
 \end{eqnarray*}
