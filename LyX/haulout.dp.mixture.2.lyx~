@@ -842,7 +842,7 @@ where
 \noindent
 
 \emph on
-Haul-out probability coefficients (
+Random 'effects' for non-linear trend/dependence (
 \begin_inset Formula $\boldsymbol{\alpha}$
 \end_inset
 
