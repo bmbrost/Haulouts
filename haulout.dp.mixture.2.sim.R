@@ -140,10 +140,10 @@ polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
 polygon(x=S[,1],y=S[,2],col="gray85")
 polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
 points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
-points(s,pch=19,cex=0.2,col=3)
 points(h,pch=1,cex=1,col=rgb(1,0,0,1))
+points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 350
+pt.idx <- 101
 points(mod$h[pt.idx,1,idx],mod$h[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(1,1,0,0.25))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
@@ -187,27 +187,29 @@ mean(mod$sigma[idx])
 hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
 mean(mod$sigma.mu[idx])
 
-# Haul-out indicator variable for telemetry locations
+# Inference on z: latent haul-out indicator variable for telemetry locations
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
 boxplot(z.hat~z,ylim=c(0,1))
 plot(s[,1],z.hat,ylim=c(0,1),col=z+1)
 
-u.tilde <- apply(out1$beta[idx,],1,function(x) X[s.idx,]%*%x)+
+u <- apply(out1$beta[idx,],1,function(x) X[s.idx,]%*%x)+
 	apply(out1$alpha[idx,],1,function(x) W[s.idx,]%*%x)
-u.tilde.inv <- matrix(pnorm(u.tilde),,T,byrow=TRUE)
+u.inv <- matrix(pnorm(u),,T,byrow=TRUE)
+u.inv.mean <- apply(u.inv,2,mean)
+plot(u.inv.mean,z.hat)
+u.inv.quant <- t(apply(u.inv,2,quantile,c(0.025,0.975)))
+plot(u.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
+segments(1:T,u.inv.quant[,1],1:T,u.inv.quant[,2],col=rgb(0,0,0,0.15))
+abline(h=0.5,col=2,lty=2)
+points(z,col=3,pch=19,cex=0.5)
+points(z.hat,pch=19,cex=0.25)
+
+# Inference for y
+u.tilde.inv <- matrix(pnorm(out1$u[,idx]),,T,byrow=TRUE)
 u.tilde.inv.mean <- apply(u.tilde.inv,2,mean)
 u.tilde.inv.quant <- t(apply(u.tilde.inv,2,quantile,c(0.025,0.975)))
 plot(u.tilde.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
 segments(1:T,u.tilde.inv.quant[,1],1:T,u.tilde.inv.quant[,2],col=rgb(0,0,0,0.15))
-abline(h=0.5,col=2,lty=2)
-points(z,col=3,pch=19,cex=0.5)
-
-# Inference for y
-u.inv <- matrix(pnorm(out1$u[,idx]),,T,byrow=TRUE)
-u.inv.mean <- apply(u.inv,2,mean)
-u.inv.quant <- t(apply(u.inv,2,quantile,c(0.025,0.975)))
-plot(u.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
-segments(1:T,u.inv.quant[,1],1:T,u.inv.quant[,2],col=rgb(0,0,0,0.15))
 points(y,col=4,pch=19,cex=0.5)
 
 # Modeled number of clusters
