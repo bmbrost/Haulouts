@@ -188,6 +188,8 @@ hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
 mean(mod$sigma.mu[idx])
 
 # Inference on z: latent haul-out indicator variable for telemetry locations
+# Note: estimation of z (z.hat) is based on covariates and location of telemetry 
+# observations, whereas u is based on covariates alone.
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
 boxplot(z.hat~z,ylim=c(0,1))
 plot(s[,1],z.hat,ylim=c(0,1),col=z+1)
