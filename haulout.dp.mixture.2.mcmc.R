@@ -1,6 +1,6 @@
-haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
+haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,sigma.alpha,
 	priors,tune,start,n.mcmc,n.cores=NULL){
-  
+ 
   t.start <- Sys.time()
 
   ###
@@ -46,27 +46,6 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 	# cat(paste("\nUsing",n.cores,"cores for parallel processing."))
   
 	###
-	### Starting values and priors
-	###
-  
-	a0 <- start$a0
-	z <- start$z
-	sigma <- start$sigma
-	sigma.mu <- start$sigma.mu
-	pie <- start$pie
-	H <- priors$H
-	beta <- matrix(start$beta,qX)
-	alpha <- start$alpha
-	# p <- start$p
-
-	# Starting values for p and z
-	# idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] 		# mu located within intersection(S,S.tilde)
-	# p <- sum(idx)/T
-	# z <- numeric(T)
-	# z[idx] <- 1
-
-  
-	###
 	###  Setup Variables 
 	###
   
@@ -81,8 +60,28 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 	y0.sum <- sum(y0)
 	u <- numeric(n)
 
+	###
+	### Starting values and priors
+	###
+ # browser() 
+	a0 <- start$a0
+	sigma <- start$sigma
+	sigma.mu <- start$sigma.mu
+	pie <- start$pie
+	H <- priors$H
+	beta <- matrix(start$beta,qX)
+	alpha <- matrix(0,qW)
+	# alpha <- start$alpha
+	# p <- start$p
+
+	# Starting values for p and z
+	# idx <- mu[,1]>S.tilde[1,1]&mu[,1]<S.tilde[2,1]&mu[,2]>S.tilde[1,2]&mu[,2]<S.tilde[3,2] 		# mu located within intersection(S,S.tilde)
+	# p <- sum(idx)/T
+	# z <- numeric(T)
+	# z[idx] <- 1
+
 	mu.alpha <- matrix(0,qW,1)
-	Sigma.alpha <- diag(qW)*priors$sigma.alpha^2
+	Sigma.alpha <- diag(qW)*sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
 
   	mu.beta <- matrix(0,qX,1)
@@ -124,8 +123,6 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 	mu.0 <- rbind(mu.0, cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
       runif(n.cls.star,S.tilde[1,2],S.tilde[3,2])))  # update mu.0 with mu.star
 
-
-
   	###
 	### Create receptacles for output
 	###
@@ -135,12 +132,13 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 	a0.save <- numeric(n.mcmc)  # concentration parameter
 	sigma.save <- numeric(n.mcmc)  # telemetry measurement error
 	sigma.mu.save <- numeric(n.mcmc)  # dispersion about haul-out site
+	# sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
 	z.save <- matrix(0,T,n.mcmc)  # haul-out indicator variable
 	mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
 	n.cls.save <- numeric(n.mcmc)
 	alpha.save <- matrix(0,n.mcmc,qW)
 	beta.save <- matrix(0,n.mcmc,qX)
-	u.save <- matrix(0,n.mcmc,n)
+	u.save <- matrix(0,n,n.mcmc)
 	D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
 
 	keep <- list(sigma=0,sigma.mu=0)
@@ -153,7 +151,11 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
     	if(k%%1000==0) cat(k,"");flush.console()
 
 		###
-		###  Sample u (auxilliary variable for z) 
+		### Temporal haul-out process
+		###
+
+		###
+		###  Sample u(t.tilde) (auxilliary variable for y) 
 		###
 # browser()		
 		# z0 <- z==0
@@ -175,9 +177,8 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 		# p <- pnorm(W%*%alpha)
 
 		A.inv <- solve(t(W.tilde)%*%W.tilde+Sigma.alpha.inv)
-		b <- t(W.tilde)%*%(u-X.tilde%*%beta)  # +Sigma.alpha.inv%*%mu.alpha
+		b <- t(W.tilde)%*%(u-X.tilde%*%beta)
 		alpha <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qW),qW,1)
-		# p <- pnorm(W%*%alpha)
 
 		###
 		###  Sample beta (coefficients on covariates influencing P(y==1))
@@ -186,14 +187,19 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
 	 	A.inv <- solve(t(X.tilde)%*%X.tilde+Sigma.beta.inv)
 	  	b <- t(X.tilde)%*%(u-W.tilde%*%alpha)  # +mu.beta%*%Sigma.beta.inv
 	  	beta <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qX),qX,1)
-		
-		###
-		### Prediction for z_t, haul-out indicator for telemetry locations
-		###
-		
-		# p.tmp <- pnorm(X%*%beta+W%*%alpha)
-		# z <- rbinom(T,1,p.tmp)
 
+		###
+	    ### Sample z(t) (prediction of haul-out indicator variable for times t)
+	    ###
+	
+		p <- pnorm(X%*%beta+W%*%alpha)
+		p.tmp1 <- p*dnorm(s[,1],mu.0[h.idx,1],sigma,log=FALSE)*
+			dnorm(s[,2],mu.0[h.idx,2],sigma,log=FALSE)
+		p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.idx,1],sqrt(sigma^2+sigma.mu^2),log=FALSE)*
+			dnorm(s[,2],mu.0[h.idx,2],sqrt(sigma^2+sigma.mu^2),log=FALSE)
+		p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
+		z <- rbinom(T,1,p.tmp)
+	# z <- start$z
 		
 	###
 	### Dirichlet process parameters
@@ -286,10 +292,6 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
     sigma.star <- rnorm(1,sigma,tune$sigma)
     if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
 		idx <- z==1
-
-		# mu.0.tmp1 <- mu.0[h.idx[idx],] 
-		# mu.0.tmp0 <- mu.0[h.idx[-idx],] 
-
 		mu.0.tmp <- mu.0[h.idx,]
     	mh.star.sigma <- sum(dnorm(s[idx,1],mu.0.tmp[idx,1],sigma.star,log=TRUE)+
 	    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma.star,log=TRUE))#+
@@ -316,13 +318,10 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
     ### Sample sigma.mu (disperson around homerange center)
     ###
 # browser()
-
-    # Sample with truncated normal density
     sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
     if(sigma.mu.star>priors$sigma.mu.l & sigma.star<priors$sigma.mu.u){
 	  idx <- which(z==0)
 	  mu.0.tmp <- mu.0[h.idx[idx],]
-      # print(idx)
       mh.star.sigma.mu <- 
       	  sum(dnorm(s[idx,1],mu.0.tmp[,1],sqrt(sigma^2+sigma.mu.star^2),log=TRUE)+
 	      dnorm(s[idx,2],mu.0.tmp[,2],sqrt(sigma^2+sigma.mu.star^2),log=TRUE))
@@ -335,21 +334,6 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
       } 
     }
 # sigma.mu <- start$sigma.mu
-	
-
-	###
-    ### Sample z (prediction of haul-out indicator variable)
-    ###
-
-	p <- pnorm(X%*%beta+W%*%alpha)
-	p.tmp1 <- p*dnorm(s[,1],mu.0[h.idx,1],sigma,log=FALSE)*
-		dnorm(s[,2],mu.0[h.idx,2],sigma,log=FALSE)
-	p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.idx,1],sqrt(sigma^2+sigma.mu^2),log=FALSE)*
-		dnorm(s[,2],mu.0[h.idx,2],sqrt(sigma^2+sigma.mu^2),log=FALSE)
-	p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
-	z <- rbinom(T,1,p.tmp)
-# z <- start$z
-
 	
     ###
     ###  Save samples 
@@ -368,6 +352,7 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
     sigma.mu.save[k] <- sigma.mu
 	alpha.save[k,] <- alpha
 	beta.save[k,] <- beta
+	u.save[,k] <- u
 	z.save[,k] <- z
 	n.cls.save[k] <- n.cls
   }
@@ -381,7 +366,7 @@ haulout.dpmixture.2.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,
   cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
   cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
   cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
-  list(h.idx=h.idx.save,h=h.save,mu.0=mu.0.save,a0=a0.save,sigma=sigma.save,
-  	sigma.mu=sigma.mu.save,alpha=alpha.save,z=z.save,n.cls=n.cls.save,keep=keep,n.mcmc=n.mcmc)
-  
+  list(h.idx=h.idx.save,h=h.save,mu.0=mu.0.save,beta=beta.save,alpha=alpha.save,
+  	a0=a0.save,sigma=sigma.save,sigma.mu=sigma.mu.save,z=z.save,u=u.save,
+  	n.cls=n.cls.save,keep=keep,n.mcmc=n.mcmc)
 }
