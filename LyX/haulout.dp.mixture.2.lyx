@@ -137,7 +137,7 @@ A Dirichlet process mixture model for haul-out site estimation.
 
 haulout.dp.mixture.1.mcmc.R, this version uses a probit semiparametric regression
  to estimate whether locations in the telemetry data set are hauled-out
- based on wet/dry information in a second data.
+ based on wet/dry information in a second data set.
  As such, this model accommodates the temporal misalignment between telemetry
  data and wet/dry data (i.e., *.SEA records).
 \end_layout
