@@ -193,6 +193,8 @@ mean(mod$sigma.mu[idx])
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
 boxplot(z.hat~z,ylim=c(0,1))
 plot(s[,1],z.hat,ylim=c(0,1),col=z+1)
+plot(z,col=3,pch=19,cex=0.5)
+points(z.hat,pch=19,cex=0.5,col=rgb(0,0,0,0.25))
 
 u <- apply(out1$beta[idx,],1,function(x) X[s.idx,]%*%x)+
 	apply(out1$alpha[idx,],1,function(x) W[s.idx,]%*%x)
