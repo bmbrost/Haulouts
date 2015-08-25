@@ -36,6 +36,7 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
   
 	get.mh.mu.0 <- function(x,s,z,h.match,cls.idx,mu.0,mu.0.star,sigma,sigma.mu,
 		S.match,S.match.star,U,gamma){
+		mu.0 <- matrix(mu.0,,2)
 		idx.0 <- which(h.match==cls.idx[x]&z==0)
 		idx.1 <- which(h.match==cls.idx[x]&z==1)
     	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
@@ -225,25 +226,37 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 			# get.mu.0(x,dt.h.idx[1:T,h.idx],z,s,mu,sigma,sigma.mu,S.tilde)))
 
 		# Use for base functionality	
-		# mu.0.star <- matrix(NA,n.cls,2)  # ordered same as cls.idx
-		# S.match.star <- S.match+sample(tune$mu.0,n.cls,replace=TRUE) # ordered same as cls.idx
-		# idx <- which(S.match.star>0&S.match.star<max(S.tilde.idx)&
-			# !duplicated(c(S.match,S.match.star))[-(1:n.cls)])  # unique mu.0.star in S.tilde
-		# if(length(idx)>0){
-			# mu.0.star[idx,] <- S.tilde[S.match.star[idx],]
-			# mh.mu.0 <- t(sapply(idx,function(x)  # proposals for mu.0	
-				# get.mh.mu.0(x,s,z,h.match,cls.idx,mu.0[cls.idx,],mu.0.star,sigma,sigma.mu,
-				# S.match,S.match.star,U,gamma)))   
-			# idx <- idx[mh.mu.0]
-			# keep$mu.0 <- keep$mu.0+length(idx)
-			# mu.0[cls.idx[idx],] <- mu.0.star[idx,]  # accept proposals in S.tilde
-			# S.match[idx] <- S.match.star[idx]
-		# }
+		mu.0.star <- matrix(NA,n.cls,2)  # ordered same as cls.idx
+		S.match.star <- S.match+sample(tune$mu.0,n.cls,replace=TRUE) # ordered same as cls.idx
+		idx <- which(S.match.star>0&S.match.star<max(S.tilde.idx)&
+			!duplicated(c(S.match,S.match.star))[-(1:n.cls)])  # unique mu.0.star in S.tilde
+		if(length(idx)>0){
+			mu.0.star[idx,] <- S.tilde[S.match.star[idx],]
+			mh.mu.0 <- t(sapply(idx,function(x)  # proposals for mu.0	
+				get.mh.mu.0(x,s,z,h.match,cls.idx,mu.0[cls.idx,],mu.0.star,sigma,sigma.mu,
+				S.match,S.match.star,U,gamma)))   
+			idx <- idx[mh.mu.0]
+			keep$mu.0 <- keep$mu.0+length(idx)
+			mu.0[cls.idx[idx],] <- mu.0.star[idx,]  # accept proposals in S.tilde
+			S.match[idx] <- S.match.star[idx]
+		}
 		
-		# # Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|gamma]
-		# idx <- S.tilde.idx[-S.match]
-		# idx <- sample(idx,H-n.cls,replace=FALSE,prob=exp(U[idx,]%*%gamma))  # idx of new mu.0
-		# mu.0[-cls.idx,] <- S.tilde[idx,]
+		# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|gamma]
+# if(k==1000) browser()
+# plot(mu.0[cls.idx,],ylim=range(S.tilde[,2]))
+# n.cls
+		idx <- S.tilde.idx[-S.match]
+		# length(idx)
+# points(S.tilde[idx,],col=2,cex=0.5,pch="-")
+		p <- exp(U[idx,]%*%gamma)
+		
+# plot(gamma.save[,-1],type="l")
+# points(S.tilde[idx,],col=2,cex=p/max(p),pch="-")
+		idx <- sample(idx,H-n.cls,replace=FALSE,prob=p)  # idx of new mu.0
+points(S.tilde[idx,],pch=19,col=3,cex=0.25)
+		duplicated(idx)
+
+		mu.0[-cls.idx,] <- S.tilde[idx,]
 
 
 		###
@@ -252,15 +265,12 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 # browser()
 		gamma.star <- matrix(rnorm(qU,gamma,tune$gamma),qU)
 		gamma.int.star <- log(sum(exp(U%*%gamma.star)))
+		gamma.int <- log(sum(exp(U%*%gamma)))
 		mh.star.gamma <- sum(U[S.match,]%*%gamma.star) - n.cls*gamma.int.star +
 			sum(dnorm(gamma.star,mu.gamma,priors$sigma.gamma,log=TRUE))
 		mh.0.gamma <- sum(U[S.match,]%*%gamma) - n.cls*gamma.int +
 			sum(dnorm(gamma,mu.gamma,priors$sigma.gamma,log=TRUE))
-	    # mh.star.gamma <- sum(U[c(S.match,idx),]%*%gamma.star) - n.cls*gamma.int.star +
-			# sum(dnorm(gamma.star,mu.gamma,priors$sigma.gamma,log=TRUE))
-		# mh.0.gamma <- sum(U[c(S.match,idx),]%*%gamma) - n.cls*gamma.int +
-			# sum(dnorm(gamma,mu.gamma,priors$sigma.gamma,log=TRUE))
-	    if(exp(mh.star.gamma-mh.0.gamma)>runif(1)){
+		if(exp(mh.star.gamma-mh.0.gamma)>runif(1)){
     	    gamma <- gamma.star
 	        gamma.int <- gamma.int.star
 	        keep$gamma <- keep$gamma+1
@@ -333,11 +343,11 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	    # Sample h.t (cluster assignment indicator)
 		mu.0.tmp <- mu.0[cls.samp,]  # same order as pie, i.e., by decreasing membership
 		sd.tmp <- sqrt(sigma^2+sigma.mu^2)
-	   	# h.match <- sapply(1:T,function(x) sample(cls.samp,1,
-			# prob=pie*(dnorm(s[x,1],mu.0.tmp[,1],sigma)*
-			# dnorm(s[x,2],mu.0.tmp[,2],sigma))^z[x]*
-			# (dnorm(s[x,1],mu.0.tmp[,1],sd.tmp)*
-			# dnorm(s[x,2],mu.0.tmp[,2],sd.tmp))^(1-z[x])))
+	   	h.match <- sapply(1:T,function(x) sample(cls.samp,1,
+			prob=pie*(dnorm(s[x,1],mu.0.tmp[,1],sigma)*
+			dnorm(s[x,2],mu.0.tmp[,2],sigma))^z[x]*
+			(dnorm(s[x,1],mu.0.tmp[,1],sd.tmp)*
+			dnorm(s[x,2],mu.0.tmp[,2],sd.tmp))^(1-z[x])))
 
 		# Tabulate cluster membership with data.table but not setdiff
 		# h.idx <- c(h.idx,1:H)

@@ -35,7 +35,7 @@ U <- cbind(1,S.tilde[,2],sin(S.tilde[,2]))  # design matrix for haul-out site RS
 U[,-1] <- scale(U[,-1])
 gamma <- c(-1,0.025,0.5)  # Haul-out site selection coefficients
 
-U <- cbind(1,sin(0.5*S.tilde[,2]))  # design matrix for haul-out site RSF
+U <- cbind(1,sin(5*S.tilde[,2]))  # design matrix for haul-out site RSF
 U[,-1] <- scale(U[,-1])
 gamma <- c(0,3)  # Haul-out site selection coefficients
 
@@ -44,7 +44,7 @@ gamma <- c(0,3)  # Haul-out site selection coefficients
 
 qU <- ncol(U)
 selection <- exp(U%*%gamma)
-plot(selection,type="l")
+plot(S.tilde[,2],selection,type="l")
 
 # idx <- order(selection,decreasing=TRUE)
 # plot(selection[idx],type="l")
