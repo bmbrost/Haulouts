@@ -140,7 +140,7 @@ haulout.dp.mixture.mcmc.R, this version uses a probit link for estimating the
 \begin_inset Formula $z_{t}$
 \end_inset
 
-, such that incorporation of covariates in efficient.
+, such that incorporation of covariates is efficient.
  
 \end_layout
 
