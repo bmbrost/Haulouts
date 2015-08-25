@@ -363,7 +363,7 @@ v\left(\tilde{t}\right)
 \mathbf{0} & \mathbf{I}
 \end{array}\right]\right)\\
 h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
-\pi_{h} & \sim & \text{stick}(\theta)\\
+\pi_{h} & \sim & \text{Stick}(\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \frac{\exp\left\{ \mathbf{u}^{\prime}(\boldsymbol{\mu}_{0,h})\boldsymbol{\gamma}\right\} }{\int_{\tilde{{\cal S}}}\exp\left\{ \mathbf{u}^{\prime}(\boldsymbol{\mu}_{0})\boldsymbol{\gamma}\right\} d\boldsymbol{\mu}_{0}}\\
 \theta & \sim & \text{Gamma}(r,q)\\
 \boldsymbol{\beta} & \sim & {\cal N}(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I})\\
@@ -1017,7 +1017,8 @@ Homerange dispersion parameter (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\sigma_{\mu}|\cdot] & \propto & \prod_{\{t:z\left(t\right)=0\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}][\sigma_{\mu}]\\
+[\sigma_{\mu}|\cdot] & \propto & \prod_{t\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][\sigma_{\mu}]\\
+ & \propto & \prod_{t\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[\sigma_{\mu}]\\
  & \propto & \prod_{\{t:z\left(t\right)=0\}}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})
 \end{eqnarray*}
 
