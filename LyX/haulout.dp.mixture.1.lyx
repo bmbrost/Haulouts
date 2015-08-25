@@ -285,7 +285,7 @@ z_{t} & \sim & \begin{cases}
 1, & u_{t}>0
 \end{cases}\\
 u_{t} & \sim & {\cal N}(\mathbf{w}_{t}^{\prime}\boldsymbol{\alpha},\mathbf{1})\\
-h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
+h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}}\right)\\
 \pi_{h} & = & v_{h}\prod_{\tilde{h}<h}(1-v_{\tilde{h}})\\
 v_{h} & \sim & \text{Beta}(1,\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
@@ -382,7 +382,7 @@ Haul-out site locations (
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}]\\
+[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}\mid\tilde{{\cal S}}]\\
  & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{z_{t}}\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
@@ -555,7 +555,8 @@ Haul-out classification variable (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[h_{t}|\cdot] & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
+[h_{t}|\cdot] & \sim & [\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}][h_{t}\mid\pi_{h}]\\
+ & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}}\right).
 \end{eqnarray*}
@@ -744,7 +745,7 @@ Haul-out probability coefficients (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\alpha}|\cdot] & \propto & [\mathbf{u}|\boldsymbol{\alpha}][\boldsymbol{\alpha}]\\
- & \propto & {\cal N}(\mathbf{W}\boldsymbol{\alpha},\mathbf{1}){\cal N}(\boldsymbol{\mu}_{\alpha},\Sigma_{\alpha})\\
+ & \propto & {\cal N}(\mathbf{u}\mid\mathbf{W}\boldsymbol{\alpha},\mathbf{1}){\cal N}(\boldsymbol{\alpha}\mid\boldsymbol{\mu}_{\alpha},\Sigma_{\alpha})\\
  & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right)^{\prime}\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right)\right\} \exp\left\{ -\frac{1}{2}\left(\boldsymbol{\alpha}-\boldsymbol{\mu}_{\alpha}\right)^{\prime}\Sigma_{\alpha}^{-1}\left(\boldsymbol{\alpha}-\boldsymbol{\mu}_{\alpha}\right)\right\} \\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
 \end{eqnarray*}

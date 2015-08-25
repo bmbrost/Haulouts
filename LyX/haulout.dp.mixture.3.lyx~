@@ -1018,7 +1018,7 @@ Homerange dispersion parameter (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\sigma_{\mu}|\cdot] & \propto & \prod_{t\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][\sigma_{\mu}]\\
- & \propto & \prod_{t\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[\sigma_{\mu}]\\
+ & \propto & \prod_{t}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[\sigma_{\mu}]\\
  & \propto & \prod_{\{t:z\left(t\right)=0\}}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})
 \end{eqnarray*}
 
