@@ -2,9 +2,9 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
- 	### Brian M. Brost (13 AUG 2015)
- 	### See haulout.dpmixture.2.sim.R to simulate data according to this model specification,
- 	### and haulout.dp.mixture.2.pdf for the model description, model statement, and
+ 	### Brian M. Brost (31 AUG 2015)
+ 	### See haulout.dpmixture.3.sim.R to simulate data according to this model specification,
+ 	### and haulout.dp.mixture.3.pdf for the model description, model statement, and
  	### full conditional distributions
  	###
  	
@@ -14,13 +14,12 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
  	### status of telemetry locations s; X.tilde=design matrix containing covariates
  	### influencing wet/dry status of ancillary data y; W=basis expansion for s; 
  	### W.tilde=basis expansion for y; S=support of true locations/movement process (mu_t);
- 	### S.tilde=support Dirichlet process mixture (i.e., haul-out sites); sigma.alpha=
+ 	### S.tilde=support Dirichlet process mixture (i.e., haul-out sites); U=design matrix 
+ 	###	containing covariates describing all possible haul-out locations; sigma.alpha=
  	### standard deviation of parameter model for 'random' effects
  	###
- 
- 
+  
 	t.start <- Sys.time()
-	
 
 	###
 	### Libraries and Subroutines
@@ -79,11 +78,9 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	qX <- ncol(X)
 	qW <- ncol(W)
 	qU <- ncol(U)
-	y1 <- (y==1)
-	y0 <- (y==0)
-	y1.sum <- sum(y1)
-	y0.sum <- sum(y0)
-	v <- numeric(n)  # auxilliary variable for y
+	v <- numeric(n+T)  # auxilliary variable for continuous haul-out process
+	X.comb <- rbind(X,X.tilde)  # combined design matrix for updates on alpha, beta
+	W.comb <- rbind(W,W.tilde)  # combined design matrix for updates on alpha, beta 
 	S.tilde.idx <- 1:nrow(S.tilde)
 
 # browser()	
@@ -117,6 +114,13 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	mu.gamma <- matrix(priors$mu.gamma,qU,1)
 	Sigma.gamma <- diag(qU)*priors$sigma.gamma^2
   	Sigma.gamma.inv <- solve(Sigma.gamma)
+	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
+
+	y1 <- which(y==1)+T
+	y0 <- which(y==0)+T
+	y1.sum <- length(y1)
+	y0.sum <- length(y0)
+	linpred <- X.comb%*%beta+W.comb%*%alpha
 
 
 	###
@@ -169,7 +173,7 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	alpha.save <- matrix(0,n.mcmc,qW)
 	beta.save <- matrix(0,n.mcmc,qX)
 	gamma.save <- matrix(0,n.mcmc,qU)
-	v.save <- matrix(0,n,n.mcmc)
+	v.save <- matrix(0,T+n,n.mcmc)
 	sigma.save <- numeric(n.mcmc)  # telemetry measurement error
 	sigma.mu.save <- numeric(n.mcmc)  # dispersion about haul-out site
 	# sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
@@ -189,23 +193,30 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 		###
 
 		#  Sample v(t.tilde) (auxilliary variable for y) 
-		linpred <- X.tilde%*%beta+W.tilde%*%alpha
 	  	v[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
 	  	v[y0] <- truncnormsamp(linpred[y0],1,-Inf,0,y0.sum)
 
-		#  Sample alpha (coefficients on basis expansion W.tilde)
-		A.inv <- solve(t(W.tilde)%*%W.tilde+Sigma.alpha.inv)
-		b <- t(W.tilde)%*%(v-X.tilde%*%beta)
+		# Sample v(t) (auxilliary variable for s) 
+		z1 <- which(z==1)
+		z0 <- which(z==0)
+		z1.sum <- length(z1)
+		z0.sum <- length(z0)
+	  	v[z1] <- truncnormsamp(linpred[z1],1,0,Inf,z1.sum)
+		v[z0] <- truncnormsamp(linpred[z0],1,-Inf,0,z0.sum)
+		
+		#  Sample alpha (coefficients on basis expansion W)
+		A.inv <- solve(t(W.comb)%*%W.comb+Sigma.alpha.inv)
+		b <- t(W.comb)%*%(v-X.comb%*%beta)
 		alpha <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qW),qW,1)
 	
 		#  Sample beta (coefficients on covariates influencing P(y==1))
-	 	A.inv <- solve(t(X.tilde)%*%X.tilde+Sigma.beta.inv)
-	  	b <- t(X.tilde)%*%(v-W.tilde%*%alpha)  # +mu.beta%*%Sigma.beta.inv
+		A.inv <- solve(t(X.comb)%*%X.comb+Sigma.beta.inv)
+	  	b <- t(X.comb)%*%(v-W.comb%*%alpha)  # +mu.beta%*%Sigma.beta.inv
 	  	beta <- A.inv%*%b+t(chol(A.inv))%*%matrix(rnorm(qX),qX,1)
 
 	    # Sample z(t) (prediction of haul-out indicator variable for times t)
-		p <- pnorm(X%*%beta+W%*%alpha)
-		sd.tmp <- sqrt(sigma^2+sigma.mu^2)
+		linpred <- X.comb%*%beta+W.comb%*%alpha
+		p <- pnorm(linpred[1:T,])
 		p.tmp1 <- p*dnorm(s[,1],mu.0[h.match,1],sigma,log=FALSE)*
 			dnorm(s[,2],mu.0[h.match,2],sigma,log=FALSE)
 		p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.match,1],sd.tmp,log=FALSE)*
@@ -243,19 +254,12 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 		
 		# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|gamma]
 # if(k==1000) browser()
-# plot(mu.0[cls.idx,],ylim=range(S.tilde[,2]))
-# n.cls
 		idx <- S.tilde.idx[-S.match]
-		# length(idx)
-# points(S.tilde[idx,],col=2,cex=0.5,pch="-")
 		p <- exp(U[idx,]%*%gamma)
-		
-# plot(gamma.save[,-1],type="l")
-# points(S.tilde[idx,],col=2,cex=p/max(p),pch="-")
+		# p <- exp(U[idx,-1]*gamma[-1])
 		idx <- sample(idx,H-n.cls,replace=FALSE,prob=p)  # idx of new mu.0
-points(S.tilde[idx,],pch=19,col=3,cex=0.25)
-		duplicated(idx)
-
+# track proposals for mu.0
+# points(S.tilde[idx,],pch=19,col=4,cex=0.25)
 		mu.0[-cls.idx,] <- S.tilde[idx,]
 
 
@@ -286,7 +290,6 @@ points(S.tilde[idx,],pch=19,col=3,cex=0.25)
 			idx <- z==1
 			mu.0.tmp <- mu.0[h.match,]
 	    	sd.tmp.star <- sqrt(sigma.star^2+sigma.mu^2)
-	    	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
 	    	mh.star.sigma <- sum(dnorm(s[idx,1],mu.0.tmp[idx,1],sigma.star,log=TRUE)+
 		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma.star,log=TRUE))#+
 		    	sum(dnorm(s[!idx,1],mu.0.tmp[!idx,1],sd.tmp.star,log=TRUE)+
@@ -301,6 +304,7 @@ points(S.tilde[idx,],pch=19,col=3,cex=0.25)
 	      		# dmvnorm(s[x,],mu[x,],sigma^2*diag(2),log=TRUE)))
 		    if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
 	    	    sigma <- sigma.star
+				sd.tmp <- sd.tmp.star
 	        	Sigma.inv <- solve(sigma^2*diag(2))
 		        keep$sigma <- keep$sigma+1
 	    	} 
@@ -317,13 +321,13 @@ points(S.tilde[idx,],pch=19,col=3,cex=0.25)
 			idx <- which(z==0)
 			mu.0.tmp <- mu.0[h.match[idx],]
 	    	sd.tmp.star <- sqrt(sigma^2+sigma.mu.star^2)
-	    	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
 		    mh.star.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sd.tmp.star,log=TRUE)+
 		    	dnorm(s[idx,2],mu.0.tmp[,2],sd.tmp.star,log=TRUE))
 		    mh.0.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sd.tmp,log=TRUE)+
 		    	dnorm(s[idx,2],mu.0.tmp[,2],sd.tmp,log=TRUE))
 		    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
 	        	sigma.mu <- sigma.mu.star
+				sd.tmp <- sd.tmp.star
 	        	Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
 		        keep$sigma.mu <- keep$sigma.mu+1
 	    	} 
