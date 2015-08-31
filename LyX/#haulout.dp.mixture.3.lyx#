@@ -334,7 +334,7 @@ Information pertaining to the wet/dry status of the individual is available
 \end_inset
 
 .
- The auxiliary variable 
+ The auxilliary variable 
 \begin_inset Formula $\mathbf{v}$
 \end_inset
 
@@ -453,8 +453,8 @@ Haul-out site locations (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][\boldsymbol{\mu}_{0,h}\mid\boldsymbol{\gamma},\tilde{{\cal S}}]\\
- & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z\left(t\right)}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[\boldsymbol{\mu}_{0,h}\mid\boldsymbol{\gamma},\tilde{{\cal S}}]\\
+[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][\boldsymbol{\mu}_{0,h}\mid\tilde{{\cal S}}]\\
+ & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z\left(t\right)}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[\boldsymbol{\mu}_{0,h}\mid\tilde{{\cal S}}]\\
  & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})^{z\left(t\right)}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z\left(t\right)}\left(\frac{\exp\left\{ \mathbf{u}^{\prime}(\boldsymbol{\mu}_{0,h})\boldsymbol{\gamma}\right\} }{\sum_{\tilde{h}=1}^{H}\exp\left\{ \mathbf{u}^{\prime}(\boldsymbol{\mu}_{0,\tilde{h}})\boldsymbol{\gamma}\right\} }\right)1_{\left\{ \boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\right\} }
 \end{eqnarray*}
 
@@ -718,13 +718,6 @@ See page 553 in Gelman et al.
 \begin_inset VSpace bigskip
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-\noindent
-
-\emph on
 Haul-out classification variable (
 \begin_inset Formula $h_{t}$
 \end_inset
@@ -735,7 +728,7 @@ Haul-out classification variable (
 \begin_inset Formula 
 \begin{eqnarray*}
 [h_{t}|\cdot] & \sim & [\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][h_{t}\mid\pi_{h}]\\
- & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
+ &  & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z\left(t\right)}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}]^{z\left(t\right)}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})^{z\left(t\right)}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z\left(t\right)}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2})^{z\left(t\right)}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z\left(t\right)}}\right).
 \end{eqnarray*}

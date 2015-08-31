@@ -296,7 +296,7 @@ Information pertaining to the wet/dry status of the individual is available
 \end_inset
 
  are modeled using an auxiliary variable 
-\begin_inset Formula $u\left(\tilde{t}\right)$
+\begin_inset Formula $\mathbf{v}$
 \end_inset
 
 , which itself is modeled semiparametrically as a function of 
@@ -312,15 +312,18 @@ Information pertaining to the wet/dry status of the individual is available
 \begin_inset Formula $\boldsymbol{\alpha}$
 \end_inset
 
- that describe non-linear trend or dependence in 
-\begin_inset Formula $y\left(\tilde{t}\right)$
-\end_inset
-
- through the basis expansion 
+ that describe non-linear trend or dependence in wet/dry status through
+ the basis expansion 
 \begin_inset Formula $\mathbf{W}$
 \end_inset
 
 .
+ The auxilliary variable 
+\begin_inset Formula $\mathbf{v}$
+\end_inset
+
+ describes a continuous (in time) haul-out process, and links the wet/dry
+ status of the individual with its telemetry location.
  
 \begin_inset Formula 
 \begin{eqnarray*}
@@ -329,26 +332,16 @@ Information pertaining to the wet/dry status of the individual is available
 {\cal N}(\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}), & z(t)=0
 \end{cases}\\
 z(t) & \sim & \begin{cases}
-0, & u(t)\le0\\
-1, & u(t)>0
+0, & v(t)\le0\\
+1, & v(t)>0
 \end{cases}\\
 y\left(\tilde{t}\right) & \sim & \begin{cases}
-0, & u\left(\tilde{t}\right)\le0\\
-1, & u\left(\tilde{t}\right)>0
+0, & v\left(\tilde{t}\right)\le0\\
+1, & v\left(\tilde{t}\right)>0
 \end{cases}\\
-\left(\begin{array}{c}
-u(t)\\
-u\left(\tilde{t}\right)
-\end{array}\right) & \sim & {\cal N}\left(\left(\begin{array}{c}
-\mathbf{x}(t)^{\prime}\boldsymbol{\beta}+\mathbf{w}^{\prime}(t)\boldsymbol{\alpha}\\
-\mathbf{x}\left(\tilde{t}\right){}^{\prime}\boldsymbol{\beta}+\mathbf{w}^{\prime}\left(\tilde{t}\right)\boldsymbol{\alpha}
-\end{array}\right),\left[\begin{array}{cc}
-\mathbf{I} & \mathbf{0}\\
-\mathbf{0} & \mathbf{I}
-\end{array}\right]\right)\\
+\mathbf{v} & \sim & {\cal N}\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{I}\right)\\
 h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}}\right)\\
-\pi_{h} & = & v_{h}\prod_{\tilde{h}<h}(1-v_{\tilde{h}})\\
-v_{h} & \sim & \text{Beta}(1,\theta)\\
+\pi_{h} & \sim & \text{Stick}(\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
 \theta & \sim & \text{Gamma}(r,q)\\
 \boldsymbol{\beta} & \sim & {\cal N}(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I})\\
@@ -404,10 +397,6 @@ The concentration parameter
 \begin_inset Formula $\pi_{h}$
 \end_inset
 
-, 
-\begin_inset Formula $v_{h}$
-\end_inset
-
 , and 
 \begin_inset Formula $\boldsymbol{\mu}_{0,h}$
 \end_inset
@@ -453,8 +442,8 @@ Haul-out site locations (
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)\right\} ^{z(t)}\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z(t)}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}(t)-2\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{z(t)}\times\\
- &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\mathbf{s}(t)-2\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z(t)}\times\\
- &  & \qquad1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
+ &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\mathbf{s}(t)-2\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z(t)}\\
+ &  & \qquad\times1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=1\}}+\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=0\}}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
  &  & \qquad\left.\left.\boldsymbol{\mu}_{0,h}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=1\}}+\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=0\}}\right)\boldsymbol{\mu}_{0,h}\right)\right\} 1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\sum_{\{t:h_{t}=h,z(t)=1\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=h,z(t)=0\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
@@ -469,7 +458,15 @@ where
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\sum_{\{t:h_{t}=h,z(t)=1\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=h,z(t)=0\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{b}^{\prime}=\sum_{\{t:h_{t}=h,z(t)=1\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\sum_{\{t:h_{t}=h,z(t)=0\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
 .
@@ -525,12 +522,11 @@ where
 \end_inset
 
  is sampled directly from the prior.
-\begin_inset Newline newline
-\end_inset
+\end_layout
 
+\begin_layout Standard
 
 \emph on
-
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -541,42 +537,178 @@ where
 \noindent
 
 \emph on
-Latent haul-out indicator variable for locations (
-\begin_inset Formula $z(t)$
+Probability mass for haul-out location 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ (
+\begin_inset Formula $\pi_{h}$
 \end_inset
 
 ):
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+The stick-breaking representation of a Dirichlet process mixture consists
+ of two components, namely a cluster weight and a cluster probability.
+ Let 
+\begin_inset Formula $\eta_{h}$
+\end_inset
+
+ denote the weight assigned to cluster 
+\begin_inset Formula $h$
+\end_inset
+
+, where 
+\begin_inset Formula $\eta_{h}\sim\text{Beta}(1,\theta)$
+\end_inset
+
+.
+ The associated full-conditional is 
+\family default
+\series default
+\shape default
+\size default
 \emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[z(t)|\cdot] & \propto & [\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z(t)}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z(t)}[z(t)|u(t)]\\
- & \propto & [\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z(t)}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z(t)}p(t)^{z(t)}(1-p(t))^{1-z(t)}\\
- & \propto & \left(p(t)[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]\right)^{z(t)}\left((1-p(t))[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]\right){}^{1-z(t)}\\
- & = & \text{Bern}(\widetilde{p(t)}),
+[\eta_{h}|\cdot] & \sim & \text{Beta}\left(1+n_{h},\theta+\sum_{\tilde{h}=h+1}^{H}n_{\tilde{h}}\right),\text{ for }h=1,\ldots,H-1,
 \end{eqnarray*}
 
 \end_inset
 
-where 
-\begin_inset Formula $u(t)=\mathbf{x}(t)^{\prime}\boldsymbol{\beta}+\mathbf{w}(t)^{\prime}\boldsymbol{\alpha}$
+and 
+\begin_inset Formula $\eta_{H}=1$
 \end_inset
 
-, 
-\begin_inset Formula $\Phi^{-1}(p(t))=u(t)$
+.
+ The parameter 
+\begin_inset Formula $n_{h}$
 \end_inset
 
-, and 
+ denotes the number of observations allocated to cluster 
+\begin_inset Formula $h$
+\end_inset
+
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+.
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+Note that 
+\begin_inset Formula $\eta_{h}$
+\end_inset
+
+ is sampled in order of decreasing 
+\begin_inset Formula $n_{h}$
+\end_inset
+
+, i.e., 
+\begin_inset Formula $n_{h}$
+\end_inset
+
+ is sorted largest to smallest and 
+\begin_inset Formula $\eta_{h}$
+\end_inset
+
+ is sampled in sequence.
+ 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+The cluster probabilities (
+\begin_inset Formula $\pi_{h}$
+\end_inset
+
+) are deterministic and calculated as 
 \begin_inset Formula 
 \[
-\widetilde{p(t)}=\frac{p(t){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})}{p(t){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})+(1-p(t)){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})}.
+\pi_{h}=\eta_{h}\prod_{\tilde{h}<h}(1-\eta_{\tilde{h}}).
 \]
 
 \end_inset
 
+The probabilities 
+\begin_inset Formula $\pi_{h}$
+\end_inset
+
+ are also calculated in order of decreasing 
+\begin_inset Formula $n_{h}$
+\end_inset
+
+.
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+See page 553 in Gelman et al.
+ (2014) and Section 5.2 in Ishwaran and James (2001).
+\end_layout
+
+\begin_layout Standard
+\noindent
 
 \emph on
-
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -587,31 +719,40 @@ where
 \noindent
 
 \emph on
-Auxiliary variable for binary wet/dry data (
-\begin_inset Formula $u\left(\tilde{t}\right)$
+Dirichlet process concentration parameter (
+\begin_inset Formula $\theta$
 \end_inset
 
 ):
-\emph default
+\end_layout
 
+\begin_layout Standard
+\noindent
 \begin_inset Formula 
 \begin{eqnarray*}
-\left[u\left(\tilde{t}\right)|\cdot\right] & \propto & \left[y\left(\tilde{t}\right)|u\left(\tilde{t}\right)\right]\left[u\left(\tilde{t}\right)\right]\\
- & \propto & \left(1_{\left\{ y\left(\tilde{t}\right)=0\right\} }1_{\left\{ u\left(\tilde{t}\right)\le0\right\} }+1_{\left\{ y\left(\tilde{t}\right)=1\right\} }1_{\left\{ u\left(\tilde{t}\right)>0\right\} }\right)\times{\cal N}\left(u\left(\tilde{t}\right)\mid\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\\
- & = & \begin{cases}
-{\cal TN}\left(\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{-\infty}^{0}, & y\left(\tilde{t}\right)=0\\
-{\cal TN}\left(\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{0}^{\infty}, & y\left(\tilde{t}\right)=1
-\end{cases}
+[\theta|\cdot] & \propto & \text{Gamma}(r+H-1,q-\sum_{h=1}^{H-1}\log(1-v_{h})).
 \end{eqnarray*}
 
 \end_inset
 
+See page 553 in Gelman et al.
+ (2014).
+\end_layout
+
+\begin_layout Standard
+\noindent
 
 \emph on
-
 \begin_inset VSpace bigskip
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
 Haul-out classification variable (
 \begin_inset Formula $h_{t}$
 \end_inset
@@ -644,123 +785,48 @@ This update proceeds just as in multinomial sampling; see page 552 in Gelman
 \noindent
 
 \emph on
-Probability mass for haul-out location 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
-\end_inset
-
- (
-\begin_inset Formula $\pi_{h}$
+Latent haul-out indicator variable for telemetry locations (
+\begin_inset Formula $z(t)$
 \end_inset
 
 ):
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\uuline off
-\uwave off
-\noun off
-\color none
-
-\begin_inset Formula 
-\[
-\pi_{h}=v_{h}\prod_{\tilde{h}<h}(1-v_{\tilde{h}}),
-\]
-
-\end_inset
-
-where
-\family default
-\series default
-\shape default
-\size default
 \emph default
-\bar default
-\strikeout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[v_{h}|\cdot] & \sim & \text{Beta}\left(1+n_{h},\theta+\sum_{\tilde{h}=h+1}^{H}n_{\tilde{h}}\right),\text{ for }h=1,\ldots,H-1,
+[z\left(t\right)|\cdot] & \propto & [\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h},z\left(t\right),\sigma^{2},\sigma_{\mu}^{2}][z\left(t\right)\mid v\left(t\right)]\\
+ & \propto & [\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z\left(t\right)}[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z\left(t\right)}[z\left(t\right)|v\left(t\right)]\\
+ & \propto & {\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}){}^{z\left(t\right)}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}){}^{1-z\left(t\right)}\text{Bern}\left(z\left(t\right)|v\left(t\right)\right)\\
+ & \propto & {\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}){}^{z\left(t\right)}{\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}){}^{1-z\left(t\right)}p\left(t\right){}^{z\left(t\right)}(1-p\left(t\right))^{1-z\left(t\right)}\\
+ & \propto & \left(p\left(t\right){\cal N}(\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})\right)^{z\left(t\right)}\left((1-p\left(t\right))[\mathbf{s}\left(t\right)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]\right){}^{1-z\left(t\right)}\\
+ & = & \text{Bern}(\widetilde{p\left(t\right)}),
 \end{eqnarray*}
 
 \end_inset
 
-and 
-\begin_inset Formula $v_{H}=1$
+where 
+\begin_inset Formula $v\left(t\right)=\mathbf{x}^{\prime}\left(t\right)\boldsymbol{\beta}+\mathbf{w}^{\prime}\left(t\right)\boldsymbol{\alpha}$
 \end_inset
 
-.
- This represents the stick-breaking construction of the Dirichlet process.
- The parameter 
-\begin_inset Formula $n_{h}$
+, 
+\begin_inset Formula $p\left(t\right)=\Phi\left(v\left(t\right)\right)$
 \end_inset
 
- denotes the number of observations allocated to cluster 
-\begin_inset Formula $h$
+, and 
+\begin_inset Formula 
+\[
+\widetilde{p(t)}=\frac{p(t){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})}{p(t){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})+(1-p(t)){\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})}.
+\]
+
 \end_inset
 
-.
- Note that 
-\begin_inset Formula $v_{h}$
-\end_inset
 
- is sampled in order of decreasing 
-\begin_inset Formula $n_{h}$
-\end_inset
+\end_layout
 
-, i.e., 
-\begin_inset Formula $n_{h}$
-\end_inset
+\begin_layout Standard
+\noindent
 
- is sorted largest to smallest and 
-\begin_inset Formula $v_{h}$
-\end_inset
-
- is sampled in sequence.
- 
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\uuline off
-\uwave off
-\noun off
-\color none
-The probabilities 
-\begin_inset Formula $\pi_{h}$
-\end_inset
-
- are calculated in order of decreasing 
-\begin_inset Formula $n_{h}$
-\end_inset
-
- as well.
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-See page 553 in Gelman et al.
- (2014) and Section 5.2 in Ishwaran and James (2001).
 \emph on
-
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -771,8 +837,8 @@ See page 553 in Gelman et al.
 \noindent
 
 \emph on
-Dirichlet process concentration parameter (
-\begin_inset Formula $\theta$
+Auxiliary variable for continuous haul-out process (
+\begin_inset Formula $\mathbf{v}$
 \end_inset
 
 ):
@@ -782,15 +848,63 @@ Dirichlet process concentration parameter (
 \noindent
 \begin_inset Formula 
 \begin{eqnarray*}
-[\theta|\cdot] & \propto & \text{Gamma}(r+H-1,q-\sum_{h=1}^{H-1}\log(1-v_{h})).
+\left[\mathbf{v}|\cdot\right] & \propto & \prod_{\{t,\tilde{t}\}}\left[z\left(t\right),y\left(\tilde{t}\right)\mid\mathbf{v}\right]\left[\mathbf{v}\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\\
+ & \propto & \prod_{t}\left\{ \left[z\left(t\right)\mid v(t)\right]\left[v\left(t\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\right\} \prod_{\tilde{t}}\left\{ \left[y\left(\tilde{t}\right)|v\left(\tilde{t}\right)\right]\left[v\left(\tilde{t}\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\right\} \\
+ & \propto & \prod_{t}\left\{ \left(1_{\left\{ z\left(t\right)=0\right\} }1_{\left\{ v\left(t\right)\le0\right\} }+1_{\left\{ z\left(t\right)=1\right\} }1_{\left\{ v\left(t\right)>0\right\} }\right)\times{\cal N}\left(v\left(t\right)\mid\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\right\} \times\\
+ &  & \qquad\prod_{\tilde{t}}\left\{ \left(1_{\left\{ y\left(\tilde{t}\right)=0\right\} }1_{\left\{ v\left(\tilde{t}\right)\le0\right\} }+1_{\left\{ y\left(\tilde{t}\right)=1\right\} }1_{\left\{ v\left(\tilde{t}\right)>0\right\} }\right)\times{\cal N}\left(v\left(\tilde{t}\right)\mid\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\right\} 
 \end{eqnarray*}
 
 \end_inset
 
-See page 553 in Gelman et al.
- (2014).
-\emph on
+For wet/dry data 
+\begin_inset Formula $(y)$
+\end_inset
 
+ observed at times 
+\begin_inset Formula $\tilde{t}$
+\end_inset
+
+,
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[v\left(\tilde{t}\right)|\cdot\right] & \propto & \left[y\left(\tilde{t}\right)|v\left(\tilde{t}\right)\right]\left[v\left(\tilde{t}\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\\
+ & \propto & \left(1_{\left\{ y\left(\tilde{t}\right)=0\right\} }1_{\left\{ v\left(\tilde{t}\right)\le0\right\} }+1_{\left\{ y\left(\tilde{t}\right)=1\right\} }1_{\left\{ v\left(\tilde{t}\right)>0\right\} }\right)\times{\cal N}\left(v\left(\tilde{t}\right)\mid\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\\
+ & = & \begin{cases}
+{\cal TN}\left(\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{-\infty}^{0}, & y\left(\tilde{t}\right)=0\\
+{\cal TN}\left(\mathbf{x}\left(\tilde{t}\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(\tilde{t}\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{0}^{\infty}, & y\left(\tilde{t}\right)=1
+\end{cases}
+\end{eqnarray*}
+
+\end_inset
+
+For the latent wet/dry status 
+\begin_inset Formula $(z)$
+\end_inset
+
+ of telemetry locations at times 
+\begin_inset Formula $t$
+\end_inset
+
+,
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[v\left(t\right)|\cdot\right] & \propto & \left[z\left(t\right)\mid v(t)\right]\left[v\left(t\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\\
+ & \propto & \left(1_{\left\{ z\left(t\right)=0\right\} }1_{\left\{ v\left(t\right)\le0\right\} }+1_{\left\{ z\left(t\right)=1\right\} }1_{\left\{ v\left(t\right)>0\right\} }\right)\times{\cal N}\left(v\left(t\right)\mid\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\\
+ & = & \begin{cases}
+{\cal TN}\left(\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{-\infty}^{0}, & z\left(t\right)=0\\
+{\cal TN}\left(\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{0}^{\infty}, & z\left(t\right)=1
+\end{cases}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -810,29 +924,50 @@ Haul-out probability coefficients (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\beta}|\cdot] & \propto & [\mathbf{u}\left(\tilde{t}\right)|\boldsymbol{\beta},\boldsymbol{\alpha}][\boldsymbol{\beta}]\\
- & \propto & {\cal N}\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\mathbf{0},\sigma_{\beta}^{2}\mathbf{I})\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{u}\left(\tilde{t}\right)-\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{u}\left(\tilde{t}\right)-\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)\right)\right\} \times\\
+[\boldsymbol{\beta}|\cdot] & \propto & [\mathbf{v}|\boldsymbol{\beta},\boldsymbol{\alpha}][\boldsymbol{\beta}\mid\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\mu}_{\beta}\mid\mathbf{0},\sigma_{\beta}^{2}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{u}\left(\tilde{t}\right)-\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)-\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}\right)^{\prime}\left(\left(\mathbf{u}\left(\tilde{t}\right)-\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)-\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}\right)\right\} \times\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{u}\left(\tilde{t}\right)-\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)\mathbf{X}\left(\tilde{t}\right)+\boldsymbol{\mu}_{\beta}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}+\boldsymbol{\beta}^{\prime}\left(\mathbf{X}\left(\tilde{t}\right)^{\prime}\mathbf{X}\left(\tilde{t}\right)+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)\mathbf{X}+\boldsymbol{\mu}_{\beta}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}+\boldsymbol{\beta}^{\prime}\left(\mathbf{X}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}\right)\right\} \\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
 \end{eqnarray*}
 
 \end_inset
 
 where 
-\begin_inset Formula $\mathbf{A}=\mathbf{X}\left(\tilde{t}\right)^{\prime}\mathbf{X}\left(\tilde{t}\right)+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{A}=\mathbf{X}{}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{u}\left(\tilde{t}\right)-\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right){}^{\prime}\mathbf{X}\left(\tilde{t}\right)+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right){}^{\prime}\mathbf{X}+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
 .
-\emph on
+ Note that the matrices 
+\begin_inset Formula $\mathbf{X}$
+\end_inset
 
+ and 
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+ contain covariates pertaining to times associated with both 
+\begin_inset Formula $\mathbf{s}(t)$
+\end_inset
+
+ and 
+\begin_inset Formula $y\left(\tilde{t}\right)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -852,9 +987,9 @@ Random 'effects' for non-linear trend/dependence (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\alpha}|\cdot] & \propto & \left[\mathbf{u}\left(\tilde{t}\right)|\boldsymbol{\beta},\boldsymbol{\alpha}\right][\boldsymbol{\alpha}]\\
- & \propto & {\cal N}\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\mathbf{0},\sigma_{\alpha}^{-1}\mathbf{I})\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{u}\left(\tilde{t}\right)-\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{u}\left(\tilde{t}\right)-\left(\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}+\mathbf{W}\left(\tilde{t}\right)\boldsymbol{\alpha}\right)\right)\right\} \times\\
+[\boldsymbol{\alpha}|\cdot] & \propto & \left[\mathbf{v}|\boldsymbol{\beta},\boldsymbol{\alpha}\right][\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{-1}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\alpha}-\mathbf{0}\right)^{\prime}\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\alpha}-\mathbf{0}\right)\right\} \\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
 \end{eqnarray*}
@@ -862,16 +997,37 @@ Random 'effects' for non-linear trend/dependence (
 \end_inset
 
 where 
-\begin_inset Formula $\mathbf{A}=\mathbf{W}\left(\tilde{t}\right)^{\prime}\mathbf{W}\left(\tilde{t}\right)+\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{A}=\mathbf{W}{}^{\prime}\mathbf{W}+\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{u}\left(\tilde{t}\right)^{\prime}-\mathbf{X}\left(\tilde{t}\right)\boldsymbol{\beta}\right)^{\prime}\mathbf{W}\left(\tilde{t}\right)$
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}{}^{\prime}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
 \end_inset
 
 .
-\emph on
+ Note that the matrices 
+\begin_inset Formula $\mathbf{X}$
+\end_inset
 
+ and 
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+ contain covariates pertaining to times associated with both 
+\begin_inset Formula $\mathbf{s}(t)$
+\end_inset
+
+ and 
+\begin_inset Formula $y\left(\tilde{t}\right)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
 \begin_inset VSpace bigskip
 \end_inset
 
@@ -902,9 +1058,12 @@ The update for
 \end_inset
 
  proceeds using Metropolis-Hastings.
- 
-\emph on
+\end_layout
 
+\begin_layout Standard
+\noindent
+
+\emph on
 \begin_inset VSpace bigskip
 \end_inset
 
