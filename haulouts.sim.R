@@ -73,8 +73,8 @@ plot(S)
 S.tilde <- raster(S.poly,resolution=S.res)
 S.tilde <- rasterize(S.poly,S.tilde,field=1)
 S.tilde <- boundaries(S.tilde,asNA=TRUE)
-idx <- which(values(S.tilde)==1)
-S.tilde[idx] <- 1:length(idx)  # values of haul-out cells labeled in sequence
+# idx <- which(values(S.tilde)==1)
+# S.tilde[idx] <- 1:length(idx)  # values of haul-out cells labeled in sequence
 plot(S.tilde)
 plot(S,colNA=NA,add=TRUE,col="grey85")
 plot(S.poly,add=TRUE)
@@ -209,35 +209,28 @@ source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
 start <- list(theta=theta,h=h,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=1)
-tune <- list(mu.0=1000,sigma=300,sigma.mu=100,a0=0.25)
+tune <- list(mu.0=3500,sigma=750,sigma.mu=75)
 # hist(rgamma(1000,4,2))
 # hist(rgamma(1000,5,2.5))
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
-	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=1000)
+	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=10000)
 
 mod <- out1 
-# mod <- out2
-# mod <- out3
-# mod <- out4
-# dev.new()
-# idx <- 1:100
 idx <- 1:1000
 idx <- 1:2000
-idx <- 1:20000
+idx <- 1:10000
 
 # True clusters
-b <- 3*c(-sigma,sigma) # Plot buffer for errors
-plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
-polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
-polygon(x=S[,1],y=S[,2],col="gray85")
-polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
-points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
-points(h,pch=1,cex=1,col=rgb(1,0,0,1))
+tab <- table(mod$S.match[,idx])
+S.post <- reclassify(S.tilde,matrix(c(0.9,1.1,0),,3))
+S.post[as.numeric(names(tab))] <- tab/max(tab)
+plot(S.post)
+points(mu.0[unique(h.match),],cex=table(h.match)/max(table(h.match))+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 137
-points(mod$h[pt.idx,1,idx],mod$h[pt.idx,2,idx],pch=19,cex=0.2,col=rgb(1,1,0,0.25))
-points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75)
+pt.idx <- 1
+points(xyFromCell(S.tilde,mod$S.match[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
+points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=5)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
 table(mod$z[pt.idx,idx])
 z[pt.idx]
@@ -268,8 +261,8 @@ lines(alpha.hat,col=rgb(0,0,0,0.25))
 abline(h=0,col=2,lty=2)
 
 # Concentration parameter
-hist(mod$a0[idx],breaks=100);abline(v=a0,col=2,lty=2) 
-mean(mod$a0[idx])*log(T)
+hist(mod$theta[idx],breaks=100);abline(v=theta,col=2,lty=2) 
+mean(mod$theta[idx])*log(T)
 
 # Modeled number of clusters
 # n.cls <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
@@ -289,7 +282,7 @@ mean(mod$sigma.mu[idx])
 # observations, whereas u is based on covariates alone.
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
 boxplot(z.hat~z,ylim=c(0,1))
-plot(s[,1],z.hat,ylim=c(0,1),col=z+1)
+# plot(s[,1],z.hat,ylim=c(0,1),col=z+1)
 
 v <- apply(mod$beta[idx,],1,function(x) X[s.idx,]%*%x)+
 	apply(mod$alpha[idx,],1,function(x) W[s.idx,]%*%x)
