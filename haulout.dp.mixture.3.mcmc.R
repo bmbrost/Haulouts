@@ -100,8 +100,9 @@ haulout.dpmixture.3.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S,S.tilde,U,sigma.a
 	sigma <- start$sigma
 	sigma.mu <- start$sigma.mu
 	pie <- start$pie
+	z <- start$z
 	gamma.int <- log(sum(exp(U%*%gamma)))
-
+	
 	H <- priors$H
 	Sigma.inv <- solve(sigma^2*diag(2))
 	Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
