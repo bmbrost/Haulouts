@@ -73,8 +73,8 @@ plot(S)
 S.tilde <- raster(S.poly,resolution=S.res)
 S.tilde <- rasterize(S.poly,S.tilde,field=1)
 S.tilde <- boundaries(S.tilde,asNA=TRUE)
-idx <- which(values(S.tilde)==1)
-S.tilde[idx] <- 1:length(idx)  # values of haul-out cells labeled in sequence
+# idx <- which(values(S.tilde)==1)
+# S.tilde[idx] <- 1:length(idx)  # values of haul-out cells labeled in sequence
 plot(S.tilde)
 plot(S,colNA=NA,add=TRUE,col="grey85")
 plot(S.poly,add=TRUE)
@@ -209,7 +209,7 @@ source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
 start <- list(theta=theta,h=h,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=1)
-tune <- list(mu.0=1000,sigma=300,sigma.mu=100,a0=0.25)
+tune <- list(mu.0=1500,sigma=300,sigma.mu=100)
 # hist(rgamma(1000,4,2))
 # hist(rgamma(1000,5,2.5))
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
@@ -226,12 +226,11 @@ idx <- 1:2000
 idx <- 1:20000
 
 # True clusters
-b <- 3*c(-sigma,sigma) # Plot buffer for errors
-plot(0,0,xlim=c(min(S.bar[,1]),max(S[,1]))+b,ylim=range(S.bar[,2])+b,pch="",yaxt="n",xaxt="n",xlab="",ylab="")
-polygon(x=S.bar[,1],y=S.bar[,2],col="gray45")
-polygon(x=S[,1],y=S[,2],col="gray85")
-polygon(x=S.tilde[,1],y=S.tilde[,2],angle=45,density=5)
-points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.0025))
+plot(S.tilde)
+plot(S,add=TRUE)
+str(mod)
+
+points(mod$h[,1,idx],mod$h[,2,idx],pch=19,cex=0.5,col=rgb(0,0,0,0.002))
 points(h,pch=1,cex=1,col=rgb(1,0,0,1))
 points(s,pch=19,cex=0.2,col=3)
 

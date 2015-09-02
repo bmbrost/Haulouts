@@ -3,8 +3,8 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
  
  	###
  	### Brian M. Brost (13 AUG 2015)
- 	### See haulout.dpmixture.2.sim.R to simulate data according to this model specification,
- 	### and haulout.dp.mixture.2.pdf for the model description, model statement, and
+ 	### See haulouts.sim.R to simulate data according to this model specification,
+ 	### and haulouts.pdf for the model description, model statement, and
  	### full conditional distributions
  	###
  	
@@ -17,10 +17,8 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
  	### (i.e., haul-out sites); sigma.alpha=standard deviation of parameter 
  	### model for 'random' effects
  	###
- 
- 
+  
 	t.start <- Sys.time()
-	
 
 	###
 	### Libraries and Subroutines
@@ -34,17 +32,6 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	# library(mvtnorm)  # for multivariate normal density
 	# library(msm)  # for truncated normal density
   
-	get.mu.0 <- function(x,h.idx,z,s,Sigma.inv,Sigma.mu.inv){
-		# browser()
-		idx.0 <- which(h.idx==x&z==0)
-		idx.1 <- which(h.idx==x&z==1)
-		n.0 <- length(idx.0)
-		n.1 <- length(idx.1)
-		b <- colSums(s[idx.1,]%*%Sigma.inv)+colSums(s[idx.0,]%*%(Sigma.inv+Sigma.mu.inv))
-		A.inv <- solve(n.1*Sigma.inv+n.0*(Sigma.inv+Sigma.mu.inv))
-		rnorm(2,A.inv%*%b,sqrt(diag(A.inv)))	# proposal for mu.0	
-	}
-
 	truncnormsamp <- function(mu,sig2,low,high,nsamp){
 		flow <- pnorm(low,mu,sqrt(sig2)) 
 		fhigh <- pnorm(high,mu,sqrt(sig2)) 
@@ -67,7 +54,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	###  Setup Variables 
 	###
   
-	# browser() 
+# browser() 
 	T <- nrow(s)  # number of telemetry locations
 	n <- length(y)  # number of wet/dry observations
 	qX <- ncol(X)
@@ -75,6 +62,13 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	v <- numeric(n+T)  # auxilliary variable for continuous haul-out process
 	X.comb <- rbind(X,X.tilde)  # combined design matrix for updates on alpha, beta
 	W.comb <- rbind(W,W.tilde)  # combined design matrix for updates on alpha, beta 
+	idx <- which(values(S.tilde)>0)
+	S.tilde <- cbind(1:length(idx),idx,xyFromCell(S.tilde,idx))
+
+	# S.tilde.idx <- which(!is.na(values(S.tilde)))
+	# S.tilde.xy <- xyFromCell(S.tilde,S.tilde.idx)
+	# S.tilde.idx <- values(S.tilde)[S.tilde.idx]
+
 
 	###
 	### Starting values and priors
@@ -83,7 +77,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	beta <- matrix(start$beta,qX)
 	alpha <- matrix(0,qW)
 	# alpha <- start$alpha
-	a0 <- start$a0
+	theta <- start$theta
 	sigma <- start$sigma
 	sigma.mu <- start$sigma.mu
 	pie <- start$pie
@@ -110,9 +104,14 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	### Set up Dirichlet process mixture variables
 	###
 
-	mu.0 <- unique(h)  # unique cluster location s
-	n.cls <- nrow(mu.0)  # number of clusters
-	h.idx <- c(1:n.cls)[match(start$h[,1],mu.0[,1])]  # cluster membership indicator
+	# mu.0 <- unique(h)  # unique cluster location s
+	# n.cls <- nrow(mu.0)  # number of clusters
+	# h.match <- match(paste(start$h[,1],start$h[,2]),
+		# paste(mu.0[,1],mu.0[,2]))  # cluster membership indicator
+
+	S.match <- match(paste(start$h[,1],start$h[,2]),
+		paste(S.tilde[,3],S.tilde[,4]))  # S.tilde membership indicator
+
 
 	# Tabulate cluster membership with data.table and setdiff	
 	# dt.h.idx <- as.data.table(h.idx)
@@ -131,25 +130,36 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	# samp.cls <- rev(dt.tab.cls[,h.idx])  # order in which clusters are sampled
 
 	# Tabulate cluster membership with base functions
-	tab.cls <- table(h.idx)  # tabulate cluster membership
-	ord <- order(tab.cls,decreasing=TRUE) # order of clusters by membership
-	tab.cls <- tab.cls[ord]  # ordered largest to smallest
-	idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters in order
-	samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order in which clusters are sampled
- 
+	# cls.tab <- table(h.match)  # tabulate cluster membership
+	# cls.tab <- table(S.match)  # tabulate cluster membership
+	# n.cls <- length(cls.tab)  # number of clusters
+	# # cls.ord <- order(cls.tab,decreasing=TRUE)  # clusters ordered by membership
+	# cls.idx <- as.numeric(names(cls.tab))  # idx of occupied clusters
+	
+	cls.idx <- unique(S.match)
+	n.cls <- length(cls.idx)
+	
+	# cls.diff <- setdiff(1:H,cls.idx)  # idx of unoccupied clusters
+	# cls.samp <- c(cls.idx[cls.ord],cls.diff)  # order in which clusters are sampled
+		
+	# S.match <- match(paste(mu.0[cls.idx,1],mu.0[cls.idx,2]),
+		# paste(S.tilde.xy[,1],S.tilde.xy[,2]))  # S.tilde membership indicator
+  
 	# Propose values for mu.0
-	n.cls.star <- H-n.cls  # number of new clusters to propose
-	mu.0 <- rbind(mu.0, cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
-      runif(n.cls.star,S.tilde[1,2],S.tilde[3,2])))  # update mu.0 with mu.star
+	# idx <- sample(S.tilde.idx[-S.match],H-n.cls,replace=FALSE)  # idx of new mu.0
+	# mu.0 <- rbind(mu.0, S.tilde.xy[idx,])
+# sum(duplicated(mu.0))
+
 
   	###
 	### Create receptacles for output
 	###
   
-	h.idx.save <- matrix(0,T,n.mcmc)  # cluster assignment indicator variable
-	h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
-	a0.save <- numeric(n.mcmc)  # concentration parameter
-	mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
+	# h.match.save <- matrix(0,T,n.mcmc)  # cluster assignment indicator variable
+	# h.save <- array(0,dim=c(T,2,n.mcmc))  # cluster assignment indicator variable
+	S.match.save <- matrix(0,T,n.mcmc)
+	theta.save <- numeric(n.mcmc)  # concentration parameter
+	# mu.0.save <- array(0,dim=c(H,2,n.mcmc))  # cluster locations
 	n.cls.save <- numeric(n.mcmc)
 	z.save <- matrix(0,T,n.mcmc)  # haul-out indicator variable
 	alpha.save <- matrix(0,n.mcmc,qW)
@@ -160,14 +170,17 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	# sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
 	D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
 
-	keep <- list(sigma=0,sigma.mu=0)
+	keep <- list(mu.0=0,sigma=0,sigma.mu=0)
     
 	###
 	### Begin MCMC loop
 	###
   
 	for (k in 1:n.mcmc) {
-    	if(k%%1000==0) cat(k,"");flush.console()
+    	if(k%%1000==0) {
+	    	cat(k,"");flush.console()	
+    		plot(pie,type="b",ylab=expression(pi),xlab="Cluster index",las=1,pch=19,cex=0.5)
+    	} 
 
 		###
 		### Updates pertaining to wet/dry status of y and z
@@ -198,15 +211,23 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		    # Sample z(t) (prediction of haul-out indicator variable for times t)
 			linpred <- X.comb%*%beta+W.comb%*%alpha
 			p <- pnorm(linpred[1:T,])
-			p.tmp1 <- p*dnorm(s[,1],mu.0[h.idx,1],sigma,log=FALSE)*
-				dnorm(s[,2],mu.0[h.idx,2],sigma,log=FALSE)
-			p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.idx,1],sd.tmp,log=FALSE)*
-				dnorm(s[,2],mu.0[h.idx,2],sd.tmp,log=FALSE)
+			p.tmp1 <- p*dnorm(s[,1],mu.0[h.match,1],sigma,log=FALSE)*
+				dnorm(s[,2],mu.0[h.match,2],sigma,log=FALSE)
+			p.tmp2 <- (1-p)*dnorm(s[,1],mu.0[h.match,1],sd.tmp,log=FALSE)*
+				dnorm(s[,2],mu.0[h.match,2],sd.tmp,log=FALSE)
 			p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
 			z <- rbinom(T,1,p.tmp)
-			
 # z <- start$z
 		
+	
+	
+	
+	
+	
+	
+	
+	
+	
 		###
 		### Dirichlet process parameters
 		### Note: sampling order matters here. Cluster parameters must be 
@@ -215,14 +236,171 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	
 			# Update follows the blocked Gibbs sampler of Ishwaran and James (2001)
 			# and Gelman et al. (2014), Section 23.3
+
+		###
+	    ### Sample mu.0 (true location of occupied clusters)
+		### Note: sampling order does not matter here
+	    ###
+
+		# Sample 'occupied' mu.0 (clusters with non-zero membership)		   
+	
+		# Use for data.table functionality
+		# mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0
+			# get.mu.0(x,dt.h.idx[1:T,h.idx],z,s,mu,sigma,sigma.mu,S.tilde)))
+browser()			
+
+plot(S.tilde)
+points(mu.0[cls.idx,],pch=19)
+		# Proposals for mu.0 sampled from S.tilde
+		# S.match.star <- sapply(cls.idx,function(x)  # ordered same as cls.idx
+			# sample(S.tilde.idx,1,prob=dnorm(mu.0[x,1],S.tilde.xy[,1],tune$mu.0)*
+			# dnorm(mu.0[x,2],S.tilde.xy[,2],tune$mu.0)))
+		# mu.0.star <- S.tilde.xy[S.match.star,]  # ordered same as cls.idx
+		# points(mu.0.star,col=rgb(1,0,0,0.25),cex=0.5,pch=19)
+
+		cls.idx.star <- sapply(cls.idx,function(x)  # ordered same as cls.idx
+			sample(S.tilde[,1],1,prob=dnorm(S.tilde[x,3],S.tilde[,3],tune$mu.0)*
+			dnorm(S.tilde[x,4],S.tilde[,4],tune$mu.0)))
+		# points(S.tilde.xy[S.match.star,],col=rgb(1,0,0,0.25),cex=0.5,pch=19)
+
+		# mu.0.star <- S.tilde.xy[S.match.star,]  # ordered same as cls.idx
+# points(mu.0.star,col=rgb(1,0,0,0.25),cex=0.5,pch=19)
+
+	get.mh.mu.0 <- function(x,cls.idx,cls.idx.star,S.tilde,S.match,s,z,sigma,sigma.mu){
+		# ,U,gamma){
+		# browser()
+		# x
+		mu.0 <- S.tilde[cls.idx[x],3:4]
+		mu.0.star <- S.tilde[cls.idx.star[x],3:4]
+		idx.0 <- which(S.match==cls.idx[x]&z==0)
+		idx.1 <- which(S.match==cls.idx[x]&z==1)
+    	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
+		# U.0 <- U[S.match[x],]
+		# U.star <- U[S.match.star[x],]
+		mh.star <- sum(dnorm(s[idx.1,1],mu.0.star[1],sigma,log=TRUE)+
+			dnorm(s[idx.1,2],mu.0.star[2],sigma,log=TRUE))+
+			sum(dnorm(s[idx.0,1],mu.0.star[1],sd.tmp,log=TRUE)+
+			dnorm(s[idx.0,2],mu.0.star[2],sd.tmp,log=TRUE))  # +			
+			# U.star%*%gamma # - int
+		mh.0 <- sum(dnorm(s[idx.1,1],mu.0[1],sigma,log=TRUE)+
+			dnorm(s[idx.1,2],mu.0[2],sigma,log=TRUE))+
+			sum(dnorm(s[idx.0,1],mu.0[1],sd.tmp,log=TRUE)+
+			dnorm(s[idx.0,2],mu.0[2],sd.tmp,log=TRUE))  # +			
+			# U.0%*%gamma # - int
+		exp(mh.star-mh.0)>runif(1)
+	}
+
+cls.idx
+S.match.star
+
+		mh.mu.0 <- sapply(1:n.cls,function(x)  # proposals for mu.0	
+			get.mh.mu.0(x,cls.idx,cls.idx.star,S.tilde,S.match,s,z,sigma,sigma.mu)) 
+			#,U,gamma)))   
+		keep$mu.0 <- keep$mu.0+sum(mh.mu.0)
+		mu.0[cls.idx[mh.mu.0],] <- mu.0.star[mh.mu.0,]  # accept proposals in S.tilde
+		S.match[mh.mu.0] <- S.match.star[mh.mu.0]
+
+
+
+
+
+
+	# get.mh.mu.0 <- function(x,s,z,S.match,cls.idx,mu.0,mu.0.star,sigma,sigma.mu,
+		# S.match,S.match.star){  #,U,gamma){
+		# # browser()
+		# # x
+		# # mu.0.tmp <- mu.0[x,]
+		# # mu.0.star.tmp <- mu.0.star[x,]
+		# idx.0 <- which(h.match==cls.idx[x]&z==0)
+		# idx.1 <- which(h.match==cls.idx[x]&z==1)
+    	# sd.tmp <- sqrt(sigma^2+sigma.mu^2)
+		# # U.0 <- U[S.match[x],]
+		# # U.star <- U[S.match.star[x],]
+		# mh.star <- sum(dnorm(s[idx.1,1],mu.0.star[x,1],sigma,log=TRUE)+
+			# dnorm(s[idx.1,2],mu.0.star[x,2],sigma,log=TRUE))+
+			# sum(dnorm(s[idx.0,1],mu.0.star[x,1],sd.tmp,log=TRUE)+
+			# dnorm(s[idx.0,2],mu.0.star[x,2],sd.tmp,log=TRUE))  # +			
+			# # U.star%*%gamma # - int
+		# mh.0 <- sum(dnorm(s[idx.1,1],mu.0[x,1],sigma,log=TRUE)+
+			# dnorm(s[idx.1,2],mu.0[x,2],sigma,log=TRUE))+
+			# sum(dnorm(s[idx.0,1],mu.0[x,1],sd.tmp,log=TRUE)+
+			# dnorm(s[idx.0,2],mu.0[x,2],sd.tmp,log=TRUE))  # +			
+			# # U.0%*%gamma # - int
+		# exp(mh.star-mh.0)>runif(1)
+	# }
+
+		# mh.mu.0 <- sapply(1:n.cls,function(x)  # proposals for mu.0	
+			# get.mh.mu.0(x,s,z,h.match,cls.idx,mu.0[cls.idx,],mu.0.star,sigma,sigma.mu,
+			# S.match,S.match.star))  #,U,gamma)))   
+		# keep$mu.0 <- keep$mu.0+sum(mh.mu.0)
+		# mu.0[cls.idx[mh.mu.0],] <- mu.0.star[mh.mu.0,]  # accept proposals in S.tilde
+		# S.match[mh.mu.0] <- S.match.star[mh.mu.0]
+
+
+# Use for base functionality	
+# mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0	
+	# get.mu.0(x,h.match,z,s,Sigma.inv,Sigma.mu.inv)))  
+# idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
+	# mu.0.tmp[,2]>S.tilde[1,2]&mu.0.tmp[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde	
+# mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # accept proposals in S.tilde
+# n.cls.star <- H-n.cls  # number of new clusters to propose
+# mu.0[-idx.cls,] <- cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
+      # runif(n.cls.star,S.tilde[1,2],S.tilde[3,2]))  # update mu.0 with mu.star
+
+		
+		# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|gamma]
+# if(k==1000) browser()
+		idx <- sample(S.tilde.idx[-S.match],H-n.cls,replace=FALSE)  # idx of new mu.0
+		mu.0[-cls.idx,] <- S.tilde.xy[idx,]
+# sum(duplicated(mu.0))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 			
-		   	### Sample h.t (cluster assignment indicator)
 # browser()
-		   	h.idx <- sapply(1:T,function(x) sample(samp.cls,1,
-				prob=pie*(dnorm(s[x,1],mu.0[samp.cls,1],sigma)*
-				dnorm(s[x,2],mu.0[samp.cls,2],sigma))^z[x]*
-				(dnorm(s[x,1],mu.0[samp.cls,1],sd.tmp)*
-				dnorm(s[x,2],mu.0[samp.cls,2],sd.tmp))^(1-z[x])))
+		    # Sample S.match (cluster assignment indicator)
+
+			# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|gamma]
+# if(k==1000) browser()
+cls.idx
+			cls.samp <- cls.idx[cls.ord]
+		
+			idx <- sample(S.tilde[-cls.idx,1],H-n.cls,replace=FALSE)  # idx of new mu.0
+
+
+sum(idx%in%S.match)
+			cls.samp <- c(cls.samp,idx)
+
+			# mu.0.tmp <- rbind(S.tilde.xy[cls.idx[cls.ord],],S.tilde.xy[idx,])
+
+# sum(duplicated(mu.0))
+
+
+
+		   	S.match <- sapply(1:T,function(x) sample(cls.samp,1,
+				prob=pie*(dnorm(s[x,1],S.tilde[cls.samp,3],sigma)*
+				dnorm(s[x,2],S.tilde[cls.samp,4],sigma))^z[x]*
+				(dnorm(s[x,1],S.tilde[cls.samp,3],sd.tmp)*
+				dnorm(s[x,2],S.tilde[cls.samp,4],sd.tmp))^(1-z[x])))
+
+		   	# h.match <- sapply(1:T,function(x) sample(cls.samp,1,
+				# prob=pie*(dnorm(s[x,1],mu.0[cls.samp,1],sigma)*
+				# dnorm(s[x,2],mu.0[cls.samp,2],sigma))^z[x]*
+				# (dnorm(s[x,1],mu.0[cls.samp,1],sd.tmp)*
+				# dnorm(s[x,2],mu.0[cls.samp,2],sd.tmp))^(1-z[x])))
 		
 			# Tabulate cluster membership with data.table but not setdiff
 			# h.idx <- c(h.idx,1:H)
@@ -243,50 +421,42 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 			# samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
 		
 			# Tabulate cluster membership with base functions
-			tab.cls <- table(h.idx)  # tabulate cluster membership
-			n.cls <- length(tab.cls)  # number of clusters
-			ord <- order(tab.cls,decreasing=TRUE) # sort clusters by membership
-			tab.cls <- tab.cls[ord]
-			idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters
-			samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order of decreasing membership
+			# cls.tab <- table(h.match)  # tabulate cluster membership
+			cls.tab <- table(S.match)  # tabulate cluster membership
+			n.cls <- length(cls.tab)  # number of clusters
+			cls.ord <- order(cls.tab,decreasing=TRUE)  # clusters ordered by membership
+			cls.idx <- as.numeric(names(cls.tab))  # idx of occupied clusters
+			# cls.diff <- setdiff(1:H,cls.idx)  # idx of unoccupied clusters
+			# cls.samp <- c(cls.idx[cls.ord],cls.diff)  # order in which clusters are sampled
+			# S.match <- match(paste(mu.0[cls.idx,1],mu.0[cls.idx,2]),
+				# paste(S.tilde.xy[,1],S.tilde.xy[,2]))  # S.tilde membership indicator
 		  
-	 	    ### Sample pie (stick-breaking process)
+ 		    # Stick-breaking process
 		    
 		    # Use for data.table functionality
 			# tab.cls.tmp <- c(rev(dt.tab.cls[,N]),rep(0,H-n.cls-1)) 
 			
 			# Use for base functionality
-	 	  	tab.cls.tmp <- c(tab.cls,rep(0,H-n.cls-1))  # membership in decreasing order
-			
-		    eta <- c(rbeta(H-1,1+tab.cls.tmp,a0+T-cumsum(tab.cls.tmp)),1)  # stick-breaking
+			cls.tab.tmp <- c(cls.tab[cls.ord],rep(0,H-n.cls-1))  # membership in 
+ 	  			# decreasing order
+			eta <- c(rbeta(H-1,1+cls.tab.tmp,theta+T-cumsum(cls.tab.tmp)),1)  # stick-breaking
 		    	# weights
 		    pie <- eta*c(1,cumprod((1-eta[-H])))  # mixture component probabilities
+
+		    # Sample theta (concentration parameter); See Gelman section 23.3
+	       	theta <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
+# theta <- start$theta
+
+
+
+
+
+
+
+
+
+
 	
-		    ### Sample a0 (concentration parameter); See Gelman section 23.3
-	       
-	    	a0 <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
-# a0 <- start$a0
-
-		###
-	    ### Sample mu.0 (true location of occupied clusters)
-		### Note: sampling order does not matter here
-	    ###
-		   
-		# Use for data.table functionality
-		# mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0
-			# get.mu.0(x,dt.h.idx[1:T,h.idx],z,s,mu,sigma,sigma.mu,S.tilde)))
-# browser()			
-		# Use for base functionality	
-		mu.0.tmp <- t(sapply(idx.cls,function(x)  # proposals for mu.0	
-			get.mu.0(x,h.idx,z,s,Sigma.inv,Sigma.mu.inv)))  
-		idx <- which(mu.0.tmp[,1]>S.tilde[1,1]&mu.0.tmp[,1]<S.tilde[2,1]&
-			mu.0.tmp[,2]>S.tilde[1,2]&mu.0.tmp[,2]<S.tilde[3,2])  # idx of mu.0 in S.tilde	
-		mu.0[idx.cls[idx],] <- mu.0.tmp[idx,]  # accept proposals in S.tilde
-		n.cls.star <- H-n.cls  # number of new clusters to propose
-		mu.0[-idx.cls,] <- cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),
-	      runif(n.cls.star,S.tilde[1,2],S.tilde[3,2]))  # update mu.0 with mu.star
-
-
 	    ###
 	    ### Sample sigma (observation error)
 	    ###
@@ -294,7 +464,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    sigma.star <- rnorm(1,sigma,tune$sigma)
 	    if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
 			idx <- z==1
-			mu.0.tmp <- mu.0[h.idx,]
+			mu.0.tmp <- mu.0[h.match,]
 	    	sd.tmp.star <- sqrt(sigma.star^2+sigma.mu^2)
 	    	mh.star.sigma <- sum(dnorm(s[idx,1],mu.0.tmp[idx,1],sigma.star,log=TRUE)+
 		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma.star,log=TRUE))#+
@@ -325,7 +495,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
 	    if(sigma.mu.star>priors$sigma.mu.l & sigma.star<priors$sigma.mu.u){
 			idx <- which(z==0)
-			mu.0.tmp <- mu.0[h.idx[idx],]
+			mu.0.tmp <- mu.0[h.match[idx],]
 	    	sd.tmp.star <- sqrt(sigma^2+sigma.mu.star^2)
 		    mh.star.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sd.tmp.star,log=TRUE)+
 		    	dnorm(s[idx,2],mu.0.tmp[,2],sd.tmp.star,log=TRUE))
@@ -349,10 +519,10 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		# h.save[,,k] <- mu.0[dt.h.idx[1:T,h.idx],]
 		
 		# Use with base functionality
-		h.idx.save[,k] <- h.idx 
-		h.save[,,k] <- mu.0[h.idx,]
+		h.match.save[,k] <- h.match 
+		h.save[,,k] <- mu.0[h.match,]
 		mu.0.save[,,k] <- mu.0
-		a0.save[k] <- a0    
+		theta.save[k] <- theta    
 		sigma.save[k] <- sigma
 		sigma.mu.save[k] <- sigma.mu
 		alpha.save[k,] <- alpha
@@ -368,10 +538,13 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	  
 	keep$sigma <- keep$sigma/n.mcmc
 	keep$sigma.mu <- keep$sigma.mu/n.mcmc
+	keep$mu.0 <- keep$mu.0/sum(n.cls.save)
+
 	cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
 	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
+	cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
 	cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
-	list(h.idx=h.idx.save,h=h.save,mu.0=mu.0.save,beta=beta.save,alpha=alpha.save,
-		a0=a0.save,sigma=sigma.save,sigma.mu=sigma.mu.save,z=z.save,v=v.save,
+	list(h.match=h.match.save,h=h.save,mu.0=mu.0.save,beta=beta.save,alpha=alpha.save,
+		theta=theta.save,sigma=sigma.save,sigma.mu=sigma.mu.save,z=z.save,v=v.save,
 	  	n.cls=n.cls.save,keep=keep,n.mcmc=n.mcmc)
 }
