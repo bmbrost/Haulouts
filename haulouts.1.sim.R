@@ -19,9 +19,9 @@ library(MCMCpack)  # for rdirichlet(...)
 library(splines)
 
 
-#############################################################################################
+##################################################################################
 ### Prepare spatial data for analysis
-#############################################################################################
+##################################################################################
 
 ###
 ### Define S.tilde (support of haul-out sites, mu_0)
@@ -41,15 +41,6 @@ S.clip <- matrix(c(55000,110000,110000,55000,55000,805000,805000,840000,840000,8
 S.clip <- SpatialPolygons(list(Polygons(list(Polygon(S.clip)),"1")),proj4string=CRS(proj.aea))
 S.poly <- gIntersection(ak.simple,S.clip)
 
-# Define S according to centroid
-# center <- matrix(c(61156,830265),1) #PV95KOD12
-# center <- SpatialPoints(center,proj4string=CRS(proj.aea))
-
-# Create polygon of S
-# S.buffer <- gBuffer(center,width=20000)
-# S.poly <- gIntersection(ak,S.buffer,byid=TRUE)
-# plot(S.poly,col="grey")
-
 # Create raster of S
 S.res <- 250
 S <- raster(S.poly,resolution=S.res)
@@ -57,63 +48,42 @@ S <- rasterize(S.poly,S,field=1)
 S <- reclassify(S,matrix(c(1,NA,NA,1),2,2,byrow=TRUE))
 plot(S)
 
-# Remove isolated water cells enforcing 4-neighbor rule
-# Note: make sure haulout is inside S
-# tran <- transition(S,function(x) 1,directions=4)
-# idx <- which(values(S)==1)
-# cd <- costDistance(tran, haulout, xyFromCell(S,idx))*xres(S)
-# values(S)[idx[which(cd==Inf)]] <- NA
-
-# Limit extent of S to some distance d from haul-out location
-# d <- 60000
-# values(S)[idx[which(cd>d)]] <- NA
-# plot(S)
-
 # Identify cells along shoreline to define S.tilde
 S.tilde <- raster(S.poly,resolution=S.res)
 S.tilde <- rasterize(S.poly,S.tilde,field=1)
 S.tilde <- boundaries(S.tilde,asNA=TRUE)
-# idx <- which(values(S.tilde)==1)
-# S.tilde[idx] <- 1:length(idx)  # values of haul-out cells labeled in sequence
 plot(S.tilde)
 plot(S,colNA=NA,add=TRUE,col="grey85")
 plot(S.poly,add=TRUE)
 
-# Convert to points
-# idx <- which(values(S.tilde)==1)
-# S.tilde.pts <- xyFromCell(S.tilde,idx)
-# S.tilde.pts <- data.frame(S.tilde.pts,survy_d="shoreline",depth=0,qlty_cd=NA,active=NA)
-# S.tilde.pts <- SpatialPointsDataFrame(S.tilde.pts[,1:2], S.tilde.pts[,3:6],
-	# proj4string=CRS(proj.aea))
-# points(S.tilde.pts,pch=19,cex=0.1)
 
-
-#############################################################################################
+##################################################################################
 ### Simulate haul-out sites and assignments using a stick-breaking process
 ### See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
-#############################################################################################
+##################################################################################
 
 T <- 500  # number of locations to simulate
 n <- 500  # number of wet/dry observations to simulate
-theta <- 1.0  # Dirichlet process mixture concentration parameter
+theta <- 3.0  # Dirichlet process mixture concentration parameter
 H <- 25  # maximum number of clusters for truncation approximation
 
 # Simulate haul-out sits of telemetry locations s
-idx <- which(values(S.tilde)>0)
-# points(xyFromCell(S.tilde,idx))
-mu.0 <- sample(idx,H)  # clusters randomly drawn from S.tilde
-mu.0 <- xyFromCell(S.tilde,mu.0)  # clusters locations
-points(mu.0,col=1,pch=19,cex=0.25)  # plot cluster locations
+S.tilde.idx <- which(values(S.tilde)>0)
+mu.0 <- sample(S.tilde.idx,H)  # clusters randomly drawn from S.tilde
+plot(S.tilde)
+points(xyFromCell(S.tilde,mu.0),col=2,pch=19,cex=0.25)  # plot cluster locations
 eta <- c(rbeta(H-1,1,theta),1)  # stick-breaking weights
 pie <- eta*c(1,cumprod((1-eta[-H])))  # probability mass
-h.match <- sample(1:H,T,replace=TRUE,prob=pie)  # latent cluster assignments
-h <- mu.0[h.match,]  # latent clusters
-points(mu.0[unique(h.match),],pch=19,cex=table(h.match)/max(table(h.match))+0.25,col=2)
+ht <- sample(mu.0,T,replace=TRUE,prob=pie)  # latent cluster assignments
+m <- length(unique(ht))
+tab <- table(ht)
+plot(S.tilde)
+points(xyFromCell(S.tilde,unique(ht)),pch=19,cex=table(ht)/max(table(ht))+0.25,col=2)
 
 
-###
+##################################################################################
 ### Simulate wet/dry status for T telemetry locations (s) and T SEA records (y)
-###
+##################################################################################
 
 time <- c(0,cumsum(rgamma(T+n-1,shape=1.1,scale=2)))  # time covariate
 hr <- ((time)-24*floor(time/24))
@@ -159,54 +129,57 @@ matplot(W,type="l")
 qW <- ncol(W)
 
 
-###
-### Simulate true and observed locations
-###
+##################################################################################
+### Simulate true and observed telemetry locations
+##################################################################################
 
 # Simulate true locations
 sigma.mu <- 2000  # dispersion about haul-out for at-sea locations
 mu <- matrix(0,T,2)
-mu[z==1,] <- h[z==1,]  # true location is haul-out site for hauled-out locations
+
+# Sample true locations for hauled-out status; i.e., true location=haul-out site
+mu[z==1,] <- xyFromCell(S.tilde,ht[z==1])
 
 # Sample true locations for at-sea locations
 idx <- which(values(S)==1)
 S.xy <- xyFromCell(S,idx)
-mu[z==0,1] <- apply(h[z==0,],1,function(x) sample(idx,1,prob=
+mu.0.xy <- xyFromCell(S.tilde,ht[z==0])
+mu[z==0,1] <- apply(mu.0.xy,1,function(x) sample(idx,1,prob=
 	dnorm(x[1],S.xy[,1],sigma.mu)*dnorm(x[2],S.xy[,2],sigma.mu))) 
 mu[z==0,] <- xyFromCell(S,mu[z==0,1])
 
+
 # Check true location generation
+mu.0.xy <- xyFromCell(S.tilde,ht)
 S.test <- S
-S.test[idx] <- dnorm(mu.0[3,1],S.xy[,1],sigma.mu)*dnorm(mu.0[3,2],S.xy[,2],sigma.mu)
+S.test[idx] <- dnorm(mu.0.xy[3,1],S.xy[,1],sigma.mu)*dnorm(mu.0.xy[3,2],S.xy[,2],sigma.mu)
 plot(S.tilde)
 plot(S.test,add=TRUE)
+points(mu.0.xy[3,1],mu.0.xy[3,2])
 points(mu,pch=19,cex=0.25)
-points(mu.0[unique(h.match),],pch=19,cex=table(h.match)/max(table(h.match))+0.25,col=2)
+points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
 
 # Simulate observed locations
 sigma <- 5000 # Observation error
 s <- mu
 s <- s+rnorm(T*2,0,sigma) # Add error to true locations
 
-
-# Plot support
-plot(S.tilde)
-plot(S,add=TRUE)
-
 # Plot true and observed locations
+plot(S.tilde)  # plot support
+plot(S,add=TRUE)
 points(mu,pch=19,cex=0.25,col=z+1) # All true locations
 points(s,col=z+1,pch=3,cex=0.5) # Observed locations
 segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 
 
-###
+##################################################################################
 ### Fit models
-###
+##################################################################################
 
 # Fit model using blocked Gibbs sampler 
 source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
-start <- list(theta=theta,h=h,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
+start <- list(theta=theta,ht=ht,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=4,q=2,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=1)
 tune <- list(mu.0=3500,sigma=750,sigma.mu=75)
@@ -215,21 +188,26 @@ tune <- list(mu.0=3500,sigma=750,sigma.mu=75)
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
 	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=10000)
 
+
+##################################################################################
+### Inspect model output
+##################################################################################
+
 mod <- out1 
 idx <- 1:1000
 idx <- 1:2000
 idx <- 1:10000
 
 # True clusters
-tab <- table(mod$S.match[,idx])
+tab <- table(mod$ht[,idx])
 S.post <- reclassify(S.tilde,matrix(c(0.9,1.1,0),,3))
 S.post[as.numeric(names(tab))] <- tab/max(tab)
 plot(S.post)
-points(mu.0[unique(h.match),],cex=table(h.match)/max(table(h.match))+0.25,col=2)
+points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 1
-points(xyFromCell(S.tilde,mod$S.match[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
+pt.idx <- 450
+points(xyFromCell(S.tilde,mod$ht[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=5)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
 table(mod$z[pt.idx,idx])
@@ -265,9 +243,8 @@ hist(mod$theta[idx],breaks=100);abline(v=theta,col=2,lty=2)
 mean(mod$theta[idx])*log(T)
 
 # Modeled number of clusters
-# n.cls <- apply(mod$h[,,idx],3,function(x) nrow(unique(x)))
-plot(mod$n.cls,type="l");abline(h=nrow(unique(h)),col=2,lty=2)  # true number of clusters  
-barplot(table(mod$n.cls)) 
+plot(mod$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
+barplot(table(mod$m)) 
 
 # Observation error
 hist(mod$sigma[idx],breaks=100);abline(v=sigma,col=2,lty=2)
