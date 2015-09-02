@@ -64,8 +64,8 @@ plot(S.poly,add=TRUE)
 
 T <- 500  # number of locations to simulate
 n <- 500  # number of wet/dry observations to simulate
-theta <- 3.0  # Dirichlet process mixture concentration parameter
-H <- 25  # maximum number of clusters for truncation approximation
+theta <- 10.0  # Dirichlet process mixture concentration parameter
+H <- 50  # maximum number of clusters for truncation approximation
 
 # Simulate haul-out sits of telemetry locations s
 S.tilde.idx <- which(values(S.tilde)>0)
@@ -74,11 +74,12 @@ plot(S.tilde)
 points(xyFromCell(S.tilde,mu.0),col=2,pch=19,cex=0.25)  # plot cluster locations
 eta <- c(rbeta(H-1,1,theta),1)  # stick-breaking weights
 pie <- eta*c(1,cumprod((1-eta[-H])))  # probability mass
+plot(pie,type="b")
 ht <- sample(mu.0,T,replace=TRUE,prob=pie)  # latent cluster assignments
 m <- length(unique(ht))
 tab <- table(ht)
 plot(S.tilde)
-points(xyFromCell(S.tilde,unique(ht)),pch=19,cex=table(ht)/max(table(ht))+0.25,col=2)
+points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
 
 
 ##################################################################################
@@ -181,9 +182,10 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
 start <- list(theta=theta,ht=ht,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=4,q=1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=1)
+priors <- list(H=H,r=2,q=0.1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,
+	sigma.beta=1)
 tune <- list(mu.0=3500,sigma=750,sigma.mu=50)
-# hist(rgamma(1000,4,1))
+# hist(rgamma(1000,2,0.1))
 # hist(rgamma(1000,5,2.5))
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
 	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=1000)
@@ -206,7 +208,7 @@ plot(S.post)
 points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 1
+pt.idx <- 350
 points(xyFromCell(S.tilde,mod$ht[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=5)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)

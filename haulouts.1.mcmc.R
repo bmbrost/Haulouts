@@ -284,7 +284,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    ###
 # browser()
 	    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
-	    if(sigma.mu.star>priors$sigma.mu.l & sigma.star<priors$sigma.mu.u){
+	    if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
 			idx <- which(z==0)
 			mu.0.tmp <- S.tilde[ht[idx],3:4]
 	    	sd.tmp.star <- sqrt(sigma^2+sigma.mu.star^2)
