@@ -522,6 +522,13 @@ where
 \end_inset
 
  is sampled directly from the prior.
+ When the support of 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ exists as a linear feature (e.g., a shoreline), this update is easiest implemente
+d using Metropolis-Hastings.
+ See haulouts.1.sim.R and haulouts.1.mcmc.R for an example.
 \end_layout
 
 \begin_layout Standard
@@ -1001,7 +1008,7 @@ where
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}{}^{\prime}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
 \end_inset
 
 .

@@ -522,6 +522,12 @@ where
 \end_inset
 
  is sampled directly from the prior.
+ When the support of 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ exists as a linear feature (e.g., a shoreline), this update is easiest implemente
+d using Metropolis-Hastings.
 \end_layout
 
 \begin_layout Standard
@@ -924,13 +930,13 @@ Haul-out probability coefficients (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\beta}|\cdot] & \propto & [\mathbf{u}|\boldsymbol{\beta},\boldsymbol{\alpha}][\boldsymbol{\beta}\mid\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}]\\
- & \propto & {\cal N}\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\mathbf{0},\sigma_{\beta}^{2}\mathbf{I})\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{u}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{u}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
+[\boldsymbol{\beta}|\cdot] & \propto & [\mathbf{v}|\boldsymbol{\beta},\boldsymbol{\alpha}][\boldsymbol{\beta}\mid\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\mu}_{\beta}\mid\mathbf{0},\sigma_{\beta}^{2}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\left(\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)\right\} \times\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right)\mathbf{X}+\boldsymbol{\mu}_{\beta}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}+\boldsymbol{\beta}^{\prime}\left(\mathbf{X}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)\mathbf{X}+\boldsymbol{\mu}_{\beta}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}+\boldsymbol{\beta}^{\prime}\left(\mathbf{X}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}\right)\right\} \\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
 \end{eqnarray*}
 
@@ -941,7 +947,7 @@ where
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{u}-\mathbf{W}\boldsymbol{\alpha}\right){}^{\prime}\mathbf{X}+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right){}^{\prime}\mathbf{X}+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
 \end_inset
 
 .
@@ -987,9 +993,9 @@ Random 'effects' for non-linear trend/dependence (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\alpha}|\cdot] & \propto & \left[\mathbf{u}|\boldsymbol{\beta},\boldsymbol{\alpha}\right][\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}]\\
- & \propto & {\cal N}\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\mathbf{0},\sigma_{\alpha}^{-1}\mathbf{I})\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{u}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{u}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
+[\boldsymbol{\alpha}|\cdot] & \propto & \left[\mathbf{v}|\boldsymbol{\beta},\boldsymbol{\alpha}\right][\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{-1}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \times\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\alpha}-\mathbf{0}\right)^{\prime}\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\alpha}-\mathbf{0}\right)\right\} \\
  & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
 \end{eqnarray*}
@@ -1001,7 +1007,7 @@ where
 \end_inset
 
  and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{u}{}^{\prime}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
 \end_inset
 
 .
