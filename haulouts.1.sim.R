@@ -64,7 +64,7 @@ plot(S.poly,add=TRUE)
 
 T <- 500  # number of locations to simulate
 n <- 500  # number of wet/dry observations to simulate
-theta <- 10.0  # Dirichlet process mixture concentration parameter
+theta <- 2.0  # Dirichlet process mixture concentration parameter
 H <- 50  # maximum number of clusters for truncation approximation
 
 # Simulate haul-out sits of telemetry locations s
@@ -153,12 +153,13 @@ mu[z==0,] <- xyFromCell(S,mu[z==0,1])
 # Check true location generation
 mu.0.xy <- xyFromCell(S.tilde,ht)
 S.test <- S
-S.test[idx] <- dnorm(mu.0.xy[3,1],S.xy[,1],sigma.mu)*dnorm(mu.0.xy[3,2],S.xy[,2],sigma.mu)
+S.test[idx] <- dnorm(mu.0.xy[14,1],S.xy[,1],sigma.mu)*dnorm(mu.0.xy[14,2],S.xy[,2],sigma.mu)
 plot(S.tilde)
 plot(S.test,add=TRUE)
-points(mu.0.xy[3,1],mu.0.xy[3,2])
+points(mu.0.xy[14,1],mu.0.xy[14,2])
 points(mu,pch=19,cex=0.25)
 points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
+
 
 # Simulate observed locations
 sigma <- 5000 # Observation error
@@ -166,7 +167,7 @@ s <- mu
 s <- s+rnorm(T*2,0,sigma) # Add error to true locations
 
 # Plot true and observed locations
-plot(S.tilde)  # plot support
+plot(S.tilde,col=rgb(1,0,0))  # plot support
 plot(S,add=TRUE)
 points(mu,pch=19,cex=0.25,col=z+1) # All true locations
 points(s,col=z+1,pch=3,cex=0.5) # Observed locations
@@ -183,13 +184,13 @@ source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
 start <- list(theta=theta,ht=ht,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
 priors <- list(H=H,r=2,q=0.1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,
-	sigma.beta=1)
+	sigma.beta=10)
 tune <- list(mu.0=3500,sigma=750,sigma.mu=1500)
 # hist(rgamma(1000,2,0.1))
-# hist(rgamma(1000,5,2.5))
+# hist(rgamma(1000,50,10))
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
-	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=10000)
-
+	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=2000)
+hist(rbeta(1000,1,4))
 
 ##################################################################################
 ### Inspect model output
@@ -202,13 +203,13 @@ idx <- 1:10000
 
 # Inference on haul-out site locations (mu.0)
 tab.tmp <- table(mod$ht[,idx])
-S.post <- reclassify(S.tilde,matrix(c(0.9,1.1,0),,3))
-S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/1)
+S.post <- S.tilde-1
+S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/2)
 plot(S.post)
-points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,col=2)
+points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=1,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 350
+pt.idx <- 100
 points(xyFromCell(S.tilde,mod$ht[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=5)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)

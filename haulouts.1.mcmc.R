@@ -2,9 +2,9 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
- 	### Brian M. Brost (13 AUG 2015)
- 	### See haulouts.sim.R to simulate data according to this model specification,
- 	### and haulouts.pdf for the model description, model statement, and
+ 	### Brian M. Brost (04 SEP 2015)
+ 	### See haulouts.1.sim.R to simulate data according to this model specification,
+ 	### and haulout.dp.mixture.2.pdf for the model description, model statement, and
  	### full conditional distributions
  	###
  	
@@ -15,7 +15,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
  	### influencing wet/dry status of ancillary data y; W=basis expansion for s; 
  	### W.tilde=basis expansion for y; S.tilde=support Dirichlet process mixture 
  	### (i.e., haul-out sites); sigma.alpha=standard deviation of parameter 
- 	### model for 'random' effects
+ 	### model for 'random' effects...
  	###
   
 	t.start <- Sys.time()
@@ -32,7 +32,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	# library(mvtnorm)  # for multivariate normal density
 	# library(msm)  # for truncated normal density
   
-	get.mh.mu.0 <- function(x,mu.0,mu.0.star,S.tilde,ht,s,z,sigma,sd.tmp){
+	get.mh.mu.0 <- function(x,mu.0,mu.0.star,S.tilde,ht,s,z,sigma,sigma.z0){
 		# browser()
 		mu.0.tmp <- S.tilde[mu.0[x],3:4]
 		mu.0.tmp.star <- S.tilde[mu.0.star[x],3:4]
@@ -42,12 +42,12 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		# U.star <- U[ht.star[x],]
 		mh.star <- sum(dnorm(s[idx.1,1],mu.0.tmp.star[1],sigma,log=TRUE)+
 			dnorm(s[idx.1,2],mu.0.tmp.star[2],sigma,log=TRUE),
-			dnorm(s[idx.0,1],mu.0.tmp.star[1],sd.tmp,log=TRUE)+
-			dnorm(s[idx.0,2],mu.0.tmp.star[2],sd.tmp,log=TRUE))
+			dnorm(s[idx.0,1],mu.0.tmp.star[1],sigma.z0,log=TRUE)+
+			dnorm(s[idx.0,2],mu.0.tmp.star[2],sigma.z0,log=TRUE))
 		mh.0 <- sum(dnorm(s[idx.1,1],mu.0.tmp[1],sigma,log=TRUE)+
 			dnorm(s[idx.1,2],mu.0.tmp[2],sigma,log=TRUE),
-			dnorm(s[idx.0,1],mu.0.tmp[1],sd.tmp,log=TRUE)+
-			dnorm(s[idx.0,2],mu.0.tmp[2],sd.tmp,log=TRUE))
+			dnorm(s[idx.0,1],mu.0.tmp[1],sigma.z0,log=TRUE)+
+			dnorm(s[idx.0,2],mu.0.tmp[2],sigma.z0,log=TRUE))
 		exp(mh.star-mh.0)>runif(1)
 	}
 
@@ -60,14 +60,6 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		x
 	}
 	
-	###
-	###  Create cluster for parallel processing
-	###
-  
-	# if(is.null(n.cores)) n.cores <- detectCores() - 1
-	# if(n.cores==1) registerDoSEQ() else registerDoParallel(cores=n.cores) # multicore 	functionality	
-	# mcoptions <- list(preschedule=TRUE)
-	# cat(paste("\nUsing",n.cores,"cores for parallel processing."))
   
 	###
 	###  Setup Variables 
@@ -81,7 +73,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	v <- numeric(n+T)  # auxilliary variable for continuous haul-out process
 	X.comb <- rbind(X,X.tilde)  # combined design matrix for updates on alpha, beta
 	W.comb <- rbind(W,W.tilde)  # combined design matrix for updates on alpha, beta 
-	idx <- which(values(S.tilde)>0)
+	idx <- which(values(S.tilde)==1)
 	S.tilde <- cbind(1:length(idx),idx,xyFromCell(S.tilde,idx))
 
 
@@ -107,7 +99,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	mu.alpha <- matrix(0,qW,1)
 	Sigma.alpha <- diag(qW)*sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
-	sd.tmp <- sqrt(sigma^2+sigma.mu^2)
+	sigma.z0 <- sqrt(sigma^2+sigma.mu^2)
 
 	y1 <- which(y==1)+T
 	y0 <- which(y==0)+T
@@ -172,41 +164,43 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 # browser()			
 		# plot(S.tilde[,3:4],pch=19,cex=0.5,col="grey85")
 		# points(S.tilde[mu.0,3:4],pch=19,col=1)
-		mu.0.star <- sapply(mu.0,function(x)  # ordered same as mu.0
+		mu.0.star <- sapply(mu.0,function(x)  # proposals for mu.0	
 			sample(S.tilde[,1],1,prob=dnorm(S.tilde[x,3],S.tilde[,3],tune$mu.0)*
-			dnorm(S.tilde[x,4],S.tilde[,4],tune$mu.0)))
+			dnorm(S.tilde[x,4],S.tilde[,4],tune$mu.0)))  
 		# points(S.tilde[mu.0.star,3:4],col=rgb(1,0,0,0.25),cex=0.5,pch=19)
+		dup.idx <- which(!duplicated(mu.0.star))  # exclude duplicate proposals
 
-		mh.mu.0 <- sapply(1:m,function(x)  # proposals for mu.0	
+		mh.mu.0 <- sapply(dup.idx,function(x)  # accepted proposals
 			get.mh.mu.0(x,mu.0,mu.0.star,S.tilde,ht,s,z,sigma,sigma.mu)) 
 		keep$mu.0 <- keep$mu.0+sum(mh.mu.0)
-		mu.0[mh.mu.0] <- mu.0.star[mh.mu.0]
+		keep.idx <- dup.idx[mh.mu.0]
+		mu.0[keep.idx] <- mu.0.star[keep.idx]
 			
 		# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior, [m.0|S.tilde]
 		idx <- sample(S.tilde[-mu.0,1],H-m,replace=FALSE)  # idx of new mu.0
 		# sum(idx%in%ht)
 	    
-	    # Sample ht (cluster assignment indicator)
-		# Note: sampling order matters here
-
+	    # Sample cluster assignment indicator, ht (Note: sampling order matters here)
 		samp <- c(mu.0[ord],idx)  # sampling in order of decreasing membership
 		# sum(duplicated(samp))
-
-	   	ht <- sapply(1:T,function(x) sample(samp,1,
-			prob=pie*(dnorm(s[x,1],S.tilde[samp,3],sigma)*
-			dnorm(s[x,2],S.tilde[samp,4],sigma))^z[x]*
-			(dnorm(s[x,1],S.tilde[samp,3],sd.tmp)*
-			dnorm(s[x,2],S.tilde[samp,4],sd.tmp))^(1-z[x])))
-
+	   	# ht <- sapply(1:T,function(x) sample(samp,1,
+			# prob=pie*(dnorm(s[x,1],S.tilde[samp,3],sigma)*
+			# dnorm(s[x,2],S.tilde[samp,4],sigma))^z[x]*
+			# (dnorm(s[x,1],S.tilde[samp,3],sigma.z0)*
+			# dnorm(s[x,2],S.tilde[samp,4],sigma.z0))^(1-z[x])))
+		ht <- sapply(1:T,function(x) sample(samp,1,prob= 
+			exp(log(pie)+z[x]*(dnorm(s[x,1],S.tilde[samp,3],sigma,log=TRUE)+
+			dnorm(s[x,2],S.tilde[samp,4],sigma,log=TRUE))+	
+			(1-z[x])*(dnorm(s[x,1],S.tilde[samp,3],sigma.z0,log=TRUE)+
+			dnorm(s[x,2],S.tilde[samp,4],sigma.z0,log=TRUE)))))
+		
 		# Tabulate cluster membership with base functions
 		tab <- table(ht)  # tabulate cluster membership
 		m <- length(tab)  # number of clusters
 		ord <- order(tab,decreasing=TRUE)  # clusters ordered by membership
 		mu.0 <- as.numeric(names(tab))  # idx of occupied clusters
 		
-	    # Stick-breaking process
-		# Note: sampling order matters here	    
-
+	    # Stick-breaking process (Note: sampling order matters here)
 		tab.tmp <- c(tab[ord],rep(0,H-m-1))  # membership in decreasing order
 		eta <- c(rbeta(H-1,1+tab.tmp,theta+T-cumsum(tab.tmp)),1)  # stick-breaking weights
 	    pie <- eta*c(1,cumprod((1-eta[-H])))  # mixture component probabilities
@@ -214,8 +208,20 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    # Sample theta (concentration parameter); See Gelman section 23.3
        	theta <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
 # theta <- start$theta
-	
 
+		 # theta.star <- rnorm(1,theta,0.25)
+		    # if(theta.star>0 & theta.star<10){
+		    	# mh.star.sigma <- sum(dbeta(eta[-H],1,theta.star,log=TRUE))
+		    	# mh.0.sigma <- sum(dbeta(eta[-H],1,theta,log=TRUE))	    	
+			    # if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
+		    	    # theta <- theta.star
+					# # sigma.z0 <- sigma.z0.star
+		        	# # Sigma.inv <- solve(sigma^2*diag(2))
+			        # # keep$sigma <- keep$sigma+1
+		    	# } 
+		    # }
+
+	
 		###
 		### Updates pertaining to wet/dry status of y and z
 		###
@@ -245,9 +251,10 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		p <- pnorm(linpred[1:T,])
 		p.tmp1 <- p*dnorm(s[,1],S.tilde[ht,3],sigma,log=FALSE)*
 			dnorm(s[,2],S.tilde[ht,4],sigma,log=FALSE)
-		p.tmp2 <- (1-p)*dnorm(s[,1],S.tilde[ht,3],sd.tmp,log=FALSE)*
-			dnorm(s[,2],S.tilde[ht,4],sd.tmp,log=FALSE)
-		p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
+		p.tmp2 <- (1-p)*dnorm(s[,1],S.tilde[ht,3],sigma.z0,log=FALSE)*
+			dnorm(s[,2],S.tilde[ht,4],sigma.z0,log=FALSE)
+		# p.tmp <- p.tmp1/(p.tmp1+p.tmp2)
+		p.tmp <- exp(log(p.tmp1)-log(p.tmp1+p.tmp2))	
 		z <- rbinom(T,1,p.tmp)
 # z <- start$z
 
@@ -260,18 +267,18 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    if(sigma.star>priors$sigma.l & sigma.star<priors$sigma.u){
 			idx <- z==1
 			mu.0.tmp <- S.tilde[ht,3:4]
-	    	sd.tmp.star <- sqrt(sigma.star^2+sigma.mu^2)
+	    	sigma.z0.star <- sqrt(sigma.star^2+sigma.mu^2)
 	    	mh.star.sigma <- sum(dnorm(s[idx,1],mu.0.tmp[idx,1],sigma.star,log=TRUE)+
-		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma.star,log=TRUE))#+
-		    	sum(dnorm(s[!idx,1],mu.0.tmp[!idx,1],sd.tmp.star,log=TRUE)+
-		    	dnorm(s[!idx,2],mu.0.tmp[!idx,2],sd.tmp.star,log=TRUE))
+		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma.star,log=TRUE))+
+		    	sum(dnorm(s[!idx,1],mu.0.tmp[!idx,1],sigma.z0.star,log=TRUE)+
+		    	dnorm(s[!idx,2],mu.0.tmp[!idx,2],sigma.z0.star,log=TRUE))
 		    mh.0.sigma <- sum(dnorm(s[idx,1],mu.0.tmp[idx,1],sigma,log=TRUE)+
-		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma,log=TRUE))#+
-		    	sum(dnorm(s[!idx,1],mu.0.tmp[!idx,1],sd.tmp,log=TRUE)+
-		    	dnorm(s[!idx,2],mu.0.tmp[!idx,2],sd.tmp,log=TRUE))
+		    	dnorm(s[idx,2],mu.0.tmp[idx,2],sigma,log=TRUE))+
+		    	sum(dnorm(s[!idx,1],mu.0.tmp[!idx,1],sigma.z0,log=TRUE)+
+		    	dnorm(s[!idx,2],mu.0.tmp[!idx,2],sigma.z0,log=TRUE))
 		    if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
 	    	    sigma <- sigma.star
-				sd.tmp <- sd.tmp.star
+				sigma.z0 <- sigma.z0.star
 	        	Sigma.inv <- solve(sigma^2*diag(2))
 		        keep$sigma <- keep$sigma+1
 	    	} 
@@ -287,14 +294,14 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	    if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
 			idx <- which(z==0)
 			mu.0.tmp <- S.tilde[ht[idx],3:4]
-	    	sd.tmp.star <- sqrt(sigma^2+sigma.mu.star^2)
-		    mh.star.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sd.tmp.star,log=TRUE)+
-		    	dnorm(s[idx,2],mu.0.tmp[,2],sd.tmp.star,log=TRUE))
-		    mh.0.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sd.tmp,log=TRUE)+
-		    	dnorm(s[idx,2],mu.0.tmp[,2],sd.tmp,log=TRUE))
+	    	sigma.z0.star <- sqrt(sigma^2+sigma.mu.star^2)
+		    mh.star.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sigma.z0.star,log=TRUE)+
+		    	dnorm(s[idx,2],mu.0.tmp[,2],sigma.z0.star,log=TRUE))
+		    mh.0.sigma.mu <- sum(dnorm(s[idx,1],mu.0.tmp[,1],sigma.z0,log=TRUE)+
+		    	dnorm(s[idx,2],mu.0.tmp[,2],sigma.z0,log=TRUE))
 		    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
 	        	sigma.mu <- sigma.mu.star
-        		sd.tmp <- sd.tmp.star
+        		sigma.z0 <- sigma.z0.star
 	        	Sigma.mu.inv <- solve(sigma.mu^2*diag(2))
 		        keep$sigma.mu <- keep$sigma.mu+1
 	    	} 
@@ -324,7 +331,6 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	keep$sigma <- keep$sigma/n.mcmc
 	keep$sigma.mu <- keep$sigma.mu/n.mcmc
 	keep$mu.0 <- keep$mu.0/sum(m.save)
-
 	cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
 	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
 	cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
