@@ -528,6 +528,7 @@ where
 
  exists as a linear feature (e.g., a shoreline), this update is easiest implemente
 d using Metropolis-Hastings.
+ See haulouts.1.sim.R and haulouts.1.mcmc.R for an example.
 \end_layout
 
 \begin_layout Standard

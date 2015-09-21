@@ -126,6 +126,55 @@ height "0.5pt"
 \end_layout
 
 \begin_layout Subsubsection*
+Implementation
+\end_layout
+
+\begin_layout Standard
+The file haulout.dp.mixture.2.sim.R simulates data according to the model statement
+ presented below, and haulout.dp.mixture.2.mcmc.R contains the MCMC algorithm
+ for model fitting.
+ Dirichlet process mixture model implementation follows the blocked Gibbs
+ sampler truncation approximation of Ishwaran and James (2001) and Gelman
+ et al.
+ (2014).
+ Note that haulouts.1.mcmc.R and haulouts.2.mcmc.R, and the associated simulation
+ files (*.sim.R), implement variations of this model.
+ More specifically, haulouts.1 has the same model specification as haulout.dp.mixtu
+re.2, except that 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ is represented as a raster and can be linear in nature like a the shoreline
+ support of actual harbor seal haul-out sites.
+ Haulouts.2 expands on this variation to include a mixture normal observation
+ model to accommodate the x-shaped errors characteristic of Argos telemetry
+ data.
+ R files for haulouts.2 also include a 
+\begin_inset Quotes eld
+\end_inset
+
+script
+\begin_inset Quotes erd
+\end_inset
+
+ file for model implentation on real harbor seal data.
+ Note that the updates for 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ in haulouts.1.mcmc.R and haulouts.2.mcmc.R proceed using Metropolis-Hastings,
+ which is useful for generating proposals 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}^{*}$
+\end_inset
+
+ automatically on their support 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection*
 Description
 \end_layout
 
@@ -140,20 +189,6 @@ haulout.dp.mixture.1.mcmc.R, this version uses a probit semiparametric regressio
  based on wet/dry information in a second data set.
  As such, this model accommodates the temporal misalignment between telemetry
  data and wet/dry data (i.e., *.SEA records).
-\end_layout
-
-\begin_layout Subsubsection*
-Implementation
-\end_layout
-
-\begin_layout Standard
-The file haulout.dp.mixture.2.sim.R simulates data according to the model statement
- presented below, and haulout.dp.mixture.2.mcmc.R contains the MCMC algorithm
- for model fitting.
- Dirichlet process mixture model implementation follows the blocked Gibbs
- sampler truncation approximation of Ishwaran and James (2001) and Gelman
- et al.
- (2014).
 \end_layout
 
 \begin_layout Subsubsection*
