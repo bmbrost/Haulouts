@@ -220,8 +220,8 @@ priors <- list(H=H,r=2,q=0.1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=500
 tune <- list(mu.0=3500,sigma=750,sigma.mu=1250)
 # hist(rgamma(1000,2,0.1))
 # hist(rgamma(1000,50,10))
-out1 <- haulouts.2.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
-	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=4000)
+out1 <- haulouts.2.mcmc(s,y,X=rbind(X[s.idx,],X[-s.idx,]),W=rbind(W[s.idx,],W[-s.idx,]),
+	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=5000)
 
 
 ##################################################################################
@@ -237,7 +237,7 @@ idx <- 1:10000
 # Inference on haul-out site locations (mu.0)
 tab.tmp <- table(mod$ht[,idx])
 S.post <- S.tilde-1
-S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/1)
+S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/2)
 plot(S.post)
 points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=1,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
@@ -281,10 +281,6 @@ mean(mod$theta[idx])*log(T)
 # Modeled number of clusters
 plot(mod$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
 barplot(table(mod$m)) 
-
-# Observation error
-# hist(mod$sigma[idx],breaks=100);abline(v=sigma,col=2,lty=2)
-# mean(mod$sigma[idx])
 
 # Dispersion about haul-out for at-sea locations
 hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
