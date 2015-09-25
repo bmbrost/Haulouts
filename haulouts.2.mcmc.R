@@ -1,10 +1,9 @@
-haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
-	priors,tune,start,n.mcmc,n.cores=NULL){
+haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
  	### Brian M. Brost (04 SEP 2015)
  	### See haulouts.1.sim.R to simulate data according to this model specification,
- 	### and haulout.dp.mixture.2.pdf for the model description, model statement, and
+ 	### and haulouts.2.pdf for the model description, model statement, and
  	### full conditional distributions
  	###
  	
@@ -233,7 +232,6 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 	S.tilde[,3:4] <- (S.tilde[,3:4]-matrix(s.center,nrow=nrow(S.tilde),
 		ncol=2,byrow=TRUE))/s.scale
 	
-
 	###
 	### Starting values and priors
 	###
@@ -269,12 +267,14 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 	Sigma.beta <- diag(qX)*priors$sigma.beta^2
 	Sigma.beta.inv <- solve(Sigma.beta)
 	mu.alpha <- matrix(0,qW,1)
-	Sigma.alpha <- diag(qW)*sigma.alpha^2
+	Sigma.alpha <- diag(qW)*start$sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
 
 	# For updates of beta and alpha
+	
 	A.inv.alpha <- solve(W.cross+Sigma.alpha.inv)
 	A.inv.beta <- solve(X.cross+Sigma.beta.inv)
+
 	# A.inv <- solve(t(X)%*%X+Sigma.beta.inv)
 	# A.inv <- solve(t(W)%*%W+Sigma.alpha.inv)
 
@@ -309,7 +309,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 	alpha.save <- matrix(0,n.mcmc,qW)
 	beta.save <- matrix(0,n.mcmc,qX)
 	sigma.mu.save <- numeric(n.mcmc)  # dispersion about haul-out site
-	# sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
+	sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
 	# D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
 
 	keep <- list(mu.0=0,sigma.mu=0)
@@ -376,21 +376,30 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 		eta <- c(rbeta(H-1,1+tab.tmp,theta+T-cumsum(tab.tmp)),1)  # stick-breaking weights
 	    pie <- eta*c(1,cumprod((1-eta[-H])))  # mixture component probabilities
 
-	    # Sample theta (concentration parameter); See Gelman section 23.3
-       	theta <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
+	    # Sample theta (concentration parameter); See Gelman section 23.3, 
+	    # Ishwaran and Zarepour (2000)
+       	# theta <- rgamma(1,priors$r.theta+H-1,priors$q.theta-sum(log(1-eta[-H])))  
 # theta <- start$theta
-# theta <- 1
-		 # theta.star <- rnorm(1,theta,0.25)
-		    # if(theta.star>0 & theta.star<10){
-		    	# mh.star.sigma <- sum(dbeta(eta[-H],1,theta.star,log=TRUE))
-		    	# mh.0.sigma <- sum(dbeta(eta[-H],1,theta,log=TRUE))	    	
-			    # if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
-		    	    # theta <- theta.star
-					# # sigma.z0 <- sigma.z0.star
-		        	# # Sigma.inv <- solve(sigma^2*diag(2))
-			        # # keep$sigma <- keep$sigma+1
-		    	# } 
-		    # }
+
+		# Sample theta (concentration parameter); See Escobar and West (1995) and 
+		# West (1997?) white paper on hyperparameter estimation in DP
+		tmp <- rbeta(1,theta+1,T)
+		c <- priors$r.theta
+		d <- priors$q.theta
+		p.tmp <- (c+m-1)/(c+m-1+T*(d-log(tmp)))
+		p.tmp <- rbinom(1,1,p.tmp)
+		theta <- ifelse(p.tmp==1,rgamma(1,c+m,d-log(tmp)),rgamma(1,c+m-1,d-log(tmp)))
+
+		# Metropolis-Hastings update based on uniform prior on theta
+		# theta.star <- rnorm(1,theta,0.5)
+	    # if(theta.star>0 & theta.star<10){
+	    	# mh.star.theta <- m*log(theta.star)+lgamma(theta.star)-lgamma(theta.star+T)
+	    	# mh.0.theta <- m*log(theta)+lgamma(theta)-lgamma(theta+T)
+		    # if(exp(mh.star.theta-mh.0.theta)>runif(1)){
+	    	    # theta <- theta.star
+		        # keep$theta <- keep$theta+1
+	    	# } 
+	    # }
 
 	
 		###
@@ -459,7 +468,20 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 	    	} 
 	    }
 # sigma.mu <- start$sigma.mu
-	
+
+
+		###
+		###  Sample sigma.alpha (standard deviation of normal prior on alpha) 
+		###
+# browser()
+		r.tmp <- 1/(sum((alpha-mu.alpha)^2)/2+1/priors$r.sigma.alpha)
+		q.tmp <- qZ/2+priors$q.sigma.alpha
+		sigma2.alpha <- 1/rgamma(1,q.tmp,,r.tmp)
+		diag(Sigma.alpha) <- sigma2.alpha
+		Sigma.alpha.inv <- solve(Sigma.alpha)
+		A.inv.alpha <- solve(W.cross+Sigma.alpha.inv)
+
+			
 		###
 		###  Save samples 
 		###
@@ -468,6 +490,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 		ht.save[,k] <- S.tilde[ht,2]
 		theta.save[k] <- theta    
 		sigma.mu.save[k] <- sigma.mu
+		sigma.alpha.save[k] <- sqrt(sigma2.alpha)
 		alpha.save[k,] <- alpha
 		beta.save[k,] <- beta
 		v.save[,k] <- v
@@ -484,7 +507,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 	  
 	keep$sigma.mu <- keep$sigma.mu/n.mcmc
 	keep$mu.0 <- keep$mu.0/sum(m.save)
-	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
+	cat(paste("\n\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
 	cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
 	cat(paste("\n\nEnd time:",Sys.time()))
 	cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
@@ -492,8 +515,8 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,sigma.alpha,
 		round(difftime(t.mcmc.end,t.mcmc.start,units="secs")/n.mcmc,2)),"seconds")
 	cat(paste("\nTime per v update:",round(t.v.update/n.mcmc,2),"seconds"))
 	list(ht=ht.save,beta=beta.save,alpha=alpha.save,
-		theta=theta.save,sigma.mu=sigma.mu.save,z=z.save,v=v.save,
-	  	m=m.save,keep=keep,n.mcmc=n.mcmc)
+		theta=theta.save,sigma.mu=sigma.mu.save,sigma.alpha=sigma.alpha.save,
+		z=z.save,v=v.save,m=m.save,keep=keep,n.mcmc=n.mcmc)
 }
 
 
