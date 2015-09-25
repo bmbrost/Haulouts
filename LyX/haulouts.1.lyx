@@ -82,7 +82,7 @@ hanging
 
 \shape smallcaps
 \size larger
-Haul-out Site Estimation using a Truncation Approximation of
+Haul-out Site Estimation on Raster Support with a Continuous
 \end_layout
 
 \begin_layout Standard
@@ -98,7 +98,7 @@ Haul-out Site Estimation using a Truncation Approximation of
 
 \shape smallcaps
 \size larger
-a Dirichlet Process Mixture Model
+Time Haul-out Process
 \end_layout
 
 \begin_layout Standard
@@ -109,7 +109,7 @@ Brian M.
 
 \begin_layout Standard
 \align center
-13 August 2015
+04 September 2015
 \end_layout
 
 \begin_layout Standard
@@ -130,40 +130,13 @@ Implementation
 \end_layout
 
 \begin_layout Standard
-The file haulout.dp.mixture.2.sim.R simulates data according to the model statement
- presented below, and haulout.dp.mixture.2.mcmc.R contains the MCMC algorithm
- for model fitting.
+The file haulouts.1.sim.R simulates data according to the model statement presented
+ below, and haulouts.1.mcmc.R contains the MCMC algorithm for model fitting.
  Dirichlet process mixture model implementation follows the blocked Gibbs
  sampler truncation approximation of Ishwaran and James (2001) and Gelman
  et al.
  (2014).
- Note that haulouts.1.mcmc.R and haulouts.2.mcmc.R, and the associated simulation
- files (*.sim.R), implement variations of this model.
- More specifically, haulouts.1 has the same model specification as haulout.dp.mixtu
-re.2, except that 
-\begin_inset Formula $\tilde{{\cal S}}$
-\end_inset
-
- is represented as a raster and can be linear in nature like a the shoreline
- support of harbor seal haul-out sites.
- Haulouts.2 expands on this variation to include a mixture normal observation
- model to accommodate the x-shaped errors characteristic of Argos telemetry
- data.
- R files for haulouts.2 also include a 
-\begin_inset Quotes eld
-\end_inset
-
-script
-\begin_inset Quotes erd
-\end_inset
-
- file for model implentation on real harbor seal data.
- Note that the updates for 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
-\end_inset
-
- in haulouts.1.mcmc.R and haulouts.2.mcmc.R proceed using Metropolis-Hastings
- due to the unusual 
+ 
 \end_layout
 
 \begin_layout Subsubsection*
@@ -176,11 +149,31 @@ A Dirichlet process mixture model for haul-out site estimation.
 \begin_inset Newline newline
 \end_inset
 
-haulout.dp.mixture.1.mcmc.R, this version uses a probit semiparametric regression
- to estimate whether locations in the telemetry data set are hauled-out
- based on wet/dry information in a second data set.
- As such, this model accommodates the temporal misalignment between telemetry
- data and wet/dry data (i.e., *.SEA records).
+haulout.dp.mixture.2.mcmc.R, which has the same specification, 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ is represented as a raster in this version.
+ Consequently, 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ can be linear in nature like the shoreline support of actual harbor seal
+ haul-out sites.
+ As such, the update for 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ proceeds using Metropolis-Hastings, which is useful for generating proposals
+ 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}^{*}$
+\end_inset
+
+ automatically on their support 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsubsection*
@@ -370,11 +363,12 @@ y\left(\tilde{t}\right) & \sim & \begin{cases}
 h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}}\right)\\
 \pi_{h} & \sim & \text{Stick}(\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
-\theta & \sim & \text{Gamma}(r,q)\\
+\theta & \sim & \text{Gamma}(r_{\theta},q_{\theta})\\
 \boldsymbol{\beta} & \sim & {\cal N}(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I})\\
 \boldsymbol{\alpha} & \sim & {\cal N}(\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\\
 \sigma & \sim & \text{Unif}(l_{\sigma},u_{\sigma})\\
-\sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})
+\sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})\\
+\sigma_{\alpha}^{2} & \sim & \text{IG}(r_{\sigma},q_{\sigma})
 \end{eqnarray*}
 
 \end_inset
@@ -465,35 +459,21 @@ Haul-out site locations (
 \begin_inset Formula 
 \begin{eqnarray*}
 [\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z(t)}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z(t)}[\boldsymbol{\mu}_{0,h}\mid\tilde{{\cal S}}]\\
- & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})^{z(t)}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z(t)}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)\right\} ^{z(t)}\\
- &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}(t)-\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z(t)}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\mathbf{s}(t)-2\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{z(t)}\times\\
- &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\mathbf{s}(t)-2\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}+\boldsymbol{\mu}_{0,h}^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z(t)}\\
- &  & \qquad\times1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(-2\left(\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=1\}}+\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=0\}}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
- &  & \qquad\left.\left.\boldsymbol{\mu}_{0,h}^{\prime}\left(\left(\sigma^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=1\}}+\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}1_{\{z(t)=0\}}\right)\boldsymbol{\mu}_{0,h}\right)\right\} 1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\sum_{\{t:h_{t}=h,z(t)=1\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+\sum_{\{t:h_{t}=h,z(t)=0\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}+\right.\right.\\
- &  & \qquad\left.\left.\boldsymbol{\mu}_{0,h}^{\prime}\left(n_{h,1}\left(\sigma^{2}\mathbf{I}\right)^{-1}+n_{h,0}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\mu}_{0,h}\right)\right\} 1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
- & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})1_{\{\boldsymbol{\mu}_{t}\in{\cal S}\}}
+ & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})^{z(t)}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z(t)}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}
 \end{eqnarray*}
 
 \end_inset
 
-where 
-\begin_inset Formula $\mathbf{A}=n_{h,1}\left(\sigma^{2}\mathbf{I}\right)^{-1}+n_{h,0}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
+The update for 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
 \end_inset
 
- and 
-\begin_inset Formula $\mathbf{b}^{\prime}=\sum_{\{t:h_{t}=h,z(t)=1\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}+$
+ proceeds using Metropolis-Hastings and proposals are sampled from 
+\begin_inset Formula $\tilde{{\cal S}}$
 \end_inset
 
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula $\sum_{\{t:h_{t}=h,z(t)=0\}}\mathbf{s}(t)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}$
+ with probability proportional to the proposal distribution, e.g., 
+\begin_inset Formula ${\cal N}(\boldsymbol{\mu}_{0,h}^{\star}|\boldsymbol{\mu}_{0,h},\sigma_{tune}^{2}\mathbf{I})$
 \end_inset
 
 .
@@ -505,43 +485,6 @@ where
 \begin_inset Formula $\boldsymbol{\mu}_{0,h}$
 \end_inset
 
-, 
-\begin_inset Formula $n_{h,1}$
-\end_inset
-
- is the number of members in cluster 
-\begin_inset Formula $h$
-\end_inset
-
- where 
-\begin_inset Formula $z(t)=1$
-\end_inset
-
-, and 
-\begin_inset Formula $n_{h,0}$
-\end_inset
-
- is the number of members in cluster 
-\begin_inset Formula $h$
-\end_inset
-
- where 
-\begin_inset Formula $z(t)=0$
-\end_inset
-
-.
- Proposed values for 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
-\end_inset
-
- not in 
-\begin_inset Formula $\tilde{{\cal S}}$
-\end_inset
-
- are rejected, i.e., 
-\begin_inset Formula $[\boldsymbol{\mu}_{0,h}|\cdot]={\cal TN}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1})_{\tilde{{\cal S}}}$
-\end_inset
-
 .
  For each of the unoccupied haul-out locations (i.e., clusters with no members),
  
@@ -549,13 +492,7 @@ where
 \end_inset
 
  is sampled directly from the prior.
- When the support of 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
-\end_inset
-
- exists as a linear feature (e.g., a shoreline), this update is easiest implemente
-d using Metropolis-Hastings.
- See haulouts.1.sim.R and haulouts.1.mcmc.R for an example.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -764,13 +701,19 @@ Dirichlet process concentration parameter (
 \noindent
 \begin_inset Formula 
 \begin{eqnarray*}
-[\theta|\cdot] & \propto & \text{Gamma}(r+H-1,q-\sum_{h=1}^{H-1}\log(1-v_{h})).
+[\theta|\cdot] & \propto & \text{Gamma}(r_{\theta}+H-1,q_{\theta}-\sum_{h=1}^{H-1}\log(1-v_{h})).
 \end{eqnarray*}
 
 \end_inset
 
 See page 553 in Gelman et al.
  (2014).
+ Also see Escobar and West (1995) and West (1997?, white paper) for alternative
+ full-conditionals for 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1139,8 +1082,65 @@ The update for
 .
 \end_layout
 
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+Variance of random effects (
+\begin_inset Formula $\sigma_{\alpha}^{2}$
+\end_inset
+
+):
+\emph default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+[\sigma_{\alpha}^{2}|\cdot] & \propto & [\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}][\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma}]\\
+ & \propto & {\cal N}(\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\text{IG}(\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma})\\
+ & \propto & |\sigma_{\alpha}^{2}\mathbf{\text{\textbf{I}}}|^{-1/2}\exp\left\{ -\frac{1}{2}\left((\boldsymbol{\alpha}-\mathbf{0})^{\prime}\left(\sigma_{\alpha}^{2}\text{\textbf{I}}\right)^{-1}(\boldsymbol{\alpha}-\mathbf{0})\right)\right\} \times\\
+ &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-M/2}\exp\left\{ -\frac{1}{2\sigma_{\alpha}^{2}}\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}\right\} \\
+ &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-(M/2+q+1)}\exp\left\{ -\frac{1}{\sigma_{\alpha}^{2}}\left(\frac{\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)\right\} \\
+ & = & \text{IG}\left(\left(\frac{\boldsymbol{\alpha}{}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)^{-1},\frac{M}{2}+q_{\sigma}\right)
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $M$
+\end_inset
+
+ is the length of 
+\begin_inset Formula $\boldsymbol{\alpha}$
+\end_inset
+
+ (or column dimension of 
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+).
+\end_layout
+
 \begin_layout Subsubsection*
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\emph default
 References
+\end_layout
+
+\begin_layout Hanging
+Escobar, M.D., and M.
+ West.
+ 1995.Bayesian density estimation and inference using mixtures.
+ Journal of the American Statistical Association, 90:577–588.
 \end_layout
 
 \begin_layout Hanging
@@ -1161,6 +1161,13 @@ Ishwaran, H., and L.F.
  2001.
  Gibbs sampling methods for stick-breaking priors.
  Journal of the American Statistical Association 96: 161--173.
+\end_layout
+
+\begin_layout Hanging
+West, M.
+ 1997.
+ Hyperparameter estimation in Dirichlet process mixture models.
+ Unpublished?
 \end_layout
 
 \end_body
