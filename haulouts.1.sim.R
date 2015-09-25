@@ -17,7 +17,7 @@ library(raster)
 # library(rgeos)
 library(MCMCpack)  # for rdirichlet(...)
 library(splines)
-
+library(DPpackage)  # for DPelicit(...)
 
 ##################################################################################
 ### Prepare spatial data for analysis
@@ -64,8 +64,16 @@ plot(S.poly,add=TRUE)
 
 T <- 500  # number of locations to simulate
 n <- 500  # number of wet/dry observations to simulate
-theta <- 2.0  # Dirichlet process mixture concentration parameter
-H <- 50  # maximum number of clusters for truncation approximation
+theta <- 0.5  # Dirichlet process mixture concentration parameter
+H <- 100  # maximum number of clusters for truncation approximation
+
+E.m <- theta*(digamma(theta+T)-digamma(theta))  # expected number of clusters
+# theta*log(1+T/theta)  # approximates the expected number of clusters
+
+theta.priors <- DPelicit(T,mean=E.m,std=5,method="JGL")$inp
+
+DPelicit(T,mean=E.m,std=5,method="JGL")
+DPelicit(T,a0=2,b0=0.5)
 
 # Simulate haul-out sits of telemetry locations s
 S.tilde.idx <- which(values(S.tilde)>0)
@@ -162,7 +170,7 @@ points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,c
 
 
 # Simulate observed locations
-sigma <- 5000 # Observation error
+sigma <- 500 # Observation error
 s <- mu
 s <- s+rnorm(T*2,0,sigma) # Add error to true locations
 
@@ -183,14 +191,21 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 source("/Users/brost/Documents/git/haulouts/haulouts.1.mcmc.R")
 start <- list(theta=theta,ht=ht,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
   sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=2,q=0.1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,
-	sigma.beta=10)
+priors <- list(H=H,r=theta.priors[1],q=theta.priors[2],
+	sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10)
 tune <- list(mu.0=3500,sigma=750,sigma.mu=1500)
-# hist(rgamma(1000,2,0.1))
+# hist(rgamma(1000,2.3,0.23))
+mean(rgamma(1000,34.7,6.4))
 # hist(rgamma(1000,50,10))
 out1 <- haulouts.1.mcmc(s,y,X[s.idx,],X[-s.idx,],W[s.idx,],W[-s.idx,],
 	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=2000)
-hist(rbeta(1000,1,4))
+
+# hist(out1$theta,breaks=100);abline(v=theta,col=2,lty=2) 
+# plot(out1$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
+# barplot(table(out1$m)) 
+# mean(out1$m)
+# sd(out1$m)
+# m
 
 ##################################################################################
 ### Inspect model output

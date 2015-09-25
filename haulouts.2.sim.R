@@ -14,9 +14,10 @@ library(rgdal)
 library(maptools)
 library(raster)
 # library(gstat)
-# library(rgeos)
+library(rgeos)
 library(MCMCpack)  # for rdirichlet(...)
 library(splines)
+library(DPpackage)
 
 get.s <- function(mu,lc,sigma,a,rho,nu){ #Simulate observed locations (s[t])
 	library(mvtnorm)
@@ -88,8 +89,12 @@ plot(S.poly,add=TRUE)
 
 T <- 500  # number of locations to simulate
 n <- 500  # number of wet/dry observations to simulate
-theta <- 2.0  # Dirichlet process mixture concentration parameter
+theta <- 0.5  # Dirichlet process mixture concentration parameter
 H <- 50  # maximum number of clusters for truncation approximation
+
+E.m <- theta*(digamma(theta+T)-digamma(theta))  # expected number of clusters
+theta.priors <- DPelicit(T,mean=E.m,std=3,method="JGL")$inp
+
 
 # Simulate haul-out sits of telemetry locations s
 S.tilde.idx <- which(values(S.tilde)>0)
@@ -213,15 +218,23 @@ points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 
 # Fit model using blocked Gibbs sampler 
 source("/Users/brost/Documents/git/haulouts/haulouts.2.mcmc.R")
-start <- list(theta=theta,ht=ht,z=z,p=p,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma=sigma,sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=2,q=0.1,sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,
-	sigma.beta=10,lc=lc,sigma=sigma,a=a,rho=rho)
-tune <- list(mu.0=3500,sigma=750,sigma.mu=1250)
-# hist(rgamma(1000,2,0.1))
+start <- list(theta=theta,ht=ht,z=z,p=p,pie=pie,beta=beta,
+  sigma=sigma,sigma.mu=sigma.mu,sigma.alpha=2)  # rdirichlet(1,rep(1/H,H))) 
+priors <- list(H=H,r.theta=theta.priors[1],q.theta=theta.priors[2],
+	r.sigma.alpha=2,q.sigma.alpha=1,sigma=sigma,a=a,rho=rho,lc=lc,
+	sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10)
+tune <- list(mu.0=3500,sigma.mu=1250)
+# hist(rgamma(1000,2,1))
 # hist(rgamma(1000,50,10))
 out1 <- haulouts.2.mcmc(s,y,X=rbind(X[s.idx,],X[-s.idx,]),W=rbind(W[s.idx,],W[-s.idx,]),
-	S.tilde,sigma.alpha=2,priors=priors,tune=tune,start=start,n.mcmc=5000)
+	S.tilde,priors=priors,tune=tune,start=start,n.mcmc=2000)
+
+hist(out1$theta,breaks=100);abline(v=theta,col=2,lty=2) 
+plot(out1$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
+barplot(table(out1$m)) 
+mean(out1$m)
+sd(out1$m)
+m
 
 
 ##################################################################################
@@ -237,7 +250,7 @@ idx <- 1:10000
 # Inference on haul-out site locations (mu.0)
 tab.tmp <- table(mod$ht[,idx])
 S.post <- S.tilde-1
-S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/2)
+S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/1)
 plot(S.post)
 points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=1,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
@@ -273,6 +286,9 @@ plot(time,trend,type="l")
 plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
 lines(alpha.hat,col=rgb(0,0,0,0.25))
 abline(h=0,col=2,lty=2)
+
+# Standard deviation of random effects (sigma.alpha)
+hist(mod$sigma.alpha[idx],breaks=100)
 
 # Concentration parameter
 hist(mod$theta[idx],breaks=100);abline(v=theta,col=2,lty=2) 
