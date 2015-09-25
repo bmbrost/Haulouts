@@ -82,7 +82,7 @@ hanging
 
 \shape smallcaps
 \size larger
-Haul-out Site Estimation using a Truncation Approximation of
+Haul-out Site Estimation with a Simple Probit Haul-out Process
 \end_layout
 
 \begin_layout Standard
@@ -90,15 +90,6 @@ Haul-out Site Estimation using a Truncation Approximation of
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-\noindent
-\align center
-
-\shape smallcaps
-\size larger
-a Dirichlet Process Mixture Model
 \end_layout
 
 \begin_layout Standard
@@ -382,7 +373,7 @@ Haul-out site locations (
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}]\\
+[\boldsymbol{\mu}_{0,h}|\cdot] & \propto & \prod_{\{t:h_{t}=h\}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}[\boldsymbol{\mu}_{0,h}\mid\tilde{{\cal S}}]\\
  & \propto & \prod_{\{t:h_{t}=h\}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
  & \propto & \prod_{\{t:h_{t}=h\}}\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{z_{t}}\\
  &  & \qquad\exp\left\{ -\frac{1}{2}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)^{\prime}\left(\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I}\right)^{-1}\left(\mathbf{s}_{t}-\boldsymbol{\mu}_{0,h}\right)\right\} ^{1-z_{t}}1_{\{\boldsymbol{\mu}_{0,h}\in\tilde{{\cal S}}\}}\\
@@ -555,7 +546,7 @@ Haul-out classification variable (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[h_{t}|\cdot] & \sim & [h_{t}\mid\pi_{h}][\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]\\
+[h_{t}|\cdot] & \sim & [\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}][h_{t}\mid\pi_{h}]\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},z_{t},\sigma^{2},\sigma_{\mu}^{2}]}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}]^{z_{t}}[\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z_{t}}}\right)\\
  & \sim & \text{Cat}\left(\frac{\pi_{h}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2})^{z_{t}}{\cal N}(\mathbf{s}_{t}|\boldsymbol{\mu}_{0,\tilde{h}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})^{1-z_{t}}}\right).
@@ -723,6 +714,13 @@ Dirichlet process concentration parameter (
 
 See page 553 in Gelman et al.
  (2014).
+ Also see Escobar and West (1995) and West (1997?, white paper) for alternative
+ full-conditionals for 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
+ 
 \emph on
 
 \begin_inset VSpace bigskip
@@ -838,7 +836,24 @@ The update for
 \end_layout
 
 \begin_layout Subsubsection*
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
 References
+\end_layout
+
+\begin_layout Hanging
+Escobar, M.D., and M.
+ West.
+ 1995.
+ Bayesian density estimation and inference using mixtures.
+ Journal of the American Statistical Association, 90:577–588.
 \end_layout
 
 \begin_layout Hanging
@@ -859,6 +874,13 @@ Ishwaran, H., and L.F.
  2001.
  Gibbs sampling methods for stick-breaking priors.
  Journal of the American Statistical Association 96: 161--173.
+\end_layout
+
+\begin_layout Hanging
+West, M.
+ 1997.
+ Hyperparameter estimation in Dirichlet process mixture models.
+ Unpublished?
 \end_layout
 
 \end_body

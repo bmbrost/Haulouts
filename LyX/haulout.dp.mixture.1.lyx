@@ -82,7 +82,7 @@ hanging
 
 \shape smallcaps
 \size larger
-Haul-out Site Estimation using a Truncation Approximation of
+Haul-out Site Estimation with a Probit Haul-out Process
 \end_layout
 
 \begin_layout Standard
@@ -90,15 +90,6 @@ Haul-out Site Estimation using a Truncation Approximation of
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-\noindent
-\align center
-
-\shape smallcaps
-\size larger
-a Dirichlet Process Mixture Model
 \end_layout
 
 \begin_layout Standard
@@ -723,6 +714,13 @@ Dirichlet process concentration parameter (
 
 See page 553 in Gelman et al.
  (2014).
+ Also see Escobar and West (1995) and West (1997?, white paper) for alternative
+ full-conditionals for 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
+ 
 \emph on
 
 \begin_inset VSpace bigskip
@@ -838,7 +836,24 @@ The update for
 \end_layout
 
 \begin_layout Subsubsection*
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
 References
+\end_layout
+
+\begin_layout Hanging
+Escobar, M.D., and M.
+ West.
+ 1995.
+ Bayesian density estimation and inference using mixtures.
+ Journal of the American Statistical Association, 90:577–588.
 \end_layout
 
 \begin_layout Hanging
@@ -859,6 +874,13 @@ Ishwaran, H., and L.F.
  2001.
  Gibbs sampling methods for stick-breaking priors.
  Journal of the American Statistical Association 96: 161--173.
+\end_layout
+
+\begin_layout Hanging
+West, M.
+ 1997.
+ Hyperparameter estimation in Dirichlet process mixture models.
+ Unpublished?
 \end_layout
 
 \end_body

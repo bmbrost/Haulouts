@@ -82,7 +82,7 @@ hanging
 
 \shape smallcaps
 \size larger
-Haul-out Site Estimation using a Truncation Approximation of
+Haul-out Site Estimation with a Continuous Time Haul-out Process
 \end_layout
 
 \begin_layout Standard
@@ -90,15 +90,6 @@ Haul-out Site Estimation using a Truncation Approximation of
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-\noindent
-\align center
-
-\shape smallcaps
-\size larger
-a Dirichlet Process Mixture Model
 \end_layout
 
 \begin_layout Standard
@@ -126,6 +117,21 @@ height "0.5pt"
 \end_layout
 
 \begin_layout Subsubsection*
+Implementation
+\end_layout
+
+\begin_layout Standard
+The file haulout.dp.mixture.2.sim.R simulates data according to the model statement
+ presented below, and haulout.dp.mixture.2.mcmc.R contains the MCMC algorithm
+ for model fitting.
+ Dirichlet process mixture model implementation follows the blocked Gibbs
+ sampler truncation approximation of Ishwaran and James (2001) and Gelman
+ et al.
+ (2014).
+ 
+\end_layout
+
+\begin_layout Subsubsection*
 Description
 \end_layout
 
@@ -140,20 +146,6 @@ haulout.dp.mixture.1.mcmc.R, this version uses a probit semiparametric regressio
  based on wet/dry information in a second data set.
  As such, this model accommodates the temporal misalignment between telemetry
  data and wet/dry data (i.e., *.SEA records).
-\end_layout
-
-\begin_layout Subsubsection*
-Implementation
-\end_layout
-
-\begin_layout Standard
-The file haulout.dp.mixture.2.sim.R simulates data according to the model statement
- presented below, and haulout.dp.mixture.2.mcmc.R contains the MCMC algorithm
- for model fitting.
- Dirichlet process mixture model implementation follows the blocked Gibbs
- sampler truncation approximation of Ishwaran and James (2001) and Gelman
- et al.
- (2014).
 \end_layout
 
 \begin_layout Subsubsection*
@@ -343,11 +335,12 @@ y\left(\tilde{t}\right) & \sim & \begin{cases}
 h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{h}}}\right)\\
 \pi_{h} & \sim & \text{Stick}(\theta)\\
 \boldsymbol{\mu}_{0,h} & \sim & \text{Unif}(\tilde{{\cal S}})\\
-\theta & \sim & \text{Gamma}(r,q)\\
+\theta & \sim & \text{Gamma}(r_{\theta},q_{\theta})\\
 \boldsymbol{\beta} & \sim & {\cal N}(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I})\\
 \boldsymbol{\alpha} & \sim & {\cal N}(\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\\
 \sigma & \sim & \text{Unif}(l_{\sigma},u_{\sigma})\\
-\sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})
+\sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})\\
+\sigma_{\alpha}^{2} & \sim & \text{IG}(r_{\sigma},q_{\sigma})
 \end{eqnarray*}
 
 \end_inset
@@ -737,13 +730,19 @@ Dirichlet process concentration parameter (
 \noindent
 \begin_inset Formula 
 \begin{eqnarray*}
-[\theta|\cdot] & \propto & \text{Gamma}(r+H-1,q-\sum_{h=1}^{H-1}\log(1-v_{h})).
+[\theta|\cdot] & \propto & \text{Gamma}(r_{\theta}+H-1,q_{\theta}-\sum_{h=1}^{H-1}\log(1-v_{h})).
 \end{eqnarray*}
 
 \end_inset
 
 See page 553 in Gelman et al.
  (2014).
+ Also see Escobar and West (1995) and West (1997?, white paper) for alternative
+ full-conditionals for 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1112,8 +1111,65 @@ The update for
 .
 \end_layout
 
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+Variance of random effects (
+\begin_inset Formula $\sigma_{\alpha}^{2}$
+\end_inset
+
+):
+\emph default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+[\sigma_{\alpha}^{2}|\cdot] & \propto & [\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}][\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma}]\\
+ & \propto & {\cal N}(\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\text{IG}(\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma})\\
+ & \propto & |\sigma_{\alpha}^{2}\mathbf{\text{\textbf{I}}}|^{-1/2}\exp\left\{ -\frac{1}{2}\left((\boldsymbol{\alpha}-\mathbf{0})^{\prime}\left(\sigma_{\alpha}^{2}\text{\textbf{I}}\right)^{-1}(\boldsymbol{\alpha}-\mathbf{0})\right)\right\} \times\\
+ &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-M/2}\exp\left\{ -\frac{1}{2\sigma_{\alpha}^{2}}\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}\right\} \\
+ &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-(M/2+q+1)}\exp\left\{ -\frac{1}{\sigma_{\alpha}^{2}}\left(\frac{\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)\right\} \\
+ & = & \text{IG}\left(\left(\frac{\boldsymbol{\alpha}{}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)^{-1},\frac{M}{2}+q_{\sigma}\right)
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $M$
+\end_inset
+
+ is the length of 
+\begin_inset Formula $\boldsymbol{\alpha}$
+\end_inset
+
+ (or column dimension of 
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+).
+\end_layout
+
 \begin_layout Subsubsection*
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\emph default
 References
+\end_layout
+
+\begin_layout Hanging
+Escobar, M.D., and M.
+ West.
+ 1995.Bayesian density estimation and inference using mixtures.
+ Journal of the American Statistical Association, 90:577–588.
 \end_layout
 
 \begin_layout Hanging
@@ -1134,6 +1190,13 @@ Ishwaran, H., and L.F.
  2001.
  Gibbs sampling methods for stick-breaking priors.
  Journal of the American Statistical Association 96: 161--173.
+\end_layout
+
+\begin_layout Hanging
+West, M.
+ 1997.
+ Hyperparameter estimation in Dirichlet process mixture models.
+ Unpublished?
 \end_layout
 
 \end_body
