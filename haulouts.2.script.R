@@ -75,6 +75,7 @@ table(dup.idx)
 # Subset seals
 cbind(table(ko$deploy.idx,ko$lc),table(ko$deploy.idx))
 apply(table(ko$deploy.idx,ko$Ptt),1,function(x) length(which(x==0)))
+cbind(table(ko$Ptt,ko$lc),table(ko$deploy.idx))
 
 # idx <- "PV95KOD09"
 idx <- "PV95KOD12"
@@ -166,6 +167,32 @@ y$dtime$hour <- y$dtime$hour-11  # convert to local time
 
 # write.csv(comb,"~/Documents/research/harbor_seals/data/SDR data_CSU_v3/sea/ko_sea.csv",row.names=FALSE)
 
+##################################################################################
+### Compare times at which Argos and Sea data were collected
+##################################################################################
+
+t.min <- sapply(1:nrow(s),function(x) which.min(abs(difftime(s$dtime[x],y$dtime))))
+hist(as.numeric(difftime(s$dtime,y$dtime[t.min],units="hours")),breaks=1000)
+
+t.tab <- sapply(1:nrow(s),function(x) sum(abs(difftime(s$dtime[x],y$dtime))<10))
+hist(t.tab,breaks=20)
+
+t.tab.idx <- sapply(1:nrow(s),function(x) which(abs(difftime(s$dtime[x],y$dtime))<10))
+t.tab <- unlist(lapply(t.tab.idx,length))
+hist(t.tab,breaks=20)
+
+t.tab.sum <- lapply(t.tab.idx,function(x) sum(y$dry[x]))
+
+hist(unlist(t.tab.sum)/t.tab,breaks=20)
+
+plot(y$dtime,y$dry,ylim=c(0,1))
+abline(v=as.numeric(s$dtime),col=2,lty=2)
+
+idx.tmp <- 1000:1100
+plot(y$dtime[idx.tmp],y$dry[idx.tmp],ylim=c(0,1))
+abline(v=as.numeric(s$dtime),col=2,lty=2)
+
+
 
 ##################################################################################
 ### Define design matrix for haul-out use covariates
@@ -199,13 +226,17 @@ summary(X)
 ### Define B-spline basis expansion over time
 ##################################################################################
 
-knots <- seq(min(X[,3]),max(X[,3]),by=1/(X.scale[2]*12))  # knots at 2-hour intervals
-knots <- knots[-c(1,length(knots))]  # remove knots at boudnaries
-summary((knots-X.mid[2])/X.scale[2])
+# Knots defined over time interval in which s and y occur
+knots <- seq.POSIXt(min(s$dtime,y$dtime),max(s$dtime,y$dtime),by=60*60*2)  # 2-hour intervals
 
-W <- bs(X[,3],knots=knots,degree=3,intercept=FALSE)  # cubic spline
+# knots <- seq(min(X[,3]),max(X[,3]),by=1/(X.scale[2]*12))  # knots at 2-hour intervals
+knots <- knots[-c(1,length(knots))]  # remove knots at boudnaries
+
+W <- bs(c(s$dtime,y$dtime),knots=knots,degree=3,,intercept=FALSE)  # cubic spline
+
 matplot(W[1:nrow(s),],type="l",col=2,lty=1)
 matplot(W[(nrow(s)+1):nrow(W),],type="l",col=2,lty=1)
+# matplot(W[,],type="l",col=2,lty=1)
 
 
 ##################################################################################
@@ -247,25 +278,36 @@ a <- c(0.69,0.42,0.64,0.50,0.90,0.74)
 rho <- c(0.85,0.73,0.40,0.16,0.21,0.30)
 H <- 20
 pie <- rdirichlet(1,rep(1/H,H))
-beta <- c(-1.5,0.1,0.25)
+beta <- c(-2.0,0.1,0.25)
 
 
 ##################################################################################
 ### Fit model
 ##################################################################################
 
+theta.priors <- DPelicit(T,mean=3,std=3,method="JGL")$inp
+
 # Fit model using blocked Gibbs sampler 
-start <- list(theta=theta,ht=ht,z=z,#h=fitted(kmeans(s,rpois(1,10))),
-  sigma.mu=sigma.mu,pie=pie,beta=beta)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r=2,q=0.1,sigma.mu.l=0,sigma.mu.u=10000,
-	sigma.beta=10,lc=s$lc,sigma=sigma,a=a,rho=rho)
+start <- list(theta=theta,ht=ht,z=z,pie=pie,beta=beta, 
+  sigma.mu=sigma.mu,sigma.alpha=5)  # rdirichlet(1,rep(1/H,H))) 
+priors <- list(H=H,r.theta=theta.priors[1],q.theta=theta.priors[2],
+	r.sigma.alpha=2,q.sigma.alpha=1,sigma=sigma,a=a,rho=rho,lc=lc,
+	sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10)
 tune <- list(mu.0=3500,sigma.mu=500)
-# hist(rgamma(1000,2,0.1))
+# hist(rgamma(1000,2,4))
 # hist(rgamma(1000,50,10))
 source("/Users/brost/Documents/git/haulouts/haulouts.2.mcmc.R")
-out1 <- haulouts.2.mcmc(s@coords,y$dry,X,W,S.tilde,sigma.alpha=5,
-	priors=priors,tune=tune,start=start,n.mcmc=2000)
+out1 <- haulouts.2.mcmc(s@coords,y$dry,X,W,S.tilde,
+	priors=priors,tune=tune,start=start,n.mcmc=1000)
 
+hist(out1$theta,breaks=100);abline(v=theta,col=2,lty=2) 
+plot(out1$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
+barplot(table(out1$m)) 
+mean(out1$m)
+sd(out1$m)
+m
+
+theta*(digamma(theta+T)-digamma(theta))  # expected number of clusters
 
 ##################################################################################
 ### Inspect model output
@@ -280,12 +322,12 @@ idx <- 1:10000
 # Inference on haul-out site locations (mu.0)
 tab.tmp <- table(mod$ht[,idx])
 S.post <- S.tilde-1
-S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/2)
+S.post[as.numeric(names(tab.tmp))] <- (tab.tmp/max(tab.tmp))^(1/1)
 plot(S.post)
 points(s,pch=19,cex=0.1,col=3)
 plot(S.post,add=TRUE)
 
-pt.idx <- 1
+pt.idx <- 59
 points(xyFromCell(S.tilde,mod$ht[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
 table(mod$z[pt.idx,idx])
@@ -313,7 +355,7 @@ hist(mod$theta[idx],breaks=100)
 mean(mod$theta[idx])*log(T)
 
 # Modeled number of clusters
-plot(mod$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
+plot(mod$m,type="l")
 barplot(table(mod$m)) 
 
 # Dispersion about haul-out for at-sea locations
@@ -324,8 +366,6 @@ mean(mod$sigma.mu[idx])
 # Note: estimation of z (z.hat) is based on covariates and location of telemetry 
 # observations, whereas u is based on covariates alone.
 z.hat <- apply(mod$z[,idx],1,sum)/(length(idx))
-boxplot(z.hat~z,ylim=c(0,1))
-
 v <- apply(mod$beta[idx,],1,function(x) X[1:T,]%*%x)+
 	apply(mod$alpha[idx,],1,function(x) W[1:T,]%*%x)
 v.inv <- matrix(pnorm(v),,T,byrow=TRUE)
@@ -335,6 +375,52 @@ plot(v.inv.mean,pch=19,col=rgb(0,0,0,0.25),ylim=c(0,1))
 segments(1:T,v.inv.quant[,1],1:T,v.inv.quant[,2],col=rgb(0,0,0,0.15))
 abline(h=0.5,col=2,lty=2)
 points(z.hat,pch=19,cex=0.25)
+
+
+t.min <- sapply(1:nrow(s),function(x) which.min(abs(difftime(s$dtime[x],y$dtime))))
+hist(as.numeric(difftime(s$dtime,y$dtime[t.min],units="hours")))
+data.frame(s$dtime,y$dtime[t.min])
+
+which.max(difftime(s$dtime,y$dtime[t.min],units="hours"))
+
+difftime(s$dtime[200],y$dtime[t.min[200]],units="hours")
+
+idx.tmp <- 300:500
+plot(y$dtime[idx.tmp],y$dry[idx.tmp],ylim=c(0,1))
+abline(v=as.numeric(s$dtime[59]),col=2,lty=2)
+abline(v=as.numeric(s$dtime),col=2,lty=2)
+points(s$dtime,z.hat,pch=19,cex=0.5)
+
+points(seq.POSIXt(min(s$dtime,y$dtime),max(s$dtime,y$dtime),by=60*60*2),alpha.hat[-1]/(max(abs(alpha.hat[-1]))*2)+0.5,lty=1,pch=19,col="gray50")
+
+points(seq.POSIXt(min(s$dtime,y$dtime),max(s$dtime,y$dtime),by=60*60*2),alpha.hat[-1]/(max(abs(alpha.hat[-1]))*2)+0.5,lty=1,pch=19,col="gray50")
+
+ncol(W)
+W%*%alpha.hat
+
+points(attr(W,"knots"),alpha.hat)
+points(attr(W,"knots"),rep(0.5,ncol(W)-3))
+
+ncol(mod$alpha)
+length(alpha.hat)
+length(seq.POSIXt(min(s$dtime,y$dtime),max(s$dtime,y$dtime),by=60*60*2)[1])
+attr(W,"Boundary.knots")
+attr(W,"knots")
+ncol(W)
+
+alpha.hat
+points(as.numeric(s$dtime[20]),0.5,pch=19,cex=1,col=3)
+
+
+T
+
+
+
+
+
+
+
+
 
 # Inference for y
 v.tilde.inv <- matrix(pnorm(mod$v[-(1:T),idx]),,nrow(y),byrow=TRUE)
