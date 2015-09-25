@@ -4,7 +4,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
  	###
  	### Brian M. Brost (04 SEP 2015)
  	### See haulouts.1.sim.R to simulate data according to this model specification,
- 	### and haulout.dp.mixture.2.pdf for the model description, model statement, and
+ 	### and haulouts.1.pdf for the model description, model statement, and
  	### full conditional distributions
  	###
  	
@@ -137,7 +137,7 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	# sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of parameter model
 	D.bar.save <- numeric(n.mcmc)  # D.bar for DIC calculation
 
-	keep <- list(mu.0=0,sigma=0,sigma.mu=0)
+	keep <- list(mu.0=0,sigma=0,sigma.mu=0,theta=0)
     
 	###
 	### Begin MCMC loop
@@ -205,21 +205,30 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 		eta <- c(rbeta(H-1,1+tab.tmp,theta+T-cumsum(tab.tmp)),1)  # stick-breaking weights
 	    pie <- eta*c(1,cumprod((1-eta[-H])))  # mixture component probabilities
 
-	    # Sample theta (concentration parameter); See Gelman section 23.3
-       	theta <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
+	    # Sample theta (concentration parameter); See Gelman section 23.3, 
+	    # Ishwaran and Zarepour (2000)
+       	# theta <- rgamma(1,priors$r+H-1,priors$q-sum(log(1-eta[-H])))  
 # theta <- start$theta
 
-		 # theta.star <- rnorm(1,theta,0.25)
-		    # if(theta.star>0 & theta.star<10){
-		    	# mh.star.sigma <- sum(dbeta(eta[-H],1,theta.star,log=TRUE))
-		    	# mh.0.sigma <- sum(dbeta(eta[-H],1,theta,log=TRUE))	    	
-			    # if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
-		    	    # theta <- theta.star
-					# # sigma.z0 <- sigma.z0.star
-		        	# # Sigma.inv <- solve(sigma^2*diag(2))
-			        # # keep$sigma <- keep$sigma+1
-		    	# } 
-		    # }
+		# Sample theta (concentration parameter); See Escobar and West (1995) and 
+		# West (1997?) white paper on hyperparameter estimation in DP
+		tmp <- rbeta(1,theta+1,T)
+		c <- priors$r
+		d <- priors$q
+		p.tmp <- (c+m-1)/(c+m-1+T*(d-log(tmp)))
+		p.tmp <- rbinom(1,1,p.tmp)
+		theta <- ifelse(p.tmp==1,rgamma(1,c+m,d-log(tmp)),rgamma(1,c+m-1,d-log(tmp)))
+
+		# Metropolis-Hastings update based on uniform prior on theta
+		# theta.star <- rnorm(1,theta,0.5)
+	    # if(theta.star>0 & theta.star<10){
+	    	# mh.star.theta <- m*log(theta.star)+lgamma(theta.star)-lgamma(theta.star+T)
+	    	# mh.0.theta <- m*log(theta)+lgamma(theta)-lgamma(theta+T)
+		    # if(exp(mh.star.theta-mh.0.theta)>runif(1)){
+	    	    # theta <- theta.star
+		        # keep$theta <- keep$theta+1
+	    	# } 
+	    # }
 
 	
 		###
@@ -334,6 +343,8 @@ haulouts.1.mcmc <- function(s,y,X,X.tilde,W,W.tilde,S.tilde,sigma.alpha,
 	cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
 	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
 	cat(paste("\nmu.0 acceptance rate:",round(keep$mu.0,2))) 
+cat(paste("\ntheta acceptance rate:",round(keep$theta/n.mcmc,2))) 
+
 	cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
 	list(ht=ht.save,beta=beta.save,alpha=alpha.save,
 		theta=theta.save,sigma=sigma.save,sigma.mu=sigma.mu.save,z=z.save,v=v.save,
