@@ -117,6 +117,64 @@ height "0.5pt"
 \end_layout
 
 \begin_layout Subsubsection*
+Description
+\end_layout
+
+\begin_layout Standard
+A Dirichlet process mixture model for haul-out site estimation on an irregular,
+ rasterized support (like the support of real harbor seal haul-out sites).
+ Features of this model include:
+\end_layout
+
+\begin_layout Enumerate
+An auxiliary variable to model a continuous haul-out process via a secondary
+ wet/dry data source.
+\end_layout
+
+\begin_layout Enumerate
+A mixture normal observation model to accommodate Argos satellite telemetry
+ errors.
+ Estimation of measurement error parameters in the observation model is
+ not a component of this model; rather, empircal Bayes based on parameter
+ estimates from Brost et al.
+ (2015) is used.
+ This feature differentiates the model presented here from the one implemented
+ in haulouts.1.mcmc.R, which otherwise has the same specification.
+\end_layout
+
+\begin_layout Enumerate
+Haulouts.2.script.R, a script file for model implementation on real harbor
+ seal data.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ is represented as a raster; consequently, 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+ can be linear in nature like the shoreline support of actual harbor seal
+ haul-out sites.
+ The update for 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ proceeds using Metropolis-Hastings, which is useful for generating proposals
+ 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}^{*}$
+\end_inset
+
+ automatically on their support 
+\begin_inset Formula $\tilde{{\cal S}}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsubsection*
 Implementation
 \end_layout
 
@@ -131,24 +189,6 @@ and haulouts.2.mcmc.R contains the MCMC algorithm for model fitting.
  sampler truncation approximation of Ishwaran and James (2001) and Gelman
  et al.
  (2014).
- 
-\end_layout
-
-\begin_layout Subsubsection*
-Description
-\end_layout
-
-\begin_layout Standard
-A Dirichlet process mixture model for haul-out site estimation.
- Unlike the model implemented in 
-\begin_inset Newline newline
-\end_inset
-
-haulouts.1.mcmc.R, this version incorporates a normal mixture observation model
- to accommodate the x-shaped errors characteristic of Argos satellite telemetry
- data.
- This version also includes haulouts.2.script.R, a script file for model implementa
-tion on real harbor seal data.
  
 \end_layout
 
@@ -314,7 +354,7 @@ Information pertaining to the wet/dry status of the individual is available
 \end_inset
 
 .
- The auxilliary variable 
+ The auxiliary variable 
 \begin_inset Formula $\mathbf{v}$
 \end_inset
 
@@ -356,9 +396,8 @@ h_{t} & \sim & \text{Cat}\left(\frac{\pi_{h}}{\sum_{\tilde{h}=1}^{H}\pi_{\tilde{
 \theta & \sim & \text{Gamma}(r_{\theta},q_{\theta})\\
 \boldsymbol{\beta} & \sim & {\cal N}(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I})\\
 \boldsymbol{\alpha} & \sim & {\cal N}(\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\\
-\sigma & \sim & \text{Unif}(l_{\sigma},u_{\sigma})\\
 \sigma_{\mu} & \sim & \text{Unif}(l_{\sigma_{\mu}},u_{\sigma_{\mu}})\\
-\sigma_{\alpha}^{2} & \sim & \text{IG}(r_{\sigma},q_{\sigma})
+\sigma_{\alpha}^{2} & \sim & \text{IG}(r_{\sigma_{\alpha}},q_{\sigma_{\alpha}})
 \end{eqnarray*}
 
 \end_inset
@@ -1034,42 +1073,6 @@ where
 \noindent
 
 \emph on
-Error in the observation process (
-\begin_inset Formula $\sigma$
-\end_inset
-
-):
-\emph default
-
-\begin_inset Formula 
-\begin{eqnarray*}
-[\sigma|\cdot] & \propto & \prod_{t}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}]^{z(t)}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}]^{1-z(t)}[\sigma]\\
- & \propto & \prod_{t}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I})^{z(t)}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2})^{1-z(t)}
-\end{eqnarray*}
-
-\end_inset
-
-The update for 
-\begin_inset Formula $\sigma$
-\end_inset
-
- proceeds using Metropolis-Hastings.
-\end_layout
-
-\begin_layout Standard
-\noindent
-
-\emph on
-\begin_inset VSpace bigskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\noindent
-
-\emph on
 Homerange dispersion parameter (
 \begin_inset Formula $\sigma_{\mu}$
 \end_inset
@@ -1079,8 +1082,8 @@ Homerange dispersion parameter (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\sigma_{\mu}|\cdot] & \propto & \prod_{\{t:z(t)=0\}}[\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2},\sigma_{\mu}^{2}][\sigma_{\mu}]\\
- & \propto & \prod_{\{t:z(t)=0\}}{\cal N}(\mathbf{s}(t)|\boldsymbol{\mu}_{0,h_{t}},\sigma^{2}\mathbf{I}+\sigma_{\mu}^{2}\mathbf{I})
+[\sigma_{\mu}|\cdot] & \propto & \prod_{\{t:z(t)=0\}}\left[\mathbf{s}(t)\mid\boldsymbol{\mu}_{0,h_{t}},z(t),\boldsymbol{\Sigma},\boldsymbol{\widetilde{\Sigma}},\sigma_{\mu}^{2}\right][\sigma_{\mu}]\\
+ & \propto & \prod_{\{t:z(t)=0\}}0.5\times\left({\cal N}\left(\mathbf{s}(t)\mid\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}\right)+{\cal N}\left(\mathbf{s}(t)\mid\boldsymbol{\mu}_{0,h_{t}},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}\right)\right)
 \end{eqnarray*}
 
 \end_inset
@@ -1099,6 +1102,7 @@ The update for
 \end_inset
 
 .
+ 
 \end_layout
 
 \begin_layout Standard
@@ -1117,14 +1121,12 @@ Variance of random effects (
 
 \begin_inset Formula 
 \begin{eqnarray*}
-[\sigma_{\alpha}^{2}|\cdot] & \propto & [\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}][\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma}]\\
- & \propto & {\cal N}(\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\text{IG}(\sigma_{\alpha}^{2}\mid r_{\sigma},q_{\sigma})\\
- & \propto & |\sigma_{\alpha}^{2}\mathbf{\text{\textbf{I}}}|^{-1/2}\exp\left\{ -\frac{1}{2}\left((\boldsymbol{\alpha}-\mathbf{0})^{\prime}\left(\sigma_{\alpha}^{2}\text{\textbf{I}}\right)^{-1}(\boldsymbol{\alpha}-\mathbf{0})\right)\right\} \times\\
- &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
- & \propto & \left(\sigma_{\alpha}^{2}\right)^{-M/2}\exp\left\{ -\frac{1}{2\sigma_{\alpha}^{2}}\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}\right\} \\
- &  & \qquad\left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma}+1)}\exp\left\{ -\frac{1}{r_{\sigma}\sigma_{\alpha}^{2}}\right\} \\
- & \propto & \left(\sigma_{\alpha}^{2}\right)^{-(M/2+q+1)}\exp\left\{ -\frac{1}{\sigma_{\alpha}^{2}}\left(\frac{\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)\right\} \\
- & = & \text{IG}\left(\left(\frac{\boldsymbol{\alpha}{}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma}}\right)^{-1},\frac{M}{2}+q_{\sigma}\right)
+[\sigma_{\alpha}^{2}|\cdot] & \propto & [\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}][\sigma_{\alpha}^{2}\mid r_{\sigma_{\alpha}},q_{\sigma_{\alpha}}]\\
+ & \propto & {\cal N}(\boldsymbol{\alpha}|\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\text{IG}(\sigma_{\alpha}^{2}\mid r_{\sigma_{\alpha}},q_{\sigma_{\alpha}})\\
+ & \propto & |\sigma_{\alpha}^{2}\mathbf{\text{\textbf{I}}}|^{-1/2}\exp\left\{ -\frac{1}{2}\left((\boldsymbol{\alpha}-\mathbf{0})^{\prime}\left(\sigma_{\alpha}^{2}\text{\textbf{I}}\right)^{-1}(\boldsymbol{\alpha}-\mathbf{0})\right)\right\} \left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma_{\alpha}}+1)}\exp\left\{ -\frac{1}{r_{\sigma_{\alpha}}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-M/2}\exp\left\{ -\frac{1}{2\sigma_{\alpha}^{2}}\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}\right\} \left(\sigma_{\alpha}^{2}\right)^{-(q_{\sigma_{\alpha}}+1)}\exp\left\{ -\frac{1}{r_{\sigma_{\alpha}}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-(M/2+q_{\sigma_{\alpha}}+1)}\exp\left\{ -\frac{1}{\sigma_{\alpha}^{2}}\left(\frac{\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma_{\alpha}}}\right)\right\} \\
+ & = & \text{IG}\left(\left(\frac{\boldsymbol{\alpha}{}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\sigma_{\alpha}}}\right)^{-1},\frac{M}{2}+q_{\sigma_{\alpha}}\right)
 \end{eqnarray*}
 
 \end_inset
