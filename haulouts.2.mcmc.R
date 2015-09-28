@@ -41,11 +41,11 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NUL
 		x
 	}
 
-	# get.det <- function(X){
+	# get.det <- function(X){  # Calculate determinant of 2 x 2 matrix
 		# X[1,1]*X[2,2]-X[1,2]*X[2,1]
 	# }
 
-	# get.inv <- function(X,det){
+	# get.inv <- function(X,det){  # Calculate inverse of 2 x 2 matrix
 		# det <- X[1,1]*X[2,2]-X[1,2]*X[2,1]
 		# inv <- (1/det)*matrix(c(X[2,2],-X[2,1],-X[1,2],X[1,1]),2)		
 		# list(inv=inv,det=det)
@@ -96,7 +96,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NUL
 	}
 
 	get.mh.mu <- function(x,mu.0,mu.0.star,S,ht,s,lc,z,Sigma,Sigma.z0,K=K){
-		# browser()
+		# Assuming mixture normal distribution
 		mu <- S[mu.0[x],3:4]
 		mu.star <- S[mu.0.star[x],3:4]
 		idx.0 <- which(ht==mu.0[x]&z==0)
@@ -113,7 +113,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NUL
 	}
 	
 	get.ht <- function(x,y,z,lc,Sigma,Sigma.z0,const=FALSE,K=K){
-	 	#Calculate log density of mixture normal distribution (Eq. 1)
+	 	# Assuming mixture normal observation model
 		# browser()	
 		if(z==1) P <- Sigma$P[[lc]]  # precision matrix if z==1
 		if(z==0) P <- Sigma.z0$P[[lc]]  # precision matrix if z==0
@@ -175,7 +175,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NUL
 # gamma((100+2)/2)/(gamma(100/2)*100*pi)
   
 	get.mh.mu <- function(x,mu.0,mu.0.star,S,ht,s,lc,z,Sigma,Sigma.z0){
-		# browser()
+		# Assuming mixture t observation model
 		mu <- S[mu.0[x],3:4]
 		mu.star <- S[mu.0.star[x],3:4]
 		idx.0 <- which(ht==mu.0[x]&z==0)
@@ -192,7 +192,7 @@ haulouts.2.mcmc <- function(s,y,X,W,S.tilde,priors,tune,start,n.mcmc,n.cores=NUL
 	}
 
 	get.ht <- function(x,y,z,lc,Sigma,Sigma.z0,nu=100,K=matrix(c(-1,0,0,1),2)){
-	 	#Calculate log density of mixture normal distribution (Eq. 1)
+	 	# Assuming mixture t observation model
 		# browser()	
 		if(z==1) P <- Sigma$P[[lc]]  # precision matrix if z==1
 		if(z==0) P <- Sigma.z0$P[[lc]]  # precision matrix if z==0
