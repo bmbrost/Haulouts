@@ -83,6 +83,30 @@ plot(S.poly,add=TRUE)
 
 
 ##################################################################################
+### Simulate resource surface for haul-out RSF
+##################################################################################
+
+S.tilde.idx <- which(values(S.tilde)>0)
+S.tilde.xy <- xyFromCell(S.tilde,S.tilde.idx)
+
+U <- cbind(1,sqrt((S.tilde.xy[,1]-70000)^2+(S.tilde.xy[,2]-832000)^2))
+qU <- ncol(U)
+
+U.mean <- c(0,apply(U,2,mean)[-1])
+U.sd <- c(1,apply(U,2,sd)[-1])
+U.scale <- t(apply(U,1,function(x) (x-U.mean)/U.sd))
+
+gamma <- c(1,-9000)  # coefficients on unstandarized U
+
+# Examine RSF surface
+selection <- exp(U.scale%*%(gamma/U.sd))  # RSF
+S.tilde.rsf <- S.tilde
+S.tilde.rsf[S.tilde.idx] <- selection
+plot(S.tilde.rsf)
+plot(U[,-1],selection,type="p")
+
+
+##################################################################################
 ### Simulate haul-out sites and assignments using a stick-breaking process
 ### See Ishwaran and James (2001), Gelman et al. (2014), Section 23.2
 ##################################################################################
@@ -95,10 +119,9 @@ H <- 50  # maximum number of clusters for truncation approximation
 E.m <- theta*(digamma(theta+T)-digamma(theta))  # expected number of clusters
 theta.priors <- DPelicit(T,mean=E.m,std=3,method="JGL")$inp
 
-
 # Simulate haul-out sits of telemetry locations s
 S.tilde.idx <- which(values(S.tilde)>0)
-mu.0 <- sample(S.tilde.idx,H)  # clusters randomly drawn from S.tilde
+mu.0 <- sample(S.tilde.idx,H,prob=selection)  # clusters randomly drawn from S.tilde
 plot(S.tilde)
 points(xyFromCell(S.tilde,mu.0),col=2,pch=19,cex=0.25)  # plot cluster locations
 eta <- c(rbeta(H-1,1,theta),1)  # stick-breaking weights
@@ -196,9 +219,7 @@ points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=19,cex=tab/max(tab)+0.25,c
 sigma <- c(2291,2727,13252)  # standard deviation of error along x-axis 
 # nu <- c(16.74,1.60,1.00)  # degrees of freedom for mixture t distribution
 a <- c(0.70,0.50,0.75)  # modifies sd for error along y-axis
-# a <- rep(1,3)
 rho <- c(0.85,0.16,0.30)  # rotation in mixture components
-# rho <- rep(0,3)
 lc <- sample(1:3,T,replace=TRUE)  # location classes
 s <- get.s(mu,lc,sigma,a,rho,nu)  # observed locations
 
@@ -212,29 +233,21 @@ segments(s[,1],s[,2],mu[,1],mu[,2],col="grey50") # Connections between s and mu
 points(mu[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 
 
+
 ##################################################################################
 ### Fit models
 ##################################################################################
 
 # Fit model using blocked Gibbs sampler 
-source("/Users/brost/Documents/git/haulouts/haulouts.2.mcmc.R")
-start <- list(theta=theta,ht=ht,z=z,p=p,pie=pie,beta=beta,
-  sigma=sigma,sigma.mu=sigma.mu,sigma.alpha=2)  # rdirichlet(1,rep(1/H,H))) 
-priors <- list(H=H,r.theta=theta.priors[1],q.theta=theta.priors[2],
-	r.sigma.alpha=2,q.sigma.alpha=1,sigma=sigma,a=a,rho=rho,lc=lc,
-	sigma.l=0,sigma.u=10000,sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10)
-tune <- list(mu.0=3500,sigma.mu=1250)
-# hist(rgamma(1000,2,1))
-# hist(rgamma(1000,50,10))
-out1 <- haulouts.2.mcmc(s,y,X=rbind(X[s.idx,],X[-s.idx,]),W=rbind(W[s.idx,],W[-s.idx,]),
-	S.tilde,priors=priors,tune=tune,start=start,n.mcmc=2000)
-
-hist(out1$theta,breaks=100);abline(v=theta,col=2,lty=2) 
-plot(out1$m,type="l");abline(h=m,col=2,lty=2)  # true number of clusters  
-barplot(table(out1$m)) 
-mean(out1$m)
-sd(out1$m)
-m
+start <- list(theta=theta,ht=ht,z=z,pie=pie,beta=beta,gamma=gamma/U.sd,
+	sigma=sigma,sigma.mu=sigma.mu,sigma.alpha=2) 
+priors <- list(sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10,sigma.gamma=10,
+	H=H,r.theta=theta.priors[1],q.theta=theta.priors[2],r.sigma.alpha=2,q.sigma.alpha=1,
+	sigma=sigma,a=a,rho=rho,lc=lc)  # observation model parameters; empirical Bayes
+tune <- list(mu.0=2000,sigma.mu=1250,gamma=2.0)
+source("/Users/brost/Documents/git/haulouts/haulouts.3.mcmc.R")
+out1 <- haulouts.3.mcmc(s,y,X=rbind(X[s.idx,],X[-s.idx,]),W=rbind(W[s.idx,],W[-s.idx,]),
+	U.scale,S.tilde,priors=priors,tune=tune,start=start,n.mcmc=10000)
 
 
 ##################################################################################
@@ -255,7 +268,7 @@ plot(S.post)
 points(xyFromCell(S.tilde,as.numeric(names(tab))),pch=1,cex=tab/max(tab)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
 
-pt.idx <- 400
+pt.idx <- 1
 points(xyFromCell(S.tilde,mod$ht[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
 points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=5 )
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=2)
@@ -286,6 +299,16 @@ plot(time,trend,type="l")
 plot(alpha.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(alpha.quant)))
 lines(alpha.hat,col=rgb(0,0,0,0.25))
 abline(h=0,col=2,lty=2)
+
+# Haul-out resource selection covariates
+matplot(mod$gamma[idx,-1],type="l"); abline(h=gamma[-1],col=1:(qU-1),lty=2) 
+gamma.hat <- apply(mod$gamma[idx,],2,mean)
+gamma.quant <- t(apply(mod$gamma[idx,],2,quantile,c(0.025,0.975)))
+plot(gamma.hat,pch=19,col=rgb(0,0,0,0.25),ylim=c(range(gamma.quant)))
+abline(h=0,col=2,lty=2)
+segments(1:qU,gamma.quant[,1],1:qU,gamma.quant[,2],col="lightgrey")
+points(gamma.hat,pch=19,col=rgb(0,0,0,0.25))
+points(gamma/U.sd,pch=19)
 
 # Standard deviation of random effects (sigma.alpha)
 hist(mod$sigma.alpha[idx],breaks=100)
