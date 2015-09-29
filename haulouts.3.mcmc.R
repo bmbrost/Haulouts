@@ -166,21 +166,10 @@ haulouts.3.mcmc <- function(s,y,X,W,U,S.tilde,priors,tune,start,n.mcmc,n.cores=N
 	S.tilde[,3:4] <- (S.tilde[,3:4]-matrix(s.mean,nrow=nrow(S.tilde),
 		ncol=2,byrow=TRUE))/s.sd
 	
-	# Center and scale temporal haul-out process covariates
-	# X.sd <- c(1,apply(X,2,sd)[-1])
-	# X.mean <- c(0,apply(X,2,mean)[-1])
-	# X <- t(apply(X,1,function(x) (x-X.mean)/X.sd))
-
-	# Center and scale resource selection covariates
-	# U.sd <- c(1,apply(U,2,sd)[-1])
-	# U.mean <- c(0,apply(U,2,mean)[-1])
-	# U <- t(apply(U,1,function(x) (x-U.mean)/U.sd))
-
 	# Center and scale tuning parameters
 	tune$sigma.mu <- tune$sigma.mu/s.sd
 	tune$mu.0 <- tune$mu.0/s.sd
-	# tune$gamma <- tune$gamma/U.sd
-	
+		
 
 	###
 	### Priors
@@ -398,7 +387,7 @@ haulouts.3.mcmc <- function(s,y,X,W,U,S.tilde,priors,tune,start,n.mcmc,n.cores=N
 
 		
 	    ###
-	    ### Sample sigma.mu (homerange dispersion parameter
+	    ### Sample sigma.mu (homerange dispersion parameter)
 	    ###
 
 	    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
@@ -445,8 +434,6 @@ haulouts.3.mcmc <- function(s,y,X,W,U,S.tilde,priors,tune,start,n.mcmc,n.cores=N
 		m.save[k] <- m
 	}
   	
-	# beta.save <- t(apply(beta.save,1,function(x) x*X.sd))
-	# gamma.save <- t(apply(gamma.save,1,function(x) x*U.sd))
   	sigma.mu.save <- sigma.mu.save*s.sd
   	t.mcmc.end <- Sys.time()
 
