@@ -211,19 +211,89 @@ Model statement
 \end_layout
 
 \begin_layout Standard
-Denote the support of the harbor seal movement process as 
-\begin_inset Formula ${\cal S}$
+
+\end_layout
+
+\begin_layout Standard
+Let 
+\begin_inset Formula $\mathbf{s}(t)=(s_{1}(t),s_{2}(t))^{\prime}$
 \end_inset
 
-, and the support of haul-out sites as 
-\begin_inset Formula $\tilde{S}$
+ and 
+\begin_inset Formula $\boldsymbol{\mu}(t)=(\mu_{1}(t),\mu_{2}(t))^{\prime}$
 \end_inset
 
+, be observed and true locations of a single individual at some time 
+\begin_inset Formula $t$
+\end_inset
 
-\begin_inset Formula $ $
+, respectively.
+ Also let 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}=(\mu_{0,1,h},\mu_{0,2,h})^{\prime}$
+\end_inset
+
+, for 
+\begin_inset Formula $h=1,\ldots,H$
+\end_inset
+
+, be the locations of haul-out sites (i.e., cluster centroids), where 
+\begin_inset Formula $H$
+\end_inset
+
+ is the maximum number of haul-outs allowed per the truncation approximation
+ of the Dirichlet process mixture model.
+ The latent indicator variable 
+\begin_inset Formula $z(t)$
+\end_inset
+
+ denotes when location 
+\begin_inset Formula $\mathbf{s}(t)$
+\end_inset
+
+ is on a haul-out site (
+\begin_inset Formula $z(t)=1$
+\end_inset
+
+) or not (
+\begin_inset Formula $z(t)=0$
+\end_inset
+
+).
+ When an individual is hauled-out, note that 
+\begin_inset Formula $\boldsymbol{\mu}(t)=\boldsymbol{\mu}_{0,h_{t}}$
+\end_inset
+
+, where 
+\begin_inset Formula $h_{t}$
+\end_inset
+
+ acts as a classification variable that identifies the 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+ associated with each 
+\begin_inset Formula $\boldsymbol{\mu}(t)$
 \end_inset
 
 .
+ Furthermore, let 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ be the support of the movement process and 
+\begin_inset Formula $\tilde{S}$
+\end_inset
+
+ be
+\begin_inset Formula $ $
+\end_inset
+
+ the support of the haul-out sites (i.e., the Dirichlet process and all possible
+ 
+\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
+\end_inset
+
+).
  Note that 
 \begin_inset Formula ${\cal S}$
 \end_inset
@@ -251,86 +321,8 @@ Denote the support of the harbor seal movement process as
 \begin_inset Formula ${\cal S}$
 \end_inset
 
-, represents locations inaccessible to the individual (i.e., terrestrial sites
- that are not haul-outs).
-\end_layout
-
-\begin_layout Standard
-Let 
-\begin_inset Formula $\mathbf{s}\left(t\right)=(s_{1}\left(t\right),s_{2}\left(t\right))^{\prime}$
-\end_inset
-
- and 
-\begin_inset Formula $\boldsymbol{\mu}\left(t\right)=(\mu_{1}\left(t\right),\mu_{2}\left(t\right))^{\prime}$
-\end_inset
-
- be observed and true locations of a single individual at some time 
-\begin_inset Formula $t$
-\end_inset
-
-, respectively.
- Also let 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}=(\mu_{0,1,h},\mu_{0,2,h})^{\prime}$
-\end_inset
-
-, for 
-\begin_inset Formula $h=1,\ldots,H$
-\end_inset
-
-, be the locations of haul-out sites (i.e., cluster centroids), where 
-\begin_inset Formula $H$
-\end_inset
-
- is the maximum number of haul-outs allowed per the truncation approximation
- of the Dirichlet process mixture model.
- The latent indicator variable 
-\begin_inset Formula $z\left(t\right)$
-\end_inset
-
- denotes when location 
-\begin_inset Formula $\mathbf{s}\left(t\right)$
-\end_inset
-
- is on a haul-out site (
-\begin_inset Formula $z\left(t\right)=1$
-\end_inset
-
-) or not (
-\begin_inset Formula $z\left(t\right)=0$
-\end_inset
-
-).
- When an individual is hauled-out, note that 
-\begin_inset Formula $\boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{0,h_{t}}$
-\end_inset
-
-, where 
-\begin_inset Formula $h_{t}$
-\end_inset
-
- acts as a classification variable that identifies the 
-\begin_inset Formula $\boldsymbol{\mu}_{0,h}$
-\end_inset
-
- associated with each 
-\begin_inset Formula $\boldsymbol{\mu}\left(t\right)$
-\end_inset
-
-.
- Furthermore, let 
-\begin_inset Formula $\boldsymbol{\gamma}$
-\end_inset
-
- be a vector of coefficients that describe the influence of spatially-referenced
- covariates contained in the design matrix 
-\begin_inset Formula $\mathbf{U}$
-\end_inset
-
- that characterize the environment at all possible haul-out sites in 
-\begin_inset Formula $\tilde{{\cal S}}$
-\end_inset
-
-.
+, represents inaccessible locations (i.e., terrestrial sites that are not
+ haul-outs).
 \end_layout
 
 \begin_layout Standard
@@ -340,7 +332,7 @@ Information pertaining to the wet/dry status of the individual is available
 \end_inset
 
  (e.g., records from a *.SEA file).
- Records in 
+ Note that records in 
 \begin_inset Formula $y$
 \end_inset
 
@@ -365,12 +357,12 @@ Information pertaining to the wet/dry status of the individual is available
 \begin_inset Formula $\boldsymbol{\beta}$
 \end_inset
 
-, the coefficients that provide inference on covariates of biological interest
- in the matrix 
+, the 'fixed' effects that provide inference on covariates of biological
+ interest in the matrix 
 \begin_inset Formula $\mathbf{X}$
 \end_inset
 
-, and the parameters 
+, and the 'random' effects 
 \begin_inset Formula $\boldsymbol{\alpha}$
 \end_inset
 
@@ -386,6 +378,7 @@ Information pertaining to the wet/dry status of the individual is available
 
  describes a continuous (in time) haul-out process, and links the wet/dry
  status of the individual with its telemetry location.
+ 
 \begin_inset Formula 
 \begin{eqnarray*}
 \mathbf{s}(t) & \sim & \begin{cases}
