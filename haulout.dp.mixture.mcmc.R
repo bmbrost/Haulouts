@@ -85,13 +85,7 @@ haulout.dpmixture.mcmc <- function(s,S.tilde,S,priors,tune,start,n.mcmc,n.cores=
 	# idx.cls <- rev(dt.tab.cls[N>0,h.idx])
 	# samp.cls <- rev(dt.tab.cls[,h.idx])  # order in which clusters are sampled
 
-	# Tabulate cluster membership with base functions
-	tab.cls <- table(h.idx)  # tabulate cluster membership
-	ord <- order(tab.cls,decreasing=TRUE) # order of clusters by membership
-	tab.cls <- tab.cls[ord]  # ordered largest to smallest
-	idx.cls <- as.numeric(names(tab.cls))  # 'occupied' clusters in order
-	samp.cls <- c(idx.cls,setdiff(1:H,idx.cls))  # order in which clusters are sampled
- 
+	 
 	# Propose values for mu.0
 	n.cls.star <- H-n.cls  # number of new clusters to propose
 	mu.0 <- rbind(mu.0, cbind(runif(n.cls.star,S.tilde[1,1],S.tilde[2,1]),

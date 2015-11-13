@@ -782,7 +782,7 @@ Dirichlet process concentration parameter (
 \noindent
 \begin_inset Formula 
 \begin{eqnarray*}
-[\theta|\cdot] & \propto & \text{Gamma}(r_{\theta}+H-1,q_{\theta}-\sum_{h=1}^{H-1}\log(1-v_{h})).
+[\theta|\cdot] & \propto & \text{Gamma}(r_{\theta}+H-1,q_{\theta}-\sum_{h=1}^{H-1}\log(1-\eta_{h})).
 \end{eqnarray*}
 
 \end_inset

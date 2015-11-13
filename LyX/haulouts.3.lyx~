@@ -147,8 +147,8 @@ A mixture normal observation model to accommodate Argos satellite telemetry
  not a component of this model; rather, empircal Bayes based on parameter
  estimates from Brost et al.
  (2015) is used.
- This feature differentiates the model presented here from the one implemented
- in haulouts.1.mcmc.R, which otherwise has the same specification.
+ This observation model differentiates the model presented here from the
+ one implemented in haulouts.1.mcmc.R, which otherwise has the same specification.
 \end_layout
 
 \begin_layout Enumerate
@@ -193,12 +193,12 @@ Implementation
 \end_layout
 
 \begin_layout Standard
-The file haulouts.2.sim.R simulates data according to the model statement presented
+The file haulouts.3.sim.R simulates data according to the model statement presented
  below, 
 \begin_inset Newline newline
 \end_inset
 
-and haulouts.2.mcmc.R contains the MCMC algorithm for model fitting.
+and haulouts.3.mcmc.R contains the MCMC algorithm for model fitting.
  Dirichlet process mixture model implementation follows the blocked Gibbs
  sampler truncation approximation of Ishwaran and James (2001) and Gelman
  et al.
@@ -1177,7 +1177,6 @@ The update for
 \end_inset
 
 .
- 
 \end_layout
 
 \begin_layout Standard
@@ -1187,6 +1186,13 @@ The update for
 \begin_inset VSpace bigskip
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
 Variance of random effects (
 \begin_inset Formula $\sigma_{\alpha}^{2}$
 \end_inset
