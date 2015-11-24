@@ -285,6 +285,8 @@ haulouts.3.mcmc <- function(s,y,X,W,U,S.tilde,priors,tune,start,n.mcmc,n.cores=N
 			get.mh.mu(x,mu.0,mu.0.star,S.tilde,ht,s,lc,z,Sigma,Sigma.z0,U,gamma)) 
 		keep$mu.0 <- keep$mu.0+sum(mh)
 		keep.idx <- dup.idx[mh]
+
+### Check to make sure mu.0 is ordered correctly here.
 		mu.0[keep.idx] <- mu.0.star[keep.idx]  # update mu.0
 
 		# Sample 'unoccupied' mu.0 (clusters with zero membership) from prior 
