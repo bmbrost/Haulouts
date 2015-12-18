@@ -265,10 +265,11 @@ priors <- list(sigma.mu.l=0,sigma.mu.u=50000,mu.sigma=sigma.mu,tau=0.25,
 	sigma.beta=2,sigma.gamma=2,
 	J=J,r.theta=theta.priors[1],q.theta=theta.priors[2],r.sigma.alpha=2,q.sigma.alpha=1,
 	sigma=sigma,a=a,rho=rho,lc=lc)  # observation model parameters; empirical Bayes
-tune <- list(mu=2000,sigma.mu=1250,gamma=2)
+tune <- list(mu=1500,sigma.mu=3250,gamma=1.3)
 source("~/Documents/git/Haulouts/haulouts.4.mcmc.R")
 out1 <- haulouts.4.mcmc(s,y,X.scale,W,U,S.tilde,
 	priors=priors,tune=tune,start=start,n.mcmc=1000)
+out1$tune
 
 
 ##################################################################################

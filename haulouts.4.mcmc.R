@@ -246,15 +246,22 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	z.save <- matrix(0,Ts,n.mcmc)  # haul-out indicator variable
 	sigma.mu.save <- numeric(n.mcmc)  # haul-out dispersion parameter
 	sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of random effects
-
     
 	#####################################################################
 	### Appendix A, Steps 3-8: MCMC loop 
 	#####################################################################
 
 	keep <- list(mu=0,sigma.mu=0,gamma=0)  # number of proposals accepted for Metropolis updates
+	keep.tmp <- list(mu=0,sigma.mu=0,gamma=0)  # for adaptive tuning
+	m.save.tmp <- 0
 	t.v.update <- 0  # timing updates of auxiliary variable for temporal haul-out process
 	t.mcmc.start <- Sys.time()  # timing MCMC iterations
+	T.b <- 50  # frequency of adaptive tuning
+	
+	adapt <- function(tune,keep,k,target=0.44){
+		a <- min(0.01,1/sqrt(k))
+		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
+	}
 
   	cat("\nEntering MCMC Loop....\n")
 	for (k in 1:n.mcmc) {
@@ -262,6 +269,17 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	    	cat(k,"");flush.console()	
     		plot(pie,type="b",ylab=expression(pi),xlab="Cluster index",las=1,pch=19,cex=0.5)
     	} 
+
+    	if(k%%50==0) {  # Adaptive tuning
+			# browser()
+			keep.tmp$mu <- keep.tmp$mu/m.save.tmp
+			keep.tmp[-1] <- lapply(keep.tmp[-1],function(x) x/T.b)
+			adapt <- min(0.01,1/sqrt(k))		
+			tune$sigma.mu <- adapt(tune$sigma.mu,keep.tmp$sigma.mu,k)
+			tune$gamma <- adapt(tune$gamma,keep.tmp$gamma,k)
+			tune$mu <- adapt(tune$mu,keep.tmp$mu,k)
+			keep.tmp <- lapply(keep.tmp,function(x) x*0)
+	   	} 
 	
 		#--------------------------------------------------------------------------
 		# Appendix A, Step 4: update temporal haul-out process model parameters 
@@ -347,6 +365,8 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
         	sigma.mu <- sigma.mu.star
 			Q <- Q.star
 			keep$sigma.mu <- keep$sigma.mu+1
+			keep.tmp$sigma.mu <- keep.tmp$sigma.mu+1
+
     	} 
 
 		# Uniform prior	    
@@ -394,6 +414,7 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		mh <- sapply(dup.idx,function(x)  # accepted proposals
 			get.mh.mu(x,mu,mu.star,mu.tmp,S.tilde,h,s,lc,z,Sigma,Q,U,gamma)) 
 		keep$mu <- keep$mu+sum(mh)
+		keep.tmp$mu <- keep.tmp$mu+sum(mh)
 		keep.idx <- dup.idx[mh]
 		mu[keep.idx] <- mu.star[keep.idx]  # update mu
 
@@ -413,6 +434,7 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
     	    gamma <- gamma.star
 	        # gamma.int <- gamma.int.star
 	        keep$gamma <- keep$gamma+1
+	        keep.tmp$gamma <- keep.tmp$gamma+1
     	} 
 
 		###
@@ -455,8 +477,11 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		v.save[,k] <- v
 		z.save[,k] <- z
 		m.save[k] <- m
+		m.save.tmp <- m.save.tmp+m
 	}
   	
+  	tune$sigma.mu <- tune$sigma.mu*s.sd
+	tune$mu <- tune$mu*s.sd
   	sigma.mu.save <- sigma.mu.save*s.sd
   	t.mcmc.end <- Sys.time()
 
@@ -478,5 +503,5 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	list(beta=beta.save,gamma=gamma.save, alpha=alpha.save,
 		mu=mu.save,theta=theta.save,m=m.save,z=z.save,v=v.save,
 		sigma.mu=sigma.mu.save, sigma.alpha=sigma.alpha.save,
-		keep=keep,n.mcmc=n.mcmc)
+		keep=keep,tune=tune,n.mcmc=n.mcmc)
 }
