@@ -178,6 +178,7 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	priors$sigma <- priors$sigma/s.sd  # observation model standard deviation
 	priors$sigma.mu.l <- priors$sigma.mu.l/s.sd  # lower bound of uniform prior on sigma.mu
 	priors$sigma.mu.u <- priors$sigma.mu.u/s.sd  # upper bound of uniform prior on sigma.mu
+	priors$mu.sigma <- priors$mu.sigma/s.sd  # variance on lognormal prior for sigma.mu
 
 	# Center and scale starting values
 	sigma.mu <- start$sigma.mu/s.sd  # homerange dispersion parameter
@@ -332,19 +333,36 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	  	# Appendix A, Step 5: update sigma.mu
 	    #--------------------------------------------------------------------------
 # browser()
-	    sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)
-	    if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
-			# Q.star <- get.Sigma(sigma2+sigma.mu.star^2,n.lc,Mix)
-			Q.star <- get.Sigma(sigma2+sigma.mu.star^2,a,rho)
-			idx <- which(z==0)
-		    mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
-		    mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
-		    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
-	        	sigma.mu <- sigma.mu.star
-				Q <- Q.star
-				keep$sigma.mu <- keep$sigma.mu+1
-	    	} 
-	    }
+
+		# test <- rnorm(1000,log(mu.sigma),tau)
+		# hist(s.sd*exp(test))
+
+		# Lognormal prior
+	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
+		Q.star <- get.Sigma(sigma2+sigma.mu.star^2,a,rho)
+		idx <- which(z==0)
+	    mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))					+dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$tau,log=TRUE)		    
+	    mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))						    +dnorm(log(sigma.mu),log(priors$mu.sigma),priors$tau,log=TRUE)		    
+	    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
+        	sigma.mu <- sigma.mu.star
+			Q <- Q.star
+			keep$sigma.mu <- keep$sigma.mu+1
+    	} 
+
+		# Uniform prior	    
+	    # sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)				   
+	    # if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
+			# # Q.star <- get.Sigma(sigma2+sigma.mu.star^2,n.lc,Mix)
+			# Q.star <- get.Sigma(sigma2+sigma.mu.star^2,a,rho)
+			# idx <- which(z==0)
+		    # mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
+		    # mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+		    # if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
+	        	# sigma.mu <- sigma.mu.star
+				# Q <- Q.star
+				# keep$sigma.mu <- keep$sigma.mu+1
+	    	# } 
+	    # }
 		
 				
 		#--------------------------------------------------------------------------

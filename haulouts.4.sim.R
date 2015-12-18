@@ -116,7 +116,7 @@ plot(U.scale[,-1],rsf,type="p")
 
 Ts <- 500  # number of telemetry locations to simulate
 Ty <- 500  # number of wet/dry observations to simulate
-theta <- 0.1  # Dirichlet process mixture concentration parameter
+theta <- 1  # Dirichlet process mixture concentration parameter
 J <- 50 # maximum number of clusters for truncation approximation
 
 # Prior elicitation for theta
@@ -253,16 +253,22 @@ points(mu.t[z==1,],pch=19,col=rgb(1,1,1,0.6),cex=0.5) # Haul out locations
 ### Fit models
 ##################################################################################
 
+test <- rnorm(1000,log(sigma.mu),0.25)
+hist(exp(test))
+
+# mu.sigma <- 13000/2  # From Brost et al. 2015
+
 # Fit model using blocked Gibbs sampler 
 start <- list(theta=theta,h=h,z=z,pie=pie,beta=beta,gamma=gamma,
 	sigma=sigma,sigma.mu=sigma.mu,sigma.alpha=2) 
-priors <- list(sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=2,sigma.gamma=2,
+priors <- list(sigma.mu.l=0,sigma.mu.u=50000,mu.sigma=sigma.mu,tau=0.25,
+	sigma.beta=2,sigma.gamma=2,
 	J=J,r.theta=theta.priors[1],q.theta=theta.priors[2],r.sigma.alpha=2,q.sigma.alpha=1,
 	sigma=sigma,a=a,rho=rho,lc=lc)  # observation model parameters; empirical Bayes
 tune <- list(mu=2000,sigma.mu=1250,gamma=2)
 source("~/Documents/git/Haulouts/haulouts.4.mcmc.R")
 out1 <- haulouts.4.mcmc(s,y,X.scale,W,U,S.tilde,
-	priors=priors,tune=tune,start=start,n.mcmc=3000)
+	priors=priors,tune=tune,start=start,n.mcmc=1000)
 
 
 ##################################################################################
@@ -274,6 +280,9 @@ idx <- 1:1000
 idx <- 1:3000
 idx <- 1:5000
 idx <- 1:10000
+
+hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
+
 
 # Inference on mu_0: haul-out site locations
 n.tmp <- table(mod$mu[,idx])  # tabulate posterior for mu.0
