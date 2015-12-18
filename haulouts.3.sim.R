@@ -257,7 +257,7 @@ priors <- list(sigma.mu.l=0,sigma.mu.u=5000,sigma.beta=10,sigma.gamma=10,
 tune <- list(mu.0=2000,sigma.mu=1250,gamma=2.0)
 source("/Users/brost/Documents/git/haulouts/haulouts.3.mcmc.R")
 out1 <- haulouts.3.mcmc(s,y,X.scale,W,U.scale,S.tilde,
-	priors=priors,tune=tune,start=start,n.mcmc=5000)
+	priors=priors,tune=tune,start=start,n.mcmc=1000)
 
 
 ##################################################################################
