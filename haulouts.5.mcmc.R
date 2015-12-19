@@ -1,4 +1,4 @@
-haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
+haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
  	### Brian M. Brost (08 DEC 2015)
@@ -37,10 +37,15 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		x
 	}
 	
-	tkern <- function(d,P,nu){  # kernel of t-distribution
+	tkern <- function(d,P,nu=100){  # kernel of t-distribution
 		(1+1/nu*(rowSums((d%*%P)*d)))^-((nu+2)/2)
 	}
 
+	adapt <- function(tune,keep,k,target=0.44){  # adaptive tuning
+		a <- min(0.01,1/sqrt(k))
+		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
+	}
+	
 	get.Sigma <- function(sigma2,a,rho){  # get var-cov matrix, determinant, and inverse
 		n.lc <- length(sigma2)
 		Sigma <- lapply(1:n.lc,function(x) sigma2[x]*  # variance-covariance matrix			
@@ -68,8 +73,6 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 				idx <- lc.list[[i]]
 				d.tmp <- d[idx,]
 				out[idx] <- tkern(d.tmp,P[[i]],nu)+tkern(d.tmp,K%*%P[[i]]%*%t(K),nu)
-				# out[idx] <- (1+1/nu*(rowSums((d.tmp%*%P[[i]])*d.tmp)))^-((nu+2)/2) +
-					# (1+1/nu*(rowSums((d.tmp%*%(K%*%P[[i]]%*%t(K)))*d.tmp)))^-((nu+2)/2)
 			}	
 			if(log) out <- log(0.5)+log(out)+log(b[lc])  # log density
 					# +lgamma((nu+2)/2)-(lgamma(nu/2)+log(nu)+log(pi))  # constant
@@ -126,8 +129,6 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		if(z==0) P <- Q$P[[lc]]  # precision matrix when z=0
 		d <- matrix(x,nrow(y),2,byrow=TRUE)-y
 		out <- tkern(d,P,nu)+tkern(d,K%*%P%*%t(K),nu)
-		# out <- (1+1/nu*(rowSums((d%*%P)*d)))^-((nu+2)/2) +
-			# (1+1/nu*(rowSums((d%*%(K%*%P%*%t(K)))*d)))^-((nu+2)/2)
 		log(out)  # log of mixture kernel
 	}
 
@@ -155,7 +156,10 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	h <- match(start$h,S.tilde[,2])  # Note: h corresponds to row idx of S.tilde 
 		# for computational efficiency, and not idx of mu as in Appendix A
 	U <- cbind(1,values(U)[idx])  # convert raster to design matrix
-	
+
+	lc <- as.numeric(priors$lc)  # Argos location quality class
+	n.lc <- length(unique(lc))  # number of error classes
+	lc.list <- sapply(sort(unique(lc)),function(x) which(lc==x),simplify=FALSE)
 	
 	#####################################################################
 	### Standardize parameters
@@ -173,15 +177,16 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	# Center and scale tuning parameters
 	tune$sigma.mu <- tune$sigma.mu/s.sd
 	tune$mu <- tune$mu/s.sd
+	tune$sigma <- tune$sigma/s.sd
 
 	# Center and scale priors
-	priors$sigma <- priors$sigma/s.sd  # observation model standard deviation
 	priors$sigma.mu.l <- priors$sigma.mu.l/s.sd  # lower bound of uniform prior on sigma.mu
 	priors$sigma.mu.u <- priors$sigma.mu.u/s.sd  # upper bound of uniform prior on sigma.mu
 	priors$mu.sigma <- priors$mu.sigma/s.sd  # variance on lognormal prior for sigma.mu
 
 	# Center and scale starting values
 	sigma.mu <- start$sigma.mu/s.sd  # homerange dispersion parameter
+	sigma <- start$sigma/s.sd  # observation model standard deviation
 
 
 	#####################################################################
@@ -191,11 +196,8 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	cat("\nGetting priors....")
 	
 	# Observation model
-	lc <- as.numeric(priors$lc)  # Argos location quality class
-	sigma2 <- priors$sigma^2  # standardized variance component
-	Sigma <- get.Sigma(sigma2,priors$a,priors$rho)
-	Q <- get.Sigma(sigma2+sigma.mu^2,priors$a,priors$rho)
-
+	u.sigma <- priors$u.sigma/s.sd
+	
 	# Temporal haul-out process model 
 	mu.alpha <- matrix(0,qW,1)  # random effects for temporal haul-out process
 	mu.beta <- matrix(0,qX,1)  # temporal haul-out process coefficients; fixed effects
@@ -215,6 +217,12 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	#####################################################################
 
 	cat("\nGetting starting values....")
+
+	# Observation model
+	a <- start$a
+	rho <- start$rho
+	Sigma <- get.Sigma(sigma^2,a,rho)
+	Q <- get.Sigma(sigma^2+sigma.mu^2,a,rho)
 
 	# Temporal haul-out process model
 	beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
@@ -246,24 +254,26 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	z.save <- matrix(0,Ts,n.mcmc)  # haul-out indicator variable
 	sigma.mu.save <- numeric(n.mcmc)  # haul-out dispersion parameter
 	sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of random effects
+
+	sigma.save <- matrix(0,n.mcmc,n.lc)
+	a.save <- matrix(0,n.mcmc,n.lc)
+	rho.save <- matrix(0,n.mcmc,n.lc)
+
     
 	#####################################################################
 	### Appendix A, Steps 3-8: MCMC loop 
 	#####################################################################
 
 	keep <- list(mu=0,sigma.mu=0,gamma=0)  # number of proposals accepted for Metropolis updates
+
+keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n.lc))
 	keep.tmp <- list(mu=0,sigma.mu=0,gamma=0)  # for adaptive tuning
 	m.save.tmp <- 0
 	t.v.update <- 0  # timing updates of auxiliary variable for temporal haul-out process
 	t.mcmc.start <- Sys.time()  # timing MCMC iterations
 	T.b <- 50  # frequency of adaptive tuning
 	
-	adapt <- function(tune,keep,k,target=0.44){
-		a <- min(0.01,1/sqrt(k))
-		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
-	}
-
-  	cat("\nEntering MCMC Loop....\n")
+	cat("\nEntering MCMC Loop....\n")
 	for (k in 1:n.mcmc) {
     	if(k%%1000==0) {  # Monitor the appropriateness of J, the truncation approximation
 	    	cat(k,"");flush.console()	
@@ -274,12 +284,120 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			# browser()
 			keep.tmp$mu <- keep.tmp$mu/m.save.tmp
 			keep.tmp[-1] <- lapply(keep.tmp[-1],function(x) x/T.b)
-			adapt <- min(0.01,1/sqrt(k))		
 			tune$sigma.mu <- adapt(tune$sigma.mu,keep.tmp$sigma.mu,k)
 			tune$gamma <- adapt(tune$gamma,keep.tmp$gamma,k)
 			tune$mu <- adapt(tune$mu,keep.tmp$mu,k)
 			keep.tmp <- lapply(keep.tmp,function(x) x*0)
 	   	} 
+	
+		#--------------------------------------------------------------------------
+		# Appendix A, Step 4: update observation model parameters (Sigma)
+		#--------------------------------------------------------------------------
+
+# browser()
+# priors$sigma <- priors$sigma/s.scale
+
+		sigma.star <- rnorm(n.lc,sigma,tune$sigma) #Proposals for sigma
+		a.star <- rnorm(n.lc,a,tune$a) #Proposals for a
+		rho.star <- rnorm(n.lc,rho,tune$rho) #Proposals for rho
+
+	dmvt2.vec <- function(d,P,b,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
+	 	# Calculate density of mixture t distribution
+		b <- b^(-0.5)  # determinant
+		out <- tkern(d,P,nu)+tkern(d,K%*%P%*%t(K),nu)
+		out <- log(0.5)+log(out)+log(b)  # log density
+					# +lgamma((nu+2)/2)-(lgamma(nu/2)+log(nu)+log(pi))  # constant
+		out
+	}
+	
+		for(i in 1:n.lc){ #Loop to iterate over error classes: Appendix A, step 2(f)
+	# i <- 2
+			idx <- lc.list[[i]] #Index of locations in error class i
+			d.tmp <- s[idx,]-S.tilde[h[idx],3:4]
+			K <- matrix(c(-1,0,0,1),2)
+			z1 <- which(z[idx]==1)
+			z0 <- which(z[idx]==0)
+# browser()	
+			### Sample sigma: Appendix A, step 2(b)
+
+			if(sigma.star[i]>0 & sigma.star[i]<u.sigma){
+				Q.star <- get.Sigma(sigma.star[i]^2+sigma.mu^2,a[i],rho[i])
+				Sigma.star <- get.Sigma(sigma.star[i]^2,a[i],rho[i])
+
+				mh.star.sigma <- 
+				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
+				mh.0.sigma <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
+
+		# mh.star.sigma <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
+		# mh.0.sigma <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+
+				if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
+					sigma[i] <- sigma.star[i]
+					keep$sigma[i] <- keep$sigma[i]+1
+					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
+					Sigma$P[[i]] <- Sigma.star$P[[1]]
+					Sigma$det[[i]] <- Sigma.star$det[[1]]
+					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
+					Q$P[[i]] <- Q.star$P[[1]]
+					Q$det[[i]] <- Q.star$det[[1]]
+				}
+			}
+
+			### Sample a: Appendix A, step 2(c)
+
+			if(a.star[i]>0 & a.star[i]<1){
+				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a.star[i],rho[i])
+				Sigma.star <- get.Sigma(sigma[i]^2,a.star[i],rho[i])
+
+				mh.star.a <- 
+				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
+				mh.0.a <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
+				# mh.star.a <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
+			  	# mh.0.a <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+				if(exp(mh.star.a-mh.0.a)>runif(1)){
+					a[i] <- a.star[i]
+					keep$a[i] <- keep$a[i]+1
+					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
+					Sigma$P[[i]] <- Sigma.star$P[[1]]
+					Sigma$det[[i]] <- Sigma.star$det[[1]]
+					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
+					Q$P[[i]] <- Q.star$P[[1]]
+					Q$det[[i]] <- Q.star$det[[1]]
+				}
+			}
+
+			### Sample rho: Appendix A, step 2(d)
+
+			if(rho.star[i]>0 & rho.star[i]<1){
+				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a[i],rho.star[i])
+				Sigma.star <- get.Sigma(sigma[i]^2,a[i],rho.star[i])
+
+				mh.star.rho <- 
+				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
+				mh.0.rho <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
+				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
+
+				# mh.star.rho <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
+			  	# mh.0.rho <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+				if(exp(mh.star.rho-mh.0.rho)>runif(1)){
+					rho[i] <- rho.star[i]
+					keep$rho[i] <- keep$rho[i]+1
+					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
+					Sigma$P[[i]] <- Sigma.star$P[[1]]
+					Sigma$det[[i]] <- Sigma.star$det[[1]]
+					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
+					Q$P[[i]] <- Q.star$P[[1]]
+					Q$det[[i]] <- Q.star$det[[1]]
+				}
+			}
+		}
+
+
 	
 		#--------------------------------------------------------------------------
 		# Appendix A, Step 4: update temporal haul-out process model parameters 
@@ -357,7 +475,7 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
 		# Lognormal prior
 	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
-		Q.star <- get.Sigma(sigma2+sigma.mu.star^2,a,rho)
+		Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,a,rho)
 		idx <- which(z==0)
 	    mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))					+dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$tau,log=TRUE)		    
 	    mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))						    +dnorm(log(sigma.mu),log(priors$mu.sigma),priors$tau,log=TRUE)		    
@@ -372,8 +490,8 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		# Uniform prior	    
 	    # sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)				   
 	    # if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
-			# # Q.star <- get.Sigma(sigma2+sigma.mu.star^2,n.lc,Mix)
-			# Q.star <- get.Sigma(sigma2+sigma.mu.star^2,a,rho)
+			# # Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,n.lc,Mix)
+			# Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,a,rho)
 			# idx <- which(z==0)
 		    # mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
 		    # mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
@@ -409,7 +527,7 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		###
 # browser()			
 		mu.star <- sapply(mu,function(x) sample(S.tilde[,1],1,prob=  # proposals for mu	
-			dnorm(S.tilde[x,3],S.tilde[,3],tune$mu)*	dnorm(S.tilde[x,4],S.tilde[,4],tune$mu)))  
+			dnorm(S.tilde[x,3],S.tilde[,3],tune$mu)*dnorm(S.tilde[x,4],S.tilde[,4],tune$mu)))  
 		dup.idx <- which(!duplicated(mu.star))  # exclude duplicate proposals
 		mh <- sapply(dup.idx,function(x)  # accepted proposals
 			get.mh.mu(x,mu,mu.star,mu.tmp,S.tilde,h,s,lc,z,Sigma,Q,U,gamma)) 
@@ -478,6 +596,9 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		z.save[,k] <- z
 		m.save[k] <- m
 		m.save.tmp <- m.save.tmp+m
+sigma.save[k,] <- sigma*s.sd
+a.save[k,] <- a
+rho.save[k,] <- rho
 	}
   	
   	tune$sigma.mu <- tune$sigma.mu*s.sd
@@ -492,9 +613,18 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	keep$sigma.mu <- keep$sigma.mu/n.mcmc
 	keep$mu <- keep$mu/sum(m.save)
 	keep$gamma <- keep$gamma/n.mcmc
+	keep$sigma <- keep$sigma/n.mcmc
+	keep$a <- keep$a/n.mcmc
+	keep$rho <- keep$rho/n.mcmc
+
 	cat(paste("\n\ngamma acceptance rate:",round(keep$gamma,2))) 
 	cat(paste("\nmu acceptance rate:",round(keep$mu,2))) 
 	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
+
+	cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
+	cat(paste("\na acceptance rate:",round(keep$a,2))) 
+	cat(paste("\nrho acceptance rate:",round(keep$rho,2))) 
+
 	cat(paste("\n\nEnd time:",Sys.time()))
 	cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
 	cat(paste("\nTime per MCMC iteration:",
@@ -503,5 +633,6 @@ haulouts.4.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	list(beta=beta.save,gamma=gamma.save, alpha=alpha.save,
 		mu=mu.save,theta=theta.save,m=m.save,z=z.save,v=v.save,
 		sigma.mu=sigma.mu.save, sigma.alpha=sigma.alpha.save,
-		keep=keep,tune=tune,n.mcmc=n.mcmc)
+		keep=keep,tune=tune,n.mcmc=n.mcmc,
+		sigma=sigma.save,a=a.save,rho=rho.save)
 }

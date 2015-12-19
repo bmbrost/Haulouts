@@ -260,14 +260,28 @@ hist(exp(test))
 
 # Fit model using blocked Gibbs sampler 
 start <- list(theta=theta,h=h,z=z,pie=pie,beta=beta,gamma=gamma,
-	sigma=sigma,sigma.mu=sigma.mu,sigma.alpha=2) 
-priors <- list(sigma.mu.l=0,sigma.mu.u=50000,mu.sigma=sigma.mu,tau=0.25,
-	sigma.beta=2,sigma.gamma=2,
+	sigma=sigma,a=a,rho=rho,sigma.mu=sigma.mu,sigma.alpha=2) 
+
+priors <- list(mu.sigma=sigma.mu,tau=0.25,
+	sigma.beta=2,sigma.gamma=2,u.sigma=200000,
 	J=J,r.theta=theta.priors[1],q.theta=theta.priors[2],r.sigma.alpha=2,q.sigma.alpha=1,
-	sigma=sigma,a=a,rho=rho,lc=lc)  # observation model parameters; empirical Bayes
-tune <- list(mu=1500,sigma.mu=3250,gamma=1.3)
-source("~/Documents/git/Haulouts/haulouts.4.mcmc.R")
-out1 <- haulouts.4.mcmc(s,y,X.scale,W,U,S.tilde,
+	lc=lc)  # observation model parameters; empirical Bayes
+
+tune <- list(mu=1500,sigma.mu=3250,gamma=1.3,
+	sigma=c(950,800,2750),
+	rho=c(0.45,0.25,0.35),
+	a=c(0.375,0.13,0.2))
+
+# tune <- list(mu=c(800,700,900,1000,1000,1000),
+	# sigma=c(950,700,450,800,750,2750),
+	# rho=c(0.45,0.19,0.35,0.25,0.3,0.35),
+	# a=c(0.375,0.275,0.175,0.13,0.18,0.2),
+	# nu=c(21,1.25,0.525,0.29,0.24,0.225),
+	# phi=75,beta=c(0.025,0.025,0.025))
+
+
+source("~/Documents/git/Haulouts/haulouts.5.mcmc.R")
+out1 <- haulouts.5.mcmc(s,y,X.scale,W,U,S.tilde,
 	priors=priors,tune=tune,start=start,n.mcmc=1000)
 out1$tune
 
@@ -281,6 +295,10 @@ idx <- 1:1000
 idx <- 1:3000
 idx <- 1:5000
 idx <- 1:10000
+
+matplot(mod$sigma,type="l");abline(h=sigma)
+matplot(mod$a,type="l");abline(h=a)
+matplot(mod$rho,type="l");abline(h=rho)
 
 hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
 
