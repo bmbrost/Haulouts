@@ -46,40 +46,31 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
 	}
 	
-	get.Sigma <- function(sigma2,a,rho){  # get var-cov matrix, determinant, and inverse
-		n.lc <- length(sigma2)
-		Sigma <- lapply(1:n.lc,function(x) sigma2[x]*  # variance-covariance matrix			
-			matrix(c(1,sqrt(a[x])*rho[x],sqrt(a[x])*rho[x],a[x]),2))  
-		det <- lapply(Sigma,function(x) x[1,1]*x[2,2]-x[1,2]*x[2,1])  # determinant
-		P <- lapply(1:n.lc,function(x) (1/det[[x]])*  # precision matrix
-			matrix(c(Sigma[[x]][2,2],-Sigma[[x]][2,1],-Sigma[[x]][1,2],Sigma[[x]][1,1]),2))
-		list(Sigma=Sigma,P=P,det=det)  # return list of lists
+	get.Sigma <- function(sigma2,a,rho){  
+		# Get covariance matrix, determinant, and precision matrix
+		S <- sigma2*matrix(c(1,sqrt(a)*rho,sqrt(a)*rho,a),2)  # variance-covariance matrix
+		b <-  S[1,1]*S[2,2]-S[1,2]*S[2,1]  # determinant
+		P <- (1/b)*matrix(c(S[2,2],-S[2,1],-S[1,2],S[1,1]),2)  # precision matrix
+		list(P=P,b=b,S=S)
 	}
 
-	dmvt2 <- function(x,y,lc,Sigma,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
-	 	# Calculate density of mixture t distribution
-		x <- matrix(x,,2,byrow=FALSE)
-		if(nrow(x)==0) out <- 0
-		if(nrow(x)!=0){
-			if(!is.matrix(y)) y <- matrix(y,nrow(x),2,byrow=TRUE)
-			lc.idx <- sort(unique(lc))
-			n <- length(lc.idx)
-			lc.list <- sapply(lc.idx,function(x) which(lc==x),simplify=FALSE)
-			P <- Sigma$P[lc.idx]  # precision matrix
-			b <- unlist(lapply(Sigma$det,function(x) x^(-0.5)))  # determinant
-			d <- x-y  
-			out <- numeric(nrow(d))
-			for(i in 1:n){  # calculate kernel for each Sigma
-				idx <- lc.list[[i]]
-				d.tmp <- d[idx,]
-				out[idx] <- tkern(d.tmp,P[[i]],nu)+tkern(d.tmp,K%*%P[[i]]%*%t(K),nu)
-			}	
-			if(log) out <- log(0.5)+log(out)+log(b[lc])  # log density
-					# +lgamma((nu+2)/2)-(lgamma(nu/2)+log(nu)+log(pi))  # constant
-			if(!log){ out <- 0.5*out*b[lc]  # density
-					# *gamma((nu+2)/2)/(gamma(nu/2)*nu*pi)  # constant
-			} 
+	dt2 <- function(x,y,z,S,Q,lc=NULL,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
+		# browser()		
+		x <- matrix(x,,2)	
+		y <- matrix(y,,2)
+		if(nrow(x)!=nrow(y)) x <- matrix(x,nrow(y),2,byrow=TRUE)
+		if(!is.null(lc)){
+			S <- S[[lc]]
+			Q <- Q[[lc]]
 		}
+		P <- ifelse(z==1,S,Q)[[1]]  # precision matrix
+		b <- ifelse(z==1,S$b,Q$b)  # determinant
+		d <- x-y
+		out <- tkern(d,P,nu)+tkern(d,K%*%P%*%t(K),nu)  # mixture kernel
+		if(log) out <- log(out)+log(0.5)+log(b^(-0.5))  # log density
+			# +lgamma((nu+2)/2)-(lgamma(nu/2)+log(nu)+log(pi))  # constant
+		if(!log) out <- 0.5*out*b^(-0.5)  # density
+			# *gamma((nu+2)/2)/(gamma(nu/2)*nu*pi)  # constant
 		out
 	}
 
@@ -103,33 +94,32 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	# gamma((100+2)/2)/(gamma(100/2)*100*pi)
   
 	get.mh.mu <- function(x,mu,mu.star,mu.tmp,S,h,s,lc,z,Sigma,Q,U,gamma){
-		# browser()
 		# Accept/reject proposals for mu
+		# browser()
 		mu.xy <- S[mu[x],3:4]  # location of current clusters mu
 		mu.xy.star <- S[mu.star[x],3:4]  # location of proposal clusters mu.star
 		idx.0 <- which(h==mu[x]&z==0)  # obs. associated with mu and z=0
 		idx.1 <- which(h==mu[x]&z==1)  # obs. associated with mu and z=1
-		mh.star <- sum(  # numerator of Metropolis-Hastings ratio
-			dmvt2(s[idx.1,],mu.xy.star,lc[idx.1],Sigma,log=TRUE),
-			dmvt2(s[idx.0,],mu.xy.star,lc[idx.0],Q,log=TRUE))+
-			U[mu[x],]%*%gamma#-log(sum(exp(U%*%gamma)))  # integral over S.tilde
+		num.z1 <- denom.z1 <- num.z0 <- denom.z0 <- 0
+		if(length(idx.1)>0){
+			num.z1 <- sum(sapply(idx.1,function(x)
+				dt2(s[x,],mu.xy.star,z=1,Sigma,Q,lc[x],log=TRUE)))
+			denom.z1 <- sum(sapply(idx.1,function(x)
+				dt2(s[x,],mu.xy,z=1,Sigma,Q,lc[x],log=TRUE)))
+		}
+		if(length(idx.0)>0){
+			num.z0 <- sum(sapply(idx.0,function(x) 
+				dt2(s[x,],mu.xy.star,z=0,Sigma,Q,lc[x],log=TRUE)))
+			denom.z0 <- sum(sapply(idx.0,function(x)
+				dt2(s[x,],mu.xy,z=0,Sigma,Q,lc[x],log=TRUE)))
+		}
+		mh.star <- num.z1+num.z0+U[mu.star[x],]%*%gamma  # numerator of Metropolis-Hastings ratio
+			 #-log(sum(exp(U%*%gamma))))  # integral over S.tilde
 			# log(sum(exp(U[c(mu.star[x],mu[-x],mu.tmp),]%*%gamma)))  # integral over active mu
-		mh.0 <-	sum(  # denominator of Metropolis-Hastings ratio
-			dmvt2(s[idx.1,],mu.xy,lc[idx.1],Sigma,log=TRUE),
-			dmvt2(s[idx.0,],mu.xy,lc[idx.0],Q,log=TRUE))+
-			U[mu.star[x],]%*%gamma#-log(sum(exp(U%*%gamma)))  # integral over S.tilde
+		mh.0 <-	denom.z1+denom.z0+U[mu[x],]%*%gamma   # denominator of Metropolis-Hastings ratio
+			#-log(sum(exp(U%*%gamma)))  # integral over S.tilde
 			# log(sum(exp(U[c(mu,mu.tmp),]%*%gamma)))  # integral over active mu
 		exp(mh.star-mh.0)>runif(1)  # Accept or reject
-	}
-
-	get.h <- function(x,y,z,lc,Sigma,Q,nu=100,K=matrix(c(-1,0,0,1),2)){
-		# browser()
-		# For sampling h
-		if(z==1) P <- Sigma$P[[lc]]  # precision matrix when z=1 
-		if(z==0) P <- Q$P[[lc]]  # precision matrix when z=0
-		d <- matrix(x,nrow(y),2,byrow=TRUE)-y
-		out <- tkern(d,P,nu)+tkern(d,K%*%P%*%t(K),nu)
-		log(out)  # log of mixture kernel
 	}
 
 
@@ -217,12 +207,12 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	#####################################################################
 
 	cat("\nGetting starting values....")
-
+# browser()
 	# Observation model
 	a <- start$a
 	rho <- start$rho
-	Sigma <- get.Sigma(sigma^2,a,rho)
-	Q <- get.Sigma(sigma^2+sigma.mu^2,a,rho)
+	Sigma <- sapply(1:n.lc,function(x) get.Sigma(sigma[x]^2,a[x],rho[x]),simplify=FALSE)
+	Q <- sapply(1:n.lc,function(x) get.Sigma(sigma[x]^2+sigma.mu^2,a[x],rho[x]),simplify=FALSE)
 
 	# Temporal haul-out process model
 	beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
@@ -266,8 +256,8 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
 	keep <- list(mu=0,sigma.mu=0,gamma=0)  # number of proposals accepted for Metropolis updates
 
-keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n.lc))
-	keep.tmp <- list(mu=0,sigma.mu=0,gamma=0)  # for adaptive tuning
+	keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n.lc))
+	keep.tmp <- keep  # for adaptive tuning
 	m.save.tmp <- 0
 	t.v.update <- 0  # timing updates of auxiliary variable for temporal haul-out process
 	t.mcmc.start <- Sys.time()  # timing MCMC iterations
@@ -287,116 +277,80 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 			tune$sigma.mu <- adapt(tune$sigma.mu,keep.tmp$sigma.mu,k)
 			tune$gamma <- adapt(tune$gamma,keep.tmp$gamma,k)
 			tune$mu <- adapt(tune$mu,keep.tmp$mu,k)
+			tune$sigma <- sapply(1:n.lc,function(x) adapt(tune$sigma[i],keep.tmp$sigma[i],k))
+			tune$a <- sapply(1:n.lc,function(x) adapt(tune$a[i],keep.tmp$a[i],k))
+			tune$rho <- sapply(1:n.lc,function(x) adapt(tune$rho[i],keep.tmp$rho[i],k))
 			keep.tmp <- lapply(keep.tmp,function(x) x*0)
 	   	} 
 	
 		#--------------------------------------------------------------------------
 		# Appendix A, Step 4: update observation model parameters (Sigma)
 		#--------------------------------------------------------------------------
-
 # browser()
-# priors$sigma <- priors$sigma/s.scale
-
-		sigma.star <- rnorm(n.lc,sigma,tune$sigma) #Proposals for sigma
-		a.star <- rnorm(n.lc,a,tune$a) #Proposals for a
-		rho.star <- rnorm(n.lc,rho,tune$rho) #Proposals for rho
-
-	dmvt2.vec <- function(d,P,b,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
-	 	# Calculate density of mixture t distribution
-		b <- b^(-0.5)  # determinant
-		out <- tkern(d,P,nu)+tkern(d,K%*%P%*%t(K),nu)
-		out <- log(0.5)+log(out)+log(b)  # log density
-					# +lgamma((nu+2)/2)-(lgamma(nu/2)+log(nu)+log(pi))  # constant
-		out
-	}
+		sigma.star <- rnorm(n.lc,sigma,tune$sigma)  # proposals for sigma
+		a.star <- rnorm(n.lc,a,tune$a)  # proposals for a
+		rho.star <- rnorm(n.lc,rho,tune$rho)  # proposals for rho
 	
 		for(i in 1:n.lc){ #Loop to iterate over error classes: Appendix A, step 2(f)
-	# i <- 2
-			idx <- lc.list[[i]] #Index of locations in error class i
-			d.tmp <- s[idx,]-S.tilde[h[idx],3:4]
-			K <- matrix(c(-1,0,0,1),2)
-			z1 <- which(z[idx]==1)
-			z0 <- which(z[idx]==0)
-# browser()	
+
+			idx <- lc.list[[i]]  # index of locations in error class i
+			z1 <- idx[which(z[idx]==1)]
+			z0 <- idx[which(z[idx]==0)]
+
 			### Sample sigma: Appendix A, step 2(b)
 
 			if(sigma.star[i]>0 & sigma.star[i]<u.sigma){
-				Q.star <- get.Sigma(sigma.star[i]^2+sigma.mu^2,a[i],rho[i])
 				Sigma.star <- get.Sigma(sigma.star[i]^2,a[i],rho[i])
-
-				mh.star.sigma <- 
-				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
-				mh.0.sigma <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
-
-		# mh.star.sigma <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
-		# mh.0.sigma <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
-
+				Q.star <- get.Sigma(sigma.star[i]^2+sigma.mu^2,a[i],rho[i])
+				mh.star.sigma <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma.star,Q.star))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma.star,Q.star))
+				mh.0.sigma <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma,Q,i))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma,Q,i))
 				if(exp(mh.star.sigma-mh.0.sigma)>runif(1)){
 					sigma[i] <- sigma.star[i]
+					Sigma[[i]] <- Sigma.star
+					Q[[i]] <- Q.star
 					keep$sigma[i] <- keep$sigma[i]+1
-					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
-					Sigma$P[[i]] <- Sigma.star$P[[1]]
-					Sigma$det[[i]] <- Sigma.star$det[[1]]
-					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
-					Q$P[[i]] <- Q.star$P[[1]]
-					Q$det[[i]] <- Q.star$det[[1]]
+					keep.tmp$sigma[i] <- keep.tmp$sigma[i]+1
 				}
 			}
 
 			### Sample a: Appendix A, step 2(c)
 
 			if(a.star[i]>0 & a.star[i]<1){
-				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a.star[i],rho[i])
 				Sigma.star <- get.Sigma(sigma[i]^2,a.star[i],rho[i])
-
-				mh.star.a <- 
-				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
-				mh.0.a <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
-				# mh.star.a <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
-			  	# mh.0.a <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a.star[i],rho[i])
+				mh.star.a <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma.star,Q.star))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma.star,Q.star))
+				mh.0.a <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma,Q,i))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma,Q,i))
 				if(exp(mh.star.a-mh.0.a)>runif(1)){
 					a[i] <- a.star[i]
+					Sigma[[i]] <- Sigma.star
+					Q[[i]] <- Q.star
 					keep$a[i] <- keep$a[i]+1
-					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
-					Sigma$P[[i]] <- Sigma.star$P[[1]]
-					Sigma$det[[i]] <- Sigma.star$det[[1]]
-					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
-					Q$P[[i]] <- Q.star$P[[1]]
-					Q$det[[i]] <- Q.star$det[[1]]
+					keep.tmp$a[i] <- keep.tmp$a[i]+1
 				}
 			}
 
 			### Sample rho: Appendix A, step 2(d)
 
 			if(rho.star[i]>0 & rho.star[i]<1){
-				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a[i],rho.star[i])
 				Sigma.star <- get.Sigma(sigma[i]^2,a[i],rho.star[i])
-
-				mh.star.rho <- 
-				sum(dmvt2.vec(d.tmp[z1,],Sigma.star$P[[1]],b=Sigma.star$det[[1]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q.star$P[[1]],b=Q.star$det[[1]]))
-				mh.0.rho <- sum(dmvt2.vec(d.tmp[z1,],Sigma$P[[i]],b=Sigma$det[[i]]))+
-				sum(dmvt2.vec(d.tmp[z0,],Q$P[[i]],b=Q$det[[i]]))
-
-				# mh.star.rho <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
-			  	# mh.0.rho <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
+				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a[i],rho.star[i])
+				mh.star.rho <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma.star,Q.star))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma.star,Q.star))
+				mh.0.rho <- sum(dt2(s[z1,],S.tilde[h[z1],3:4],z=1,Sigma,Q,i))+
+					sum(dt2(s[z0,],S.tilde[h[z0],3:4],z=0,Sigma,Q,i))
 				if(exp(mh.star.rho-mh.0.rho)>runif(1)){
 					rho[i] <- rho.star[i]
+					Sigma[[i]] <- Sigma.star
+					Q[[i]] <- Q.star
 					keep$rho[i] <- keep$rho[i]+1
-					Sigma$Sigma[[i]] <- Sigma.star$Sigma[[1]]
-					Sigma$P[[i]] <- Sigma.star$P[[1]]
-					Sigma$det[[i]] <- Sigma.star$det[[1]]
-					Q$Sigma[[i]] <- Q.star$Sigma[[1]]
-					Q$P[[i]] <- Q.star$P[[1]]
-					Q$det[[i]] <- Q.star$det[[1]]
+					keep.tmp$rho[i] <- keep.tmp$rho[i]+1
 				}
 			}
 		}
-
 
 	
 		#--------------------------------------------------------------------------
@@ -447,9 +401,11 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 	    ###
 	    ### Appendix A, Step 4(f): update z
 	    ###
-	    
-		p1 <- p*dmvt2(s,S.tilde[h,3:4],lc,Sigma,log=FALSE)
-		p2 <- (1-p)*dmvt2(s,S.tilde[h,3:4],lc,Q,log=FALSE)
+		
+		p1 <- p*sapply(1:Ts,function(x) 
+			dt2(s[x,],S.tilde[h[x],3:4],z=1,Sigma,Q,lc[x],log=FALSE))
+		p2 <- (1-p)*sapply(1:Ts,function(x) 
+			dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q,lc[x],log=FALSE))
 		p <- exp(log(p1)-log(p1+p2))	
 		z <- rbinom(Ts,1,p)
 
@@ -470,15 +426,17 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 	    #--------------------------------------------------------------------------
 # browser()
 
-		# test <- rnorm(1000,log(mu.sigma),tau)
-		# hist(s.sd*exp(test))
-
 		# Lognormal prior
 	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
-		Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,a,rho)
+		Q.star <- sapply(1:n.lc,function(x) 
+			get.Sigma(sigma[x]^2+sigma.mu.star^2,a[x],rho[x]),simplify=FALSE)
 		idx <- which(z==0)
-	    mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))					+dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$tau,log=TRUE)		    
-	    mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))						    +dnorm(log(sigma.mu),log(priors$mu.sigma),priors$tau,log=TRUE)		    
+	    mh.star.sigma.mu <-	sum(sapply(idx,function(x) 
+	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q.star,lc[x],log=TRUE)))+
+	    	dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$tau,log=TRUE)
+	    mh.0.sigma.mu <- sum(sapply(idx,function(x)
+	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q,lc[x],log=TRUE)))+
+	    	dnorm(log(sigma.mu),log(priors$mu.sigma),priors$tau,log=TRUE)
 	    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
         	sigma.mu <- sigma.mu.star
 			Q <- Q.star
@@ -536,6 +494,7 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 		keep.idx <- dup.idx[mh]
 		mu[keep.idx] <- mu.star[keep.idx]  # update mu
 
+
 		###
 	    ### Appendix A, Step 6(f): update gamma
 	    ###
@@ -545,7 +504,7 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 		mh.star.gamma <- sum(dnorm(gamma.star,mu.gamma,priors$sigma.gamma,log=TRUE))+
 			sum(U[mu,]%*%gamma.star-log(sum(exp(U%*%gamma.star))))
  		 	# sum(U[mu,]%*%gamma.star-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma.star))))
-			mh.0.gamma <- sum(dnorm(gamma,mu.gamma,priors$sigma.gamma,log=TRUE))+
+		mh.0.gamma <- sum(dnorm(gamma,mu.gamma,priors$sigma.gamma,log=TRUE))+
 			sum(U[mu,]%*%gamma-log(sum(exp(U%*%gamma))))
 			# sum(U[mu,]%*%gamma-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma))))
 		if(exp(mh.star.gamma-mh.0.gamma)>runif(1)){
@@ -579,12 +538,17 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 
 		mu <- c(mu[I],mu.tmp)
 		h <- sapply(1:Ts,function(x) sample(mu,1,prob= 
-			exp(log(pie)+get.h(s[x,],S.tilde[mu,3:4],z[x],lc[x],Sigma,Q))))
+			exp(log(pie)+dt2(s[x,],S.tilde[mu,3:4],z[x],Sigma,Q,lc[x]))))
+
 
 		###
 		###  Appendix A, Step 7: save samples 		   
 		###
 		
+		sigma.save[k,] <- sigma*s.sd
+		a.save[k,] <- a
+		rho.save[k,] <- rho
+
 		mu.save[,k] <- S.tilde[h,2]
 		theta.save[k] <- theta    
 		sigma.mu.save[k] <- sigma.mu
@@ -596,9 +560,6 @@ keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n
 		z.save[,k] <- z
 		m.save[k] <- m
 		m.save.tmp <- m.save.tmp+m
-sigma.save[k,] <- sigma*s.sd
-a.save[k,] <- a
-rho.save[k,] <- rho
 	}
   	
   	tune$sigma.mu <- tune$sigma.mu*s.sd
@@ -630,6 +591,7 @@ rho.save[k,] <- rho
 	cat(paste("\nTime per MCMC iteration:",
 		round(difftime(t.mcmc.end,t.mcmc.start,units="secs")/n.mcmc,2)),"seconds")
 	cat(paste("\nTime per v update:",round(t.v.update/n.mcmc,2),"seconds"))
+
 	list(beta=beta.save,gamma=gamma.save, alpha=alpha.save,
 		mu=mu.save,theta=theta.save,m=m.save,z=z.save,v=v.save,
 		sigma.mu=sigma.mu.save, sigma.alpha=sigma.alpha.save,

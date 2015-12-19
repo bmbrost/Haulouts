@@ -279,12 +279,11 @@ tune <- list(mu=1500,sigma.mu=3250,gamma=1.3,
 	# nu=c(21,1.25,0.525,0.29,0.24,0.225),
 	# phi=75,beta=c(0.025,0.025,0.025))
 
-
 source("~/Documents/git/Haulouts/haulouts.5.mcmc.R")
 out1 <- haulouts.5.mcmc(s,y,X.scale,W,U,S.tilde,
-	priors=priors,tune=tune,start=start,n.mcmc=1000)
+	priors=priors,tune=tune,start=start,n.mcmc=3000)
 out1$tune
-
+out1$keep
 
 ##################################################################################
 ### Inspect model output
@@ -296,9 +295,9 @@ idx <- 1:3000
 idx <- 1:5000
 idx <- 1:10000
 
-matplot(mod$sigma,type="l");abline(h=sigma)
-matplot(mod$a,type="l");abline(h=a)
-matplot(mod$rho,type="l");abline(h=rho)
+matplot(mod$sigma,type="l");abline(h=sigma,col=1:3)
+matplot(mod$a,type="l");abline(h=a,col=1:3)
+matplot(mod$rho,type="l");abline(h=rho,col=1:3)
 
 hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
 
