@@ -170,8 +170,6 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	tune$sigma <- tune$sigma/s.sd
 
 	# Center and scale priors
-	priors$sigma.mu.l <- priors$sigma.mu.l/s.sd  # lower bound of uniform prior on sigma.mu
-	priors$sigma.mu.u <- priors$sigma.mu.u/s.sd  # upper bound of uniform prior on sigma.mu
 	priors$mu.sigma <- priors$mu.sigma/s.sd  # variance on lognormal prior for sigma.mu
 
 	# Center and scale starting values
@@ -234,6 +232,9 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	#####################################################################
   
   	cat("\nCreating receptacles for output....")
+	sigma.save <- matrix(0,n.mcmc,n.lc)
+	a.save <- matrix(0,n.mcmc,n.lc)
+	rho.save <- matrix(0,n.mcmc,n.lc)
 	beta.save <- matrix(0,n.mcmc,qX)  # temporal haul-out process coefficients; fixed effects
 	alpha.save <- matrix(0,n.mcmc,qW)  # random effects of temporal haul-out process
 	gamma.save <- matrix(0,n.mcmc,qU)  # haul-out location RSF coefficients
@@ -244,24 +245,22 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	z.save <- matrix(0,Ts,n.mcmc)  # haul-out indicator variable
 	sigma.mu.save <- numeric(n.mcmc)  # haul-out dispersion parameter
 	sigma.alpha.save <- numeric(n.mcmc)  # standard deviation of random effects
-
-	sigma.save <- matrix(0,n.mcmc,n.lc)
-	a.save <- matrix(0,n.mcmc,n.lc)
-	rho.save <- matrix(0,n.mcmc,n.lc)
-
+	
     
 	#####################################################################
 	### Appendix A, Steps 3-8: MCMC loop 
 	#####################################################################
-
-	keep <- list(mu=0,sigma.mu=0,gamma=0)  # number of proposals accepted for Metropolis updates
-
+	
+	# Track MH accpetance rate
 	keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n.lc))
-	keep.tmp <- keep  # for adaptive tuning
-	m.save.tmp <- 0
+
+	# Adaptive tuning
+	keep.tmp <- keep  
+	T.b <- 50  # frequency of adaptive tuning
+	m.save.tmp <- 0  # number of clusters
+
 	t.v.update <- 0  # timing updates of auxiliary variable for temporal haul-out process
 	t.mcmc.start <- Sys.time()  # timing MCMC iterations
-	T.b <- 50  # frequency of adaptive tuning
 	
 	cat("\nEntering MCMC Loop....\n")
 	for (k in 1:n.mcmc) {
@@ -281,6 +280,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			tune$a <- sapply(1:n.lc,function(x) adapt(tune$a[i],keep.tmp$a[i],k))
 			tune$rho <- sapply(1:n.lc,function(x) adapt(tune$rho[i],keep.tmp$rho[i],k))
 			keep.tmp <- lapply(keep.tmp,function(x) x*0)
+			m.save.tmp <- 0
 	   	} 
 	
 		#--------------------------------------------------------------------------
@@ -291,13 +291,15 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		a.star <- rnorm(n.lc,a,tune$a)  # proposals for a
 		rho.star <- rnorm(n.lc,rho,tune$rho)  # proposals for rho
 	
-		for(i in 1:n.lc){ #Loop to iterate over error classes: Appendix A, step 2(f)
+		for(i in 1:n.lc){  # loop to iterate over error classes: Appendix A, step 2(f)
 
 			idx <- lc.list[[i]]  # index of locations in error class i
 			z1 <- idx[which(z[idx]==1)]
 			z0 <- idx[which(z[idx]==0)]
 
+			###
 			### Sample sigma: Appendix A, step 2(b)
+			###
 
 			if(sigma.star[i]>0 & sigma.star[i]<u.sigma){
 				Sigma.star <- get.Sigma(sigma.star[i]^2,a[i],rho[i])
@@ -315,8 +317,10 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 				}
 			}
 
+			###
 			### Sample a: Appendix A, step 2(c)
-
+			###
+			
 			if(a.star[i]>0 & a.star[i]<1){
 				Sigma.star <- get.Sigma(sigma[i]^2,a.star[i],rho[i])
 				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a.star[i],rho[i])
@@ -333,8 +337,10 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 				}
 			}
 
+			###
 			### Sample rho: Appendix A, step 2(d)
-
+			###
+			
 			if(rho.star[i]>0 & rho.star[i]<1){
 				Sigma.star <- get.Sigma(sigma[i]^2,a[i],rho.star[i])
 				Q.star <- get.Sigma(sigma[i]^2+sigma.mu^2,a[i],rho.star[i])
@@ -445,22 +451,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
     	} 
 
-		# Uniform prior	    
-	    # sigma.mu.star <- rnorm(1,sigma.mu,tune$sigma.mu)				   
-	    # if(sigma.mu.star>priors$sigma.mu.l & sigma.mu.star<priors$sigma.mu.u){
-			# # Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,n.lc,Mix)
-			# Q.star <- get.Sigma(sigma^2+sigma.mu.star^2,a,rho)
-			# idx <- which(z==0)
-		    # mh.star.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q.star,log=TRUE))
-		    # mh.0.sigma.mu <- sum(dmvt2(s[idx,],S.tilde[h[idx],3:4],lc[idx],Q,log=TRUE))
-		    # if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
-	        	# sigma.mu <- sigma.mu.star
-				# Q <- Q.star
-				# keep$sigma.mu <- keep$sigma.mu+1
-	    	# } 
-	    # }
-		
-				
+					
 		#--------------------------------------------------------------------------
 		# Update spatial haul-out process model parameters: Appendix A, Step 6
 		#--------------------------------------------------------------------------
@@ -493,7 +484,6 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		keep.tmp$mu <- keep.tmp$mu+sum(mh)
 		keep.idx <- dup.idx[mh]
 		mu[keep.idx] <- mu.star[keep.idx]  # update mu
-
 
 		###
 	    ### Appendix A, Step 6(f): update gamma
@@ -530,7 +520,6 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
 		    # Appendix A, Step 6(b(iii)): update theta
 			theta <- rgamma(1,priors$r.theta+J-1,priors$q.theta-sum(log(1-eta[-J])))  
-
 			
 		###
 	    ### Appendix A, Step 6(e): update h(t_s)
@@ -540,15 +529,13 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		h <- sapply(1:Ts,function(x) sample(mu,1,prob= 
 			exp(log(pie)+dt2(s[x,],S.tilde[mu,3:4],z[x],Sigma,Q,lc[x]))))
 
-
-		###
-		###  Appendix A, Step 7: save samples 		   
-		###
-		
+		#--------------------------------------------------------------------------
+		# Save samples: Appendix A, Step 7
+		#--------------------------------------------------------------------------
+						
 		sigma.save[k,] <- sigma*s.sd
 		a.save[k,] <- a
 		rho.save[k,] <- rho
-
 		mu.save[,k] <- S.tilde[h,2]
 		theta.save[k] <- theta    
 		sigma.mu.save[k] <- sigma.mu
