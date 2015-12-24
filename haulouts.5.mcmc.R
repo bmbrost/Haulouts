@@ -1,4 +1,4 @@
-haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
+haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
  	### Brian M. Brost (08 DEC 2015)
@@ -55,6 +55,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	}
 
 	dt2 <- function(x,y,z,S,Q,lc=NULL,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
+		# Density of mixture t-distribution
 		# browser()		
 		x <- matrix(x,,2)	
 		y <- matrix(y,,2)
@@ -113,10 +114,10 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			denom.z0 <- sum(sapply(idx.0,function(x)
 				dt2(s[x,],mu.xy,z=0,Sigma,Q,lc[x],log=TRUE)))
 		}
-		mh.star <- num.z1+num.z0+U[mu.star[x],]%*%gamma  # numerator of Metropolis-Hastings ratio
+		mh.star <- num.z1+num.z0+U[mu.star[x],]%*%gamma  # numerator of Metropolis ratio
 			 #-log(sum(exp(U%*%gamma))))  # integral over S.tilde
 			# log(sum(exp(U[c(mu.star[x],mu[-x],mu.tmp),]%*%gamma)))  # integral over active mu
-		mh.0 <-	denom.z1+denom.z0+U[mu[x],]%*%gamma   # denominator of Metropolis-Hastings ratio
+		mh.0 <-	denom.z1+denom.z0+U[mu[x],]%*%gamma   # denominator of Metropolis ratio
 			#-log(sum(exp(U%*%gamma)))  # integral over S.tilde
 			# log(sum(exp(U[c(mu,mu.tmp),]%*%gamma)))  # integral over active mu
 		exp(mh.star-mh.0)>runif(1)  # Accept or reject
@@ -147,7 +148,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		# for computational efficiency, and not idx of mu as in Appendix A
 	U <- cbind(1,values(U)[idx])  # convert raster to design matrix
 
-	lc <- as.numeric(priors$lc)  # Argos location quality class
+	lc <- as.numeric(lc)  # Argos location quality class
 	n.lc <- length(unique(lc))  # number of error classes
 	lc.list <- sapply(sort(unique(lc)),function(x) which(lc==x),simplify=FALSE)
 	
@@ -201,7 +202,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
 
 	#####################################################################
-	### Appendix A, Step 1: starting values 
+	### Starting values: Appendix A, Steps 1 and 2
 	#####################################################################
 
 	cat("\nGetting starting values....")
@@ -213,7 +214,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	Q <- sapply(1:n.lc,function(x) get.Sigma(sigma[x]^2+sigma.mu^2,a[x],rho[x]),simplify=FALSE)
 
 	# Temporal haul-out process model
-	beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
+	# beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
 	alpha <- matrix(0,qW)  # random effects for temporal haul-out process
 	Sigma.alpha <- diag(qW)*start$sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
@@ -232,9 +233,9 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	#####################################################################
   
   	cat("\nCreating receptacles for output....")
-	sigma.save <- matrix(0,n.mcmc,n.lc)
-	a.save <- matrix(0,n.mcmc,n.lc)
-	rho.save <- matrix(0,n.mcmc,n.lc)
+	sigma.save <- matrix(0,n.mcmc,n.lc)  # longitudianl telemetry measurement error
+	a.save <- matrix(0,n.mcmc,n.lc)  # adjustment for latitudinal error
+	rho.save <- matrix(0,n.mcmc,n.lc)  # covariance between long. and lat. errors
 	beta.save <- matrix(0,n.mcmc,qX)  # temporal haul-out process coefficients; fixed effects
 	alpha.save <- matrix(0,n.mcmc,qW)  # random effects of temporal haul-out process
 	gamma.save <- matrix(0,n.mcmc,qU)  # haul-out location RSF coefficients
@@ -248,7 +249,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	
     
 	#####################################################################
-	### Appendix A, Steps 3-8: MCMC loop 
+	### MCMC loop: Appendix A, Steps 3-9
 	#####################################################################
 	
 	# Track MH accpetance rate
@@ -276,29 +277,54 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			tune$sigma.mu <- adapt(tune$sigma.mu,keep.tmp$sigma.mu,k)
 			tune$gamma <- adapt(tune$gamma,keep.tmp$gamma,k)
 			tune$mu <- adapt(tune$mu,keep.tmp$mu,k)
-			tune$sigma <- sapply(1:n.lc,function(x) adapt(tune$sigma[i],keep.tmp$sigma[i],k))
-			tune$a <- sapply(1:n.lc,function(x) adapt(tune$a[i],keep.tmp$a[i],k))
-			tune$rho <- sapply(1:n.lc,function(x) adapt(tune$rho[i],keep.tmp$rho[i],k))
+			tune$sigma <- sapply(1:n.lc,function(x) adapt(tune$sigma[x],keep.tmp$sigma[x],k))
+			tune$a <- sapply(1:n.lc,function(x) adapt(tune$a[x],keep.tmp$a[x],k))
+			tune$rho <- sapply(1:n.lc,function(x) adapt(tune$rho[x],keep.tmp$rho[x],k))
 			keep.tmp <- lapply(keep.tmp,function(x) x*0)
 			m.save.tmp <- 0
 	   	} 
 	
+	    
+	    #--------------------------------------------------------------------------
+	  	# Update sigma.mu: Appendix A, Step 4 
+	    #--------------------------------------------------------------------------
+# browser()
+		# Lognormal prior
+	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
+		Q.star <- sapply(1:n.lc,function(x) 
+			get.Sigma(sigma[x]^2+sigma.mu.star^2,a[x],rho[x]),simplify=FALSE)
+		idx <- which(z==0)
+	    mh.star.sigma.mu <-	sum(sapply(idx,function(x) 
+	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q.star,lc[x],log=TRUE)))+
+	    	dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$sigma.sigma,log=TRUE)
+	    mh.0.sigma.mu <- sum(sapply(idx,function(x)
+	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q,lc[x],log=TRUE)))+
+	    	dnorm(log(sigma.mu),log(priors$mu.sigma),priors$sigma.sigma,log=TRUE)
+	    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
+        	sigma.mu <- sigma.mu.star
+			Q <- Q.star
+			keep$sigma.mu <- keep$sigma.mu+1
+			keep.tmp$sigma.mu <- keep.tmp$sigma.mu+1
+
+    	} 
+
+	
 		#--------------------------------------------------------------------------
-		# Appendix A, Step 4: update observation model parameters (Sigma)
+		# Update observation model parameters: Appendix A, Step 5
 		#--------------------------------------------------------------------------
 # browser()
 		sigma.star <- rnorm(n.lc,sigma,tune$sigma)  # proposals for sigma
 		a.star <- rnorm(n.lc,a,tune$a)  # proposals for a
 		rho.star <- rnorm(n.lc,rho,tune$rho)  # proposals for rho
 	
-		for(i in 1:n.lc){  # loop to iterate over error classes: Appendix A, step 2(f)
+		for(i in 1:n.lc){  # loop to iterate over error classes: Appendix A, Step 5(b)
 
 			idx <- lc.list[[i]]  # index of locations in error class i
 			z1 <- idx[which(z[idx]==1)]
 			z0 <- idx[which(z[idx]==0)]
 
 			###
-			### Sample sigma: Appendix A, step 2(b)
+			### Sample sigma: Appendix A, Step 5(a.i)
 			###
 
 			if(sigma.star[i]>0 & sigma.star[i]<u.sigma){
@@ -318,7 +344,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			}
 
 			###
-			### Sample a: Appendix A, step 2(c)
+			### Sample a: Appendix A, Step 5(a.ii)
 			###
 			
 			if(a.star[i]>0 & a.star[i]<1){
@@ -338,7 +364,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			}
 
 			###
-			### Sample rho: Appendix A, step 2(d)
+			### Sample rho: Appendix A, Step 5(a.iii)
 			###
 			
 			if(rho.star[i]>0 & rho.star[i]<1){
@@ -360,20 +386,34 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 
 	
 		#--------------------------------------------------------------------------
-		# Appendix A, Step 4: update temporal haul-out process model parameters 
+		# Update temporal haul-out process model parameters: Appendix A, Step 6
 		#--------------------------------------------------------------------------
 # browser()
 	 	t.v.start <- Sys.time()  # start time of auxiliary variable update
 	
+		###	
+		### Update beta: Appendix A, Step 6(a)
 		###
-		### Appendix A, Step 4(a): update v(t_y)
+		
+		b <- crossprod(X,(v-W%*%alpha))
+	  	beta <- A.inv.beta%*%b+crossprod(chol(A.inv.beta),matrix(rnorm(qX),qX,1))
+
+		###
+		### Update alpha: Appendix A, Step 6(b)
+		###
+		
+		b <- crossprod(W,(v-X%*%beta))
+		alpha <- A.inv.alpha%*%b+crossprod(chol(A.inv.alpha),matrix(rnorm(qW),qW,1))
+
+		###
+		### Update v(t_y): Appendix A, Step 6(c)
 		###
 		
 	  	v[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
 	  	v[y0] <- truncnormsamp(linpred[y0],1,-Inf,0,y0.sum)
 
 		###
-		### Appendix A, Step 4(b): update v(t_s)
+		### Update v(t_s): Appendix A, Step 6(d)
 		###
 			
 		z1 <- which(z==1)
@@ -381,31 +421,17 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	  	v[z1] <- truncnormsamp(linpred[z1],1,0,Inf,length(z1))
 		v[z0] <- truncnormsamp(linpred[z0],1,-Inf,0,length(z0))
 	
-		###
-		### Appendix A, Step 4(c): update alpha
-		###
-		
-		b <- crossprod(W,(v-X%*%beta))
-		alpha <- A.inv.alpha%*%b+crossprod(chol(A.inv.alpha),matrix(rnorm(qW),qW,1))
-
-		###	
-		### Appendix A, Step 4(d): update beta
-		###
-		
-		b <- crossprod(X,(v-W%*%alpha))
-	  	beta <- A.inv.beta%*%b+crossprod(chol(A.inv.beta),matrix(rnorm(qX),qX,1))
-	  	
-	  	t.v.update <- t.v.update+difftime(Sys.time(),t.v.start,"secs")  # end time of auxilliary variable update
+	  	t.v.update <- t.v.update+difftime(Sys.time(),t.v.start,"secs")  # end time of aux. variable update
 	  	
 	  	###
-	  	### Appendix A, Step 4(e): calculate Prob(z(t_s)==1)
+	  	### Calculate Prob(z(t_s)==1): Appendix A, Step 6(e)
 	  	###
 	  	
 	  	linpred <- X%*%beta+W%*%alpha  # update linear predictor 
 		p <- pnorm(linpred[1:Ts,])
 
 	    ###
-	    ### Appendix A, Step 4(f): update z
+	    ### Update z: Appendix A, Step 6(f)
 	    ###
 		
 		p1 <- p*sapply(1:Ts,function(x) 
@@ -416,7 +442,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		z <- rbinom(Ts,1,p)
 
 		###
-		### Appendix A, Step 4(g): update sigma2.alpha
+		### Update sigma2.alpha: Appendix A, Step 6(g)
 		###
 		
 		r.tmp <- 1/(sum((alpha-mu.alpha)^2)/2+1/priors$r.sigma.alpha)
@@ -426,38 +452,13 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		Sigma.alpha.inv <- solve(Sigma.alpha)
 		A.inv.alpha <- solve(W.cross+Sigma.alpha.inv)
 		
-
-	    #--------------------------------------------------------------------------
-	  	# Appendix A, Step 5: update sigma.mu
-	    #--------------------------------------------------------------------------
-# browser()
-
-		# Lognormal prior
-	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
-		Q.star <- sapply(1:n.lc,function(x) 
-			get.Sigma(sigma[x]^2+sigma.mu.star^2,a[x],rho[x]),simplify=FALSE)
-		idx <- which(z==0)
-	    mh.star.sigma.mu <-	sum(sapply(idx,function(x) 
-	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q.star,lc[x],log=TRUE)))+
-	    	dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$tau,log=TRUE)
-	    mh.0.sigma.mu <- sum(sapply(idx,function(x)
-	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q,lc[x],log=TRUE)))+
-	    	dnorm(log(sigma.mu),log(priors$mu.sigma),priors$tau,log=TRUE)
-	    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
-        	sigma.mu <- sigma.mu.star
-			Q <- Q.star
-			keep$sigma.mu <- keep$sigma.mu+1
-			keep.tmp$sigma.mu <- keep.tmp$sigma.mu+1
-
-    	} 
-
 					
 		#--------------------------------------------------------------------------
-		# Update spatial haul-out process model parameters: Appendix A, Step 6
+		# Update spatial haul-out process model parameters: Appendix A, Step 7
 		#--------------------------------------------------------------------------
 # browser()
 		###
-		### Appendix A, Step 6(a): tabulate cluster membership 
+		### Tabulate cluster membership: Appendix A, Step 7(a) 
 		###
 
 		n <- table(h)  
@@ -465,14 +466,31 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		mu <- as.numeric(names(n))  # idx of occupied clusters
 
 		###
-		### Appendix A, Step 6(d): update 'unoccupied' mu
+		### Update the stick-breaking process: Appendix A, Step 7(b)
+		###
+		
+			# Create index set I: Appendix A, Step 6(b.i)
+			I <- order(n,decreasing=TRUE)  # clusters ordered by membership
+		
+			# Update eta: Appendix A, Step 6(b.ii)
+			n.tmp <- c(n[I],rep(0,J-m-1))  # membership in decreasing order
+			eta <- c(rbeta(J-1,1+n.tmp,theta+Ts-cumsum(n.tmp)),1)  # stick-breaking weights
+
+			# Update pi: Appendix A, Step 6(b.ii)
+		    pie <- eta*c(1,cumprod((1-eta[-J])))  # mixture component probabilities
+
+		    # Update theta: Appendix A, Step 6(b.iii)
+			theta <- rgamma(1,priors$r.theta+J-1,priors$q.theta-sum(log(1-eta[-J])))  
+
+		###
+		### Update 'unoccupied' mu: Appendix A, Step 7(c)
 		###
 
 		p <- exp(U[-mu,]%*%gamma)
 		mu.tmp <- sample(S.tilde[-mu,1],J-m,replace=FALSE,prob=p)  # idx of unoccupied mu
 
 		###
-		### Appendix A, Step 6(c): update 'occupied' mu		   
+		### Update 'occupied' mu: Appendix A, Step 7(d)		   
 		###
 # browser()			
 		mu.star <- sapply(mu,function(x) sample(S.tilde[,1],1,prob=  # proposals for mu	
@@ -486,9 +504,9 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 		mu[keep.idx] <- mu.star[keep.idx]  # update mu
 
 		###
-	    ### Appendix A, Step 6(f): update gamma
+	    ### Update gamma: Appendix A, Step 7(e)
 	    ###
-
+	    
 		# Integral over S.tilde, occupied mu only
 		gamma.star <- matrix(rnorm(qU,gamma,tune$gamma),qU)
 		mh.star.gamma <- sum(dnorm(gamma.star,mu.gamma,priors$sigma.gamma,log=TRUE))+
@@ -503,26 +521,9 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 	        keep$gamma <- keep$gamma+1
 	        keep.tmp$gamma <- keep.tmp$gamma+1
     	} 
-
-		###
-		### Appendix A, Step 6(b): update the stick-breaking process 
-		###
-		
-			# Appendix A, Step 6(b(i)): create index set I
-			I <- order(n,decreasing=TRUE)  # clusters ordered by membership
-		
-			# Appendix A, Step 6(b(ii)): update eta
-			n.tmp <- c(n[I],rep(0,J-m-1))  # membership in decreasing order
-			eta <- c(rbeta(J-1,1+n.tmp,theta+Ts-cumsum(n.tmp)),1)  # stick-breaking weights
-
-			# Appendix A, Step 6(b(ii)): update pi
-		    pie <- eta*c(1,cumprod((1-eta[-J])))  # mixture component probabilities
-
-		    # Appendix A, Step 6(b(iii)): update theta
-			theta <- rgamma(1,priors$r.theta+J-1,priors$q.theta-sum(log(1-eta[-J])))  
 			
 		###
-	    ### Appendix A, Step 6(e): update h(t_s)
+	    ### Update h(t_s): Appendix A, Step 7(f)
 	    ###
 
 		mu <- c(mu[I],mu.tmp)
@@ -530,7 +531,7 @@ haulouts.5.mcmc <- function(s,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc
 			exp(log(pie)+dt2(s[x,],S.tilde[mu,3:4],z[x],Sigma,Q,lc[x]))))
 
 		#--------------------------------------------------------------------------
-		# Save samples: Appendix A, Step 7
+		# Save samples: Appendix A, Step 8
 		#--------------------------------------------------------------------------
 						
 		sigma.save[k,] <- sigma*s.sd

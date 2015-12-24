@@ -19,6 +19,8 @@ library(MCMCpack)  # for rdirichlet(...)
 library(splines)
 library(DPpackage)
 
+load('~/Documents/git/Haulouts/haulouts.5.workspace.Rdata')
+
 get.s <- function(mu,lc,sigma,a,rho,nu){ #Simulate observed locations (s[t])
 	library(mvtnorm)
 	s <- mu
@@ -58,8 +60,10 @@ ak <- readOGR(dsn=
 	layer="ak_63360_poly_R")
 
 # Define S according to some bounding box
-S.clip <- matrix(c(55000,110000,110000,55000,55000,805000,805000,840000,840000,805000),5,2)
-S.clip <- SpatialPolygons(list(Polygons(list(Polygon(S.clip)),"1")),proj4string=CRS(proj.aea))
+S.clip <- matrix(c(55000,110000,110000,55000,55000,
+	805000,805000,840000,840000,805000),5,2)
+S.clip <- SpatialPolygons(list(Polygons(list(Polygon(S.clip)),"1")),
+	proj4string=CRS(proj.aea))
 S.poly <- gIntersection(ak.simple,S.clip)
 
 # Create raster of S
@@ -259,29 +263,22 @@ hist(exp(test))
 # mu.sigma <- 13000/2  # From Brost et al. 2015
 
 # Fit model using blocked Gibbs sampler 
-start <- list(theta=theta,h=h,z=z,pie=pie,beta=beta,gamma=gamma,
+start <- list(theta=theta,h=h,z=z,gamma=gamma, # pie=pie,beta=beta
 	sigma=sigma,a=a,rho=rho,sigma.mu=sigma.mu,sigma.alpha=2) 
 
-priors <- list(mu.sigma=sigma.mu,tau=0.25,
+priors <- list(mu.sigma=sigma.mu,sigma.sigma=0.25,
 	sigma.beta=2,sigma.gamma=2,u.sigma=200000,
-	J=J,r.theta=theta.priors[1],q.theta=theta.priors[2],r.sigma.alpha=2,q.sigma.alpha=1,
-	lc=lc)  # observation model parameters; empirical Bayes
+	J=J,r.theta=theta.priors[1],q.theta=theta.priors[2],
+	r.sigma.alpha=2,q.sigma.alpha=1)
 
-tune <- list(mu=1500,sigma.mu=3250,gamma=1.3,
-	sigma=c(950,800,2750),
-	rho=c(0.45,0.25,0.35),
-	a=c(0.375,0.13,0.2))
-
-# tune <- list(mu=c(800,700,900,1000,1000,1000),
-	# sigma=c(950,700,450,800,750,2750),
-	# rho=c(0.45,0.19,0.35,0.25,0.3,0.35),
-	# a=c(0.375,0.275,0.175,0.13,0.18,0.2),
-	# nu=c(21,1.25,0.525,0.29,0.24,0.225),
-	# phi=75,beta=c(0.025,0.025,0.025))
+tune <- list(mu=1150,sigma.mu=3000,gamma=1.1,
+	sigma=c(250,250,1500),
+	rho=c(0.2,0.25,0.3),
+	a=c(0.175,0.13,0.2))
 
 source("~/Documents/git/Haulouts/haulouts.5.mcmc.R")
-out1 <- haulouts.5.mcmc(s,y,X.scale,W,U,S.tilde,
-	priors=priors,tune=tune,start=start,n.mcmc=3000)
+out1 <- haulouts.5.mcmc(s,lc,y,X.scale,W,U,S.tilde,
+	priors=priors,tune=tune,start=start,n.mcmc=1000)
 out1$tune
 out1$keep
 
@@ -295,17 +292,10 @@ idx <- 1:3000
 idx <- 1:5000
 idx <- 1:10000
 
-matplot(mod$sigma,type="l");abline(h=sigma,col=1:3)
-matplot(mod$a,type="l");abline(h=a,col=1:3)
-matplot(mod$rho,type="l");abline(h=rho,col=1:3)
-
-hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
-
-
 # Inference on mu_0: haul-out site locations
 n.tmp <- table(mod$mu[,idx])  # tabulate posterior for mu.0
 S.post <- S.tilde-1
-S.post[as.numeric(names(n.tmp))] <- (n.tmp/max(n.tmp))^(1/1)
+S.post[as.numeric(names(n.tmp))] <- (n.tmp/max(n.tmp))^(1/2)
 plot(S.post)  # posterior distribution of mu.0
 points(xyFromCell(S.tilde,as.numeric(names(n))),pch=1,cex=n/max(n)+0.25,col=2)
 points(s,pch=19,cex=0.2,col=3)
@@ -361,6 +351,11 @@ barplot(table(mod$m))
 # Inference on sigma_mu: homerange dispersion parameter
 hist(mod$sigma.mu[idx],breaks=100);abline(v=sigma.mu,col=2,lty=2)
 mean(mod$sigma.mu[idx])
+
+# Inference on sigma, a, and rho: observation model parameters
+matplot(mod$sigma,type="l");abline(h=sigma,col=1:3)
+matplot(mod$a,type="l");abline(h=a,col=1:3)
+matplot(mod$rho,type="l");abline(h=rho,col=1:3)
 
 # Inference on z: latent haul-out indicator variable for telemetry locations
 # Note: estimation of z (z.hat) is based on covariates and location of telemetry 
