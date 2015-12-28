@@ -1,17 +1,20 @@
 haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.mcmc,n.cores=NULL){
  
  	###
- 	### Brian M. Brost (08 DEC 2015)
- 	### Cleaned up version of haulouts.3.mcmc.R
+ 	### Brian M. Brost (28 DEC 2015)
+ 	### Cleaned up version of haulouts.4.mcmc.R with estimation of telemetry error parameters
  	###
  	
  	###
- 	### Function arguments: s=telemetry locations, y=ancillary data source containing
- 	### binary wet/dry status; X=design matrix containing covariates influencing wet/dry
+ 	### Function arguments: s=telemetry locations; lc=Argos location quality class; 
+ 	### y=ancillary data source containing binary wet/dry status;
+ 	### X=design matrix containing covariates influencing wet/dry
  	### status of telemetry locations s and wet/dry status of ancillary data y;  
  	### W=basis expansion for s and y; U=design matrix containing covariates influencing
- 	### the location of haul-out sites; S.tilde=support of haul-out sites 
+ 	### the location of haul-out sites; S.tilde=matrix summarizing support of haul-out sites 
  	###
+ 	
+ 	### See Appendix A of haul-outs manuscript for write-up of this model
 
 	t.start <- Sys.time()
 	cat(paste("Start time:",t.start,"\n"))
@@ -19,14 +22,6 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	#####################################################################
 	### Libraries and Subroutines
 	#####################################################################
-  
-	# library(MCMCpack)  # for Dirichlet distribution functions
-	# library(data.table)  # for tabulating and summing
-	# library(dplyr)  # dense_rank() for ranking clusters smallest to largest
-	# library(doParallel)  # for parallel processing
-	# library(foreach)  # for parallel processing  
-	# library(mvtnorm)  # for multivariate normal density
-	# library(msm)  # for truncated normal density
   
   	truncnormsamp <- function(mu,sig2,low,high,nsamp){  # truncated normal sampler
 		flow <- pnorm(low,mu,sqrt(sig2)) 
@@ -46,8 +41,7 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
 	}
 	
-	get.Sigma <- function(sigma2,a,rho){  
-		# Get covariance matrix, determinant, and precision matrix
+	get.Sigma <- function(sigma2,a,rho){  # Get covariance matrix
 		S <- sigma2*matrix(c(1,sqrt(a)*rho,sqrt(a)*rho,a),2)  # variance-covariance matrix
 		b <-  S[1,1]*S[2,2]-S[1,2]*S[2,1]  # determinant
 		P <- (1/b)*matrix(c(S[2,2],-S[2,1],-S[1,2],S[1,1]),2)  # precision matrix
@@ -56,7 +50,6 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 
 	dt2 <- function(x,y,z,S,Q,lc=NULL,nu=100,K=matrix(c(-1,0,0,1),2),log=TRUE){
 		# Density of mixture t-distribution
-		# browser()		
 		x <- matrix(x,,2)	
 		y <- matrix(y,,2)
 		if(nrow(x)!=nrow(y)) x <- matrix(x,nrow(y),2,byrow=TRUE)
@@ -96,7 +89,6 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
   
 	get.mh.mu <- function(x,mu,mu.star,mu.tmp,S,h,s,lc,z,Sigma,Q,U,gamma){
 		# Accept/reject proposals for mu
-		# browser()
 		mu.xy <- S[mu[x],3:4]  # location of current clusters mu
 		mu.xy.star <- S[mu.star[x],3:4]  # location of proposal clusters mu.star
 		idx.0 <- which(h==mu[x]&z==0)  # obs. associated with mu and z=0
@@ -129,29 +121,52 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	#####################################################################
 # browser() 
 	cat("\nSetting up variables....")
-
 	Ts <- nrow(s)  # number of telemetry locations
 	Ty <- length(y)  # number of wet/dry observations
 	qX <- ncol(X)
 	qW <- ncol(W)
-	qU <- dim(U)[3]+1	# number of raster layers plus an intercept
+	qU <- ncol(U)
 	v <- numeric(Ty+Ts)  # auxilliary variable for continuous haul-out process
 	y1 <- which(y==1)+Ts
 	y0 <- which(y==0)+Ts
 	y1.sum <- length(y1)
 	y0.sum <- length(y0)
 	W.cross <- t(W)%*%W  # cross product of W
-	idx <- which(values(S.tilde)==1)  # cells that define S.tilde
-	S.tilde <- cbind(1:length(idx),idx,xyFromCell(S.tilde,idx))  # matrix summarizing
-		# information in S.tilde; note that mu below references row idx in S.tilde
-	h <- match(start$h,S.tilde[,2])  # Note: h corresponds to row idx of S.tilde 
-		# for computational efficiency, and not idx of mu as in Appendix A
-	U <- cbind(1,values(U)[idx])  # convert raster to design matrix
-
 	lc <- as.numeric(lc)  # Argos location quality class
 	n.lc <- length(unique(lc))  # number of error classes
 	lc.list <- sapply(sort(unique(lc)),function(x) which(lc==x),simplify=FALSE)
 	
+
+	#####################################################################
+	### Priors
+	#####################################################################
+	
+	cat("\nGetting priors....")
+	
+	# Observation model
+	u.sigma <- priors$u.sigma  # upper limit of uniform prior on sigma
+	mu.sigma <- priors$mu.sigma  # mean of lognormal prior for sigma.mu
+	sigma.sigma <- priors$sigma.sigma  # variance of longormal prior for sigma.mu
+	r.sigma.alpha <- priors$r.sigma.alpha  # IG prior on sigma.alpha
+	q.sigma.alpha <- priors$q.sigma.alpha  # IG prior on sigma.alpha
+	r.theta <- priors$r.theta  # IG prior on theta
+	q.theta <- priors$q.theta  # IG prior on theta
+	sigma.gamma <- priors$sigma.gamma  # variance of normal prior on gamma
+	
+	# Temporal haul-out process model 
+	mu.alpha <- matrix(0,qW,1)  # random effects for temporal haul-out process
+	mu.beta <- matrix(0,qX,1)  # temporal haul-out process coefficients; fixed effects
+	Sigma.beta <- diag(qX)*priors$sigma.beta^2
+	Sigma.beta.inv <- solve(Sigma.beta)
+	A.inv.beta <- solve(t(X)%*%X+Sigma.beta.inv)
+
+	# Spatial haul-out process model 
+	J <- priors$J  # maximum number of clusters per truncation approximation
+	mu.gamma <- matrix(0,qU,1)  # haul-out location RSF coefficients
+	# Sigma.gamma <- diag(qU)*sigma.gamma^2
+  	# Sigma.gamma.inv <- solve(Sigma.gamma)
+
+
 	#####################################################################
 	### Standardize parameters
 	#####################################################################
@@ -171,34 +186,12 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	tune$sigma <- tune$sigma/s.sd
 
 	# Center and scale priors
-	priors$mu.sigma <- priors$mu.sigma/s.sd  # variance on lognormal prior for sigma.mu
+	mu.sigma <- mu.sigma/s.sd  
+	u.sigma <- u.sigma/s.sd
 
 	# Center and scale starting values
 	sigma.mu <- start$sigma.mu/s.sd  # homerange dispersion parameter
 	sigma <- start$sigma/s.sd  # observation model standard deviation
-
-
-	#####################################################################
-	### Priors
-	#####################################################################
-	
-	cat("\nGetting priors....")
-	
-	# Observation model
-	u.sigma <- priors$u.sigma/s.sd
-	
-	# Temporal haul-out process model 
-	mu.alpha <- matrix(0,qW,1)  # random effects for temporal haul-out process
-	mu.beta <- matrix(0,qX,1)  # temporal haul-out process coefficients; fixed effects
-	Sigma.beta <- diag(qX)*priors$sigma.beta^2
-	Sigma.beta.inv <- solve(Sigma.beta)
-	A.inv.beta <- solve(t(X)%*%X+Sigma.beta.inv)
-
-	# Spatial haul-out process model 
-	J <- priors$J  # maximum number of clusters per truncation approximation
-	mu.gamma <- matrix(0,qU,1)  # haul-out location RSF coefficients
-	Sigma.gamma <- diag(qU)*priors$sigma.gamma^2
-  	Sigma.gamma.inv <- solve(Sigma.gamma)
 
 
 	#####################################################################
@@ -214,13 +207,11 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	Q <- sapply(1:n.lc,function(x) get.Sigma(sigma[x]^2+sigma.mu^2,a[x],rho[x]),simplify=FALSE)
 
 	# Temporal haul-out process model
-	# beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
 	alpha <- matrix(start$alpha,qW)  # random effects for temporal haul-out process
 	Sigma.alpha <- diag(qW)*start$sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
   	A.inv.alpha <- solve(W.cross+Sigma.alpha.inv)
 	z <- start$z  # haul-out status; z=1: dry, z=0: wet
-	linpred <- X%*%beta+W%*%alpha
 
 	# Spatial haul-out process model
 	gamma <- matrix(start$gamma,qU)  # haul-out location RSF coefficients
@@ -252,10 +243,10 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	### MCMC loop: Appendix A, Steps 3-9
 	#####################################################################
 	
-	# Track MH accpetance rate
+	# Track overall MH accpetance rate
 	keep <- list(mu=0,sigma.mu=0,gamma=0,sigma=rep(0,n.lc),a=rep(0,n.lc),rho=rep(0,n.lc))
 
-	# Adaptive tuning
+	# Track MH accpetance rate for adaptive tuning
 	keep.tmp <- keep  
 	T.b <- 50  # frequency of adaptive tuning
 	m.save.tmp <- 0  # number of clusters
@@ -296,16 +287,15 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		idx <- which(z==0)
 	    mh.star.sigma.mu <-	sum(sapply(idx,function(x) 
 	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q.star,lc[x],log=TRUE)))+
-	    	dnorm(log(sigma.mu.star),log(priors$mu.sigma),priors$sigma.sigma,log=TRUE)
+	    	dnorm(log(sigma.mu.star),log(mu.sigma),sigma.sigma,log=TRUE)
 	    mh.0.sigma.mu <- sum(sapply(idx,function(x)
 	    	dt2(s[x,],S.tilde[h[x],3:4],z=0,Sigma,Q,lc[x],log=TRUE)))+
-	    	dnorm(log(sigma.mu),log(priors$mu.sigma),priors$sigma.sigma,log=TRUE)
+	    	dnorm(log(sigma.mu),log(mu.sigma),sigma.sigma,log=TRUE)
 	    if(exp(mh.star.sigma.mu-mh.0.sigma.mu)>runif(1)){
         	sigma.mu <- sigma.mu.star
 			Q <- Q.star
 			keep$sigma.mu <- keep$sigma.mu+1
 			keep.tmp$sigma.mu <- keep.tmp$sigma.mu+1
-
     	} 
 
 	
@@ -408,9 +398,10 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		###
 		### Update v(t_y): Appendix A, Step 6(c)
 		###
-		
-	  	v[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
+
+		linpred <- X%*%beta+W%*%alpha  # update linear predictor 
 	  	v[y0] <- truncnormsamp(linpred[y0],1,-Inf,0,y0.sum)
+	  	v[y1] <- truncnormsamp(linpred[y1],1,0,Inf,y1.sum)
 
 		###
 		### Update v(t_s): Appendix A, Step 6(d)
@@ -418,8 +409,8 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 			
 		z1 <- which(z==1)
 		z0 <- which(z==0)
-	  	v[z1] <- truncnormsamp(linpred[z1],1,0,Inf,length(z1))
 		v[z0] <- truncnormsamp(linpred[z0],1,-Inf,0,length(z0))
+	  	v[z1] <- truncnormsamp(linpred[z1],1,0,Inf,length(z1))
 	
 	  	t.v.update <- t.v.update+difftime(Sys.time(),t.v.start,"secs")  # end time of aux. variable update
 	  	
@@ -427,7 +418,6 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	  	### Calculate Prob(z(t_s)==1): Appendix A, Step 6(e)
 	  	###
 	  	
-	  	linpred <- X%*%beta+W%*%alpha  # update linear predictor 
 		p <- pnorm(linpred[1:Ts,])
 
 	    ###
@@ -445,8 +435,8 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		### Update sigma2.alpha: Appendix A, Step 6(g)
 		###
 		
-		r.tmp <- 1/(sum((alpha-mu.alpha)^2)/2+1/priors$r.sigma.alpha)
-		q.tmp <- qW/2+priors$q.sigma.alpha
+		r.tmp <- 1/(sum((alpha-mu.alpha)^2)/2+1/r.sigma.alpha)
+		q.tmp <- qW/2+q.sigma.alpha
 		sigma2.alpha <- 1/rgamma(1,q.tmp,,r.tmp)
 		diag(Sigma.alpha) <- sigma2.alpha
 		Sigma.alpha.inv <- solve(Sigma.alpha)
@@ -463,7 +453,7 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 
 		n <- table(h)  
 		m <- length(n)  # number of clusters
-		mu <- as.numeric(names(n))  # idx of occupied clusters
+		mu <- as.numeric(names(n))  # idx of occupied clusters; mu references row in S.tilde
 
 		###
 		### Update the stick-breaking process: Appendix A, Step 7(b)
@@ -480,7 +470,7 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		    pie <- eta*c(1,cumprod((1-eta[-J])))  # mixture component probabilities
 
 		    # Update theta: Appendix A, Step 6(b.iii)
-			theta <- rgamma(1,priors$r.theta+J-1,priors$q.theta-sum(log(1-eta[-J])))  
+			theta <- rgamma(1,r.theta+J-1,q.theta-sum(log(1-eta[-J])))  
 
 		###
 		### Update 'unoccupied' mu: Appendix A, Step 7(c)
@@ -509,10 +499,10 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	    
 		# Integral over S.tilde, occupied mu only
 		gamma.star <- matrix(rnorm(qU,gamma,tune$gamma),qU)
-		mh.star.gamma <- sum(dnorm(gamma.star,mu.gamma,priors$sigma.gamma,log=TRUE))+
+		mh.star.gamma <- sum(dnorm(gamma.star,mu.gamma,sigma.gamma,log=TRUE))+
 			sum(U[mu,]%*%gamma.star-log(sum(exp(U%*%gamma.star))))
  		 	# sum(U[mu,]%*%gamma.star-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma.star))))
-		mh.0.gamma <- sum(dnorm(gamma,mu.gamma,priors$sigma.gamma,log=TRUE))+
+		mh.0.gamma <- sum(dnorm(gamma,mu.gamma,sigma.gamma,log=TRUE))+
 			sum(U[mu,]%*%gamma-log(sum(exp(U%*%gamma))))
 			# sum(U[mu,]%*%gamma-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma))))
 		if(exp(mh.star.gamma-mh.0.gamma)>runif(1)){
@@ -534,13 +524,13 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		# Save samples: Appendix A, Step 8
 		#--------------------------------------------------------------------------
 						
-		sigma.save[k,] <- sigma*s.sd
+		sigma.save[k,] <- sigma
 		a.save[k,] <- a
 		rho.save[k,] <- rho
 		mu.save[,k] <- S.tilde[h,2]
 		theta.save[k] <- theta    
 		sigma.mu.save[k] <- sigma.mu
-		sigma.alpha.save[k] <- sqrt(sigma2.alpha)
+		sigma.alpha.save[k] <- sigma2.alpha
 		alpha.save[k,] <- alpha
 		beta.save[k,] <- beta
 		gamma.save[k,] <- gamma
@@ -548,14 +538,17 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		z.save[,k] <- z
 		m.save[k] <- m
 		m.save.tmp <- m.save.tmp+m
-	}
+	}  # end of MCMC loop
+
+  	t.mcmc.end <- Sys.time()
   	
   	tune$sigma.mu <- tune$sigma.mu*s.sd
 	tune$mu <- tune$mu*s.sd
+  	sigma.save <- sigma.save*s.sd
   	sigma.mu.save <- sigma.mu.save*s.sd
-  	t.mcmc.end <- Sys.time()
-
-	#####################################################################
+	sigma.alpha.save <- sqrt(sigma.alpha.save)
+	
+  	#####################################################################
 	### Write output
 	#####################################################################
 	  
@@ -569,10 +562,9 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	cat(paste("\n\ngamma acceptance rate:",round(keep$gamma,2))) 
 	cat(paste("\nmu acceptance rate:",round(keep$mu,2))) 
 	cat(paste("\nsigma.mu acceptance rate:",round(keep$sigma.mu,2))) 
-
-	cat(paste("\nsigma acceptance rate:",round(keep$sigma,2))) 
-	cat(paste("\na acceptance rate:",round(keep$a,2))) 
-	cat(paste("\nrho acceptance rate:",round(keep$rho,2))) 
+	cat("\nsigma acceptance rate:",round(keep$sigma,2)) 
+	cat("\na acceptance rate:",round(keep$a,2))
+	cat("\nrho acceptance rate:",round(keep$rho,2)) 
 
 	cat(paste("\n\nEnd time:",Sys.time()))
 	cat(paste("\nTotal time elapsed:",round(difftime(Sys.time(),t.start,units="mins"),2)))
@@ -580,9 +572,9 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		round(difftime(t.mcmc.end,t.mcmc.start,units="secs")/n.mcmc,2)),"seconds")
 	cat(paste("\nTime per v update:",round(t.v.update/n.mcmc,2),"seconds"))
 
-	list(beta=beta.save,gamma=gamma.save, alpha=alpha.save,
+	list(beta=beta.save,gamma=gamma.save,alpha=alpha.save,
 		mu=mu.save,theta=theta.save,m=m.save,z=z.save,v=v.save,
-		sigma.mu=sigma.mu.save, sigma.alpha=sigma.alpha.save,
-		keep=keep,tune=tune,n.mcmc=n.mcmc,
-		sigma=sigma.save,a=a.save,rho=rho.save)
+		sigma.mu=sigma.mu.save,sigma.alpha=sigma.alpha.save,
+		sigma=sigma.save,a=a.save,rho=rho.save,
+		keep=keep,tune=tune,n.mcmc=n.mcmc)
 }

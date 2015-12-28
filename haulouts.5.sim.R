@@ -74,7 +74,6 @@ S <- reclassify(S,matrix(c(1,NA,NA,1),2,2,byrow=TRUE))
 plot(S)
 
 # Identify cells along shoreline to define S.tilde
-# S.tilde <- raster(S.poly,resolution=S.res)
 S.tilde <- rasterize(S.poly,S,field=1)
 S.tilde <- boundaries(S.tilde,asNA=TRUE)
 plot(S.tilde)
@@ -163,7 +162,6 @@ X.mean <- c(0,apply(X,2,mean)[-1])
 X.sd <- c(1,apply(X,2,sd)[-1])
 X.scale <- t(apply(X,1,function(x) (x-X.mean)/X.sd))
 
-# beta <- c(-0.75,0.5,-1.5)  # coefficients on X
 beta <- c(0.75,1.75,1.0)  # Coefficients on X.scale
 
 trend <- 2*sin(0.01*time)  # non-linear pattern in haul-out process
@@ -262,8 +260,15 @@ hist(exp(test))
 
 # mu.sigma <- 13000/2  # From Brost et al. 2015
 
+# Setup matrices for model inputs
+S.tilde.mat <- cbind(1:length(S.tilde.idx),S.tilde.idx,xyFromCell(S.tilde,S.tilde.idx)) 
+	 # matrix summarizing information in S.tilde
+U.mat <-  cbind(1,values(U)[S.tilde.idx])  # convert raster to design matrix
+h <- match(h,S.tilde.mat[,2])  # h corresponds to row idx of S.tilde 
+	# for computational efficiency, and not idx of mu as in Appendix A
+
 # Fit model using blocked Gibbs sampler 
-start <- list(theta=theta,h=h,z=z,gamma=gamma, # pie=pie,beta=beta
+start <- list(theta=theta,h=h,z=z,gamma=gamma,alpha=rep(0,qW),
 	sigma=sigma,a=a,rho=rho,sigma.mu=sigma.mu,sigma.alpha=2) 
 
 priors <- list(mu.sigma=sigma.mu,sigma.sigma=0.25,
@@ -272,13 +277,11 @@ priors <- list(mu.sigma=sigma.mu,sigma.sigma=0.25,
 	r.sigma.alpha=2,q.sigma.alpha=1)
 
 tune <- list(mu=1150,sigma.mu=3000,gamma=1.1,
-	sigma=c(250,250,1500),
-	rho=c(0.2,0.25,0.3),
-	a=c(0.175,0.13,0.2))
+	sigma=c(250,250,1500),rho=c(0.2,0.25,0.3),a=c(0.175,0.13,0.2))
 
 source("~/Documents/git/Haulouts/haulouts.5.mcmc.R")
-out1 <- haulouts.5.mcmc(s,lc,y,X.scale,W,U,S.tilde,
-	priors=priors,tune=tune,start=start,n.mcmc=1000)
+out1 <- haulouts.5.mcmc(s,lc,y,X.scale,W,U.mat,S.tilde.mat,
+	priors=priors,tune=tune,start=start,n.mcmc=10)
 out1$tune
 out1$keep
 
@@ -288,7 +291,7 @@ out1$keep
 
 mod <- out1 
 idx <- 1:1000
-idx <- 1:3000
+idx <- 1:2000
 idx <- 1:5000
 idx <- 1:10000
 
@@ -303,7 +306,7 @@ points(s,pch=19,cex=0.2,col=3)
 # Examine inference of particular telemetry observation
 pt.idx <- 100
 points(xyFromCell(S.tilde,mod$mu[pt.idx,idx]),pch=19,cex=0.5,col=rgb(0,0,0,0.025))
-points(mu[pt.idx,1],mu[pt.idx,2],pch=19,cex=0.75,col=2)
+points(mu.t[pt.idx,1],mu.t[pt.idx,2],pch=19,cex=0.75,col=2)
 points(s[pt.idx,1],s[pt.idx,2],pch=19,col=5)
 table(mod$z[pt.idx,idx])
 z[pt.idx]
