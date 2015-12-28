@@ -215,7 +215,7 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 
 	# Temporal haul-out process model
 	# beta <- matrix(start$beta,qX)  # temporal haul-out process coefficients; fixed effects
-	alpha <- matrix(0,qW)  # random effects for temporal haul-out process
+	alpha <- matrix(start$alpha,qW)  # random effects for temporal haul-out process
 	Sigma.alpha <- diag(qW)*start$sigma.alpha^2
   	Sigma.alpha.inv <- solve(Sigma.alpha)
   	A.inv.alpha <- solve(W.cross+Sigma.alpha.inv)
