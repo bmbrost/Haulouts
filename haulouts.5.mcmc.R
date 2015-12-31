@@ -37,7 +37,8 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	}
 
 	adapt <- function(tune,keep,k,target=0.44){  # adaptive tuning
-		a <- min(0.01,1/sqrt(k))
+		# a <- min(0.01,1/sqrt(k))
+		a <- min(0.025,1/sqrt(k))
 		exp(ifelse(keep<target,log(tune)-a,log(tune)+a))
 	}
 	
@@ -113,6 +114,23 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 			#-log(sum(exp(U%*%gamma)))  # integral over S.tilde
 			# log(sum(exp(U[c(mu,mu.tmp),]%*%gamma)))  # integral over active mu
 		exp(mh.star-mh.0)>runif(1)  # Accept or reject
+	}
+
+	#####################################################################
+	###  Get starting values from previous model
+	#####################################################################
+
+	k <- nrow(start$sigma)
+	if(!is.null(k)){ 
+		start$sigma <- start$sigma[k,]
+		start$a <- start$a[k,]
+		start$rho <- start$rho[k,]
+		start$theta <- start$theta[k]+0.1				
+		start$sigma.mu <- start$sigma.mu[k]
+		start$gamma <- start$gamma[k,] 
+		start$h <- start$mu[,k]
+		start$h <- S.tilde[match(start$h,S.tilde[,2]),1]
+		start$z <- start$z[,k]
 	}
 
 
@@ -281,7 +299,7 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 	    #--------------------------------------------------------------------------
 # browser()
 		# Lognormal prior
-	    sigma.mu.star <-  exp(rnorm(1,log(sigma.mu),tune$sigma.mu))
+	    sigma.mu.star <-  rnorm(1,sigma.mu,tune$sigma.mu)
 		Q.star <- sapply(1:n.lc,function(x) 
 			get.Sigma(sigma[x]^2+sigma.mu.star^2,a[x],rho[x]),simplify=FALSE)
 		idx <- which(z==0)
@@ -500,10 +518,12 @@ haulouts.5.mcmc <- function(s,lc,y=NULL,X,W=NULL,U,S.tilde,priors,tune,start,n.m
 		# Integral over S.tilde, occupied mu only
 		gamma.star <- matrix(rnorm(qU,gamma,tune$gamma),qU)
 		mh.star.gamma <- sum(dnorm(gamma.star,mu.gamma,sigma.gamma,log=TRUE))+
-			sum(U[mu,]%*%gamma.star-log(sum(exp(U%*%gamma.star))))
+			sum(n*c(U[mu,]%*%gamma.star)-n*log(sum(exp(U%*%gamma.star))))
+			# sum(U[mu,]%*%gamma.star-log(sum(exp(U%*%gamma.star))))
  		 	# sum(U[mu,]%*%gamma.star-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma.star))))
 		mh.0.gamma <- sum(dnorm(gamma,mu.gamma,sigma.gamma,log=TRUE))+
-			sum(U[mu,]%*%gamma-log(sum(exp(U%*%gamma))))
+			sum(n*c(U[mu,]%*%gamma)-n*log(sum(exp(U%*%gamma))))
+			# sum(U[mu,]%*%gamma-log(sum(exp(U%*%gamma))))
 			# sum(U[mu,]%*%gamma-log(sum(exp(U[c(mu,mu.tmp),]%*%gamma))))
 		if(exp(mh.star.gamma-mh.0.gamma)>runif(1)){
     	    gamma <- gamma.star
