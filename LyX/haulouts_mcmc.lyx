@@ -1,0 +1,2267 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+\usepackage{setspace}
+%\pagestyle{empty}
+\end_preamble
+\use_default_options true
+\begin_modules
+hanging
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 10
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2.54cm
+\topmargin 2.54cm
+\rightmargin 2.54cm
+\bottommargin 2.54cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\noindent
+Brost, B.
+ M., M.
+ B.
+ Hooten, and R.
+ J.
+ Small.
+ Model-based clustering reveals patterns in central place use of a marine
+ top predator.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Appendix S1.
+ Model statement, posterior distribution, full-conditional distributions,
+ and pseudocode detailing a Markov chain Monte Carlo algorithm to implement
+ the model for haul-out site location estimation.
+ We represented 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+, the spatial domain of possible haul-out sites, as a 100-m resolution raster
+ consisting of cells along the shoreline of Kodiak Island, and let the locations
+ of potential haul-out sites (
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+) assume values corresponding to the centroids of cells in 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+.
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the posterior and full-conditional distributions below, we use bracket
+ notation to denote a probability distribution.
+ For example, 
+\begin_inset Formula $[x]$
+\end_inset
+
+ indicates the probability distribution of 
+\begin_inset Formula $x$
+\end_inset
+
+.
+ Similarly, 
+\begin_inset Formula $[x\vert y]$
+\end_inset
+
+ indicates the probability distribution of 
+\begin_inset Formula $x$
+\end_inset
+
+ given the parameter 
+\begin_inset Formula $y$
+\end_inset
+
+.
+ The notation 
+\begin_inset Quotes eld
+\end_inset
+
+
+\begin_inset Formula $\cdot$
+\end_inset
+
+
+\begin_inset Quotes erd
+\end_inset
+
+ represents the data and other parameters in the model.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Model Statement
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\mathbf{s}_{ic}\left(t\right) & \sim & \begin{cases}
+{\cal N}\left(\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic}\right), & \text{with prob. 0.5, }y_{i}\left(t\right)=1\\
+{\cal N}\left(\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\widetilde{\Sigma}}_{ic}\right), & \text{with prob. 0.5, }y_{i}\left(t\right)=1\\
+{\cal N}\left(\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right), & \text{with prob. 0.5, }y_{i}\left(t\right)=0\\
+{\cal N}\left(\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right), & \text{with prob. 0.5, }y_{i}\left(t\right)=0
+\end{cases}\\
+\boldsymbol{\Sigma}_{ic} & = & \sigma_{ic}^{2}\begin{bmatrix}1 & \rho_{ic}\sqrt{a_{ic}}\\
+\rho_{ic}\sqrt{a_{ic}} & a_{ic}
+\end{bmatrix}\\
+\widetilde{\boldsymbol{\Sigma}}_{ic} & = & \sigma_{ic}^{2}\begin{bmatrix}1 & -\rho_{ic}\sqrt{a_{ic}}\\
+-\rho_{ic}\sqrt{a_{ic}} & a_{ic}
+\end{bmatrix}\\
+\boldsymbol{\mu}_{i}\left(t\right) & \sim & \sum_{j=1}^{J}\pi_{ij}\delta_{\mu_{ij}}\\
+\pi_{ij} & = & \eta_{ij}\prod_{l<j}\left(1-\eta_{il}\right)\\
+\eta_{ij} & \sim & \text{Beta}\left(1,\theta_{i}\right)\\
+\boldsymbol{\mu}_{ij} & \sim & f_{{\cal S}}\left(\mathbf{S}_{i}\right)\\
+\theta_{i} & \sim & \text{Gamma}\left(r_{\theta},q_{\theta}\right)\\
+\log\left(\tau_{i}\right) & \sim & {\cal N}\left(\mu_{\tau},\sigma_{\tau}^{2}\right)\\
+\sigma_{ic} & \sim & \text{Unif}\left(l_{\sigma},u_{\sigma}\right)\\
+a_{ic} & \sim & \text{Unif}\left(l_{a},u_{a}\right)\\
+\rho_{ic} & \sim & \text{Unif}\left(l_{\rho},u_{\rho}\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $J$
+\end_inset
+
+ indicates the upper bound to the truncation approximation of the Dirichlet
+ process (Sethuraman 1994, Ishwaran and James 2001), 
+\begin_inset Formula $\mathbf{S}_{i}=\left\{ \mathbf{s}_{ic}\left(t\right),\forall t\right\} $
+\end_inset
+
+ is a matrix of the observed telemetry locations for individual 
+\begin_inset Formula $i$
+\end_inset
+
+, and 
+\begin_inset Formula $f_{{\cal S}}\left(\mathbf{S}_{i}\right)$
+\end_inset
+
+ is the kernel density estimate of 
+\begin_inset Formula $\mathbf{S}_{i}$
+\end_inset
+
+ truncated and normalized over 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Posterior Distribution
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\mathbf{M}_{i},\boldsymbol{\eta}_{i},\theta_{i},\tau_{i},\boldsymbol{\sigma}_{i},\mathbf{a}_{i},\boldsymbol{\rho}_{i}\mid\mathbf{S}_{i},\mathbf{y}_{i}\right] & \propto & \prod_{t\in{\cal T}}\prod_{j=1}^{J}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\tau_{i}^{2},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]\left[\boldsymbol{\mu}_{i}\left(t\right)\mid\boldsymbol{\mu}_{ij},\eta_{ij}\right]\times\\
+ &  & \qquad\left[\boldsymbol{\mu}_{ij}\mid f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]\left[\eta_{ij}\mid\theta_{i}\right]\left[\theta_{i}\right]\left[\tau_{i}\right]\left[\boldsymbol{\sigma}_{i}\right]\left[\mathbf{a}_{i}\right]\left[\boldsymbol{\mathbf{\rho}}_{i}\right],
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\mathbf{M}_{i}=\left\{ \boldsymbol{\mu}_{i}\left(t\right),\forall t\right\} $
+\end_inset
+
+ is a matrix of 
+\begin_inset Quotes eld
+\end_inset
+
+functional
+\begin_inset Quotes erd
+\end_inset
+
+ haul-out sites associated with the telemetry locations for individual 
+\begin_inset Formula $i$
+\end_inset
+
+ (
+\begin_inset Formula $\mathbf{M}_{i}$
+\end_inset
+
+ has the same dimensions as 
+\begin_inset Formula $\mathbf{S}_{i}$
+\end_inset
+
+); 
+\begin_inset Formula $\boldsymbol{\eta}_{i}\equiv\left(\eta_{i1},\ldots,\eta_{iJ}\right)^{\prime}$
+\end_inset
+
+ is a vector of stick-breaking weights; 
+\begin_inset Formula $\mathbf{y}_{i}=\left\{ y_{i}\left(t\right),\forall t\right\} $
+\end_inset
+
+ is a vector of behavioral (wet/dry) data for individual 
+\begin_inset Formula $i$
+\end_inset
+
+; and 
+\begin_inset Formula $\boldsymbol{\sigma}_{i}\equiv\left(\sigma_{i3},\sigma_{i2},\sigma_{i1},\sigma_{i0},\sigma_{iA},\sigma_{iB}\right)^{\prime}$
+\end_inset
+
+, 
+\begin_inset Formula $\mathbf{a}_{i}\equiv\left(a_{i3},a_{i2},a_{i1},a_{i0},a_{iA},a_{iB}\right)^{\prime}$
+\end_inset
+
+, and 
+\begin_inset Formula $\boldsymbol{\rho}\equiv\left(\rho_{i3},\rho_{i2},\rho_{i1},\rho_{i0},\rho_{iA},\rho_{iB}\right)^{\prime}$
+\end_inset
+
+ are vectors of parameters that describe Argos telemetry location error.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Full-Conditional Distributions
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Location of 
+\begin_inset Quotes eld
+\end_inset
+
+potential
+\begin_inset Quotes erd
+\end_inset
+
+ haul-out sites 
+\series default
+
+\begin_inset Formula $\left(\boldsymbol{\mu}_{ij}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\mu}_{ij}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]^{1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }}\left[\boldsymbol{\mu}_{ij}\mid f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]\\
+ & \propto & \prod_{\left\{ t\in{\cal T}:\boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }\left\{ \left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}\right\} \left[\boldsymbol{\mu}_{ij}\mid f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]\\
+ & \propto & \prod_{\left\{ t\in{\cal T}:\boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }\left\{ \left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\right.\\
+ &  & \qquad\left.\times\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}\right\} \left[\boldsymbol{\mu}_{ij}\mid f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ allocated to haul-out site 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Stick-breaking weights
+\series default
+ 
+\begin_inset Formula $\left(\eta_{ij}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\eta_{ij}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\boldsymbol{\mu}_{i}\left(t\right)\mid\pi_{ij}\right]^{1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }}\prod_{l=j+1}^{J}\prod_{t\in{\cal T}}\left[\boldsymbol{\mu}_{i}\left(t\right)\mid\pi_{il}\right]^{1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{il}\right\} }}\left[\eta_{ij}\mid1,\theta_{i}\right]\\
+ & \propto & \prod_{t\in{\cal T}}\pi_{ij}^{1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }}\prod_{l=j+1}^{J}\prod_{t\in{\cal T}}\pi_{il}^{1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{il}\right\} }}\text{Beta}\left(\eta_{ij}\mid1,\theta_{i}\right)\\
+ & \propto & \pi_{ij}^{\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }\right)}\prod_{l=j+1}^{J}\pi_{il}^{\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{il}\right\} }\right)}\eta_{ij}^{1-1}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\\
+ & \propto & \left(\eta_{ij}\prod_{l<j}\left(1-\eta_{il}\right)\right)^{n_{ij}}\prod_{l=j+1}^{J}\left(\eta_{il}\prod_{m<l}\left(1-\eta_{il}\right)\right)^{n_{il}}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\\
+ & \propto & \eta_{ij}{}^{n_{ij}}\prod_{l=j+1}^{J}\left(\prod_{m<l}\left(1-\eta_{il}\right)\right)^{n_{il}}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\\
+ & \propto & \eta_{ij}{}^{n_{ij}}\left(1-\eta_{ij}\right)^{\sum_{l=j+1}^{J}n_{il}}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\\
+ & \propto & \eta_{ij}{}^{n_{ij}}\left(1-\eta_{ij}\right)^{\sum_{l=j+1}^{J}n_{il}+\theta_{i}-1}\\
+ & = & \text{Beta}\left(n_{ij}+1,\sum_{l=j+1}^{J}n_{il}+\theta_{i}\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $n_{ij}=\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{ij}\right\} }\right)$
+\end_inset
+
+, i.e., the number of observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ allocated to haul-out site 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Dirichlet process concentration parameter
+\series default
+ 
+\begin_inset Formula $\left(\theta_{i}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\theta_{i}\mid\cdot\right] & \propto & \prod_{j=1}^{J-1}\left[\eta_{ij}\mid1,\theta_{i}\right]\left[\theta_{i}\mid r_{\theta},q_{\theta}\right]\\
+ & \propto & \prod_{j=1}^{J-1}\text{Beta}\left(\eta_{ij}\mid1,\theta_{i}\right)\text{Gamma}\left(\theta_{i}\mid r_{\theta},q_{\theta}\right)\\
+ & \propto & \prod_{j=1}^{J-1}\frac{\Gamma\left(1+\theta_{i}\right)}{\Gamma\left(1\right)\Gamma\left(\theta_{i}\right)}\eta_{ij}^{1-1}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\theta_{i}^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta_{i}\right\} \\
+ & \propto & \left(\frac{\theta_{i}\Gamma\left(\theta_{i}\right)}{\Gamma\left(1\right)\Gamma\left(\theta_{i}\right)}\right)^{J-1}\theta_{i}^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta_{i}+\log\left(\prod_{j=1}^{J-1}\left(1-\eta_{ij}\right)^{\theta_{i}-1}\right)\right\} \\
+ & \propto & \theta_{i}^{J-1+r_{\theta}-1}\exp\left\{ -q_{\theta}\theta_{i}+\sum_{j=1}^{J-1}\left(\log\left(1-\eta_{ij}\right)^{\theta_{i}}\log\left(1-\eta_{ij}\right)^{-1}\right)\right\} \\
+ & \propto & \theta_{i}^{J-1+r_{\theta}-1}\exp\left\{ -q_{\theta}\theta_{i}+\sum_{j=1}^{J-1}\log\left(1-\eta_{ij}\right)^{\theta_{i}}\right\} \\
+ & \propto & \theta_{i}^{J-1+r_{\theta}-1}\exp\left\{ -q_{\theta}\theta_{i}+\theta_{i}\sum_{j=1}^{J-1}\log\left(1-\eta_{ij}\right)\right\} \\
+ & \propto & \theta_{i}^{J-1+r_{\theta}-1}\exp\left\{ -\theta_{i}\left(q_{\theta}-\sum_{j=1}^{J-1}\log\left(1-\eta_{ij}\right)\right)\right\} \\
+ & = & \text{Gamma}\left(r_{\theta}+J-1,q_{\theta}-\sum_{j=1}^{J-1}\log\left(1-\eta_{ij}\right)\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over 
+\begin_inset Formula $j=1,\ldots,J-1$
+\end_inset
+
+ because 
+\begin_inset Formula $\eta_{iJ}=1$
+\end_inset
+
+ in the truncation approximation of a Dirichlet process (Sethuraman 1994,
+ Ishwaran and James 2001).
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Location of 
+\begin_inset Quotes eld
+\end_inset
+
+functional
+\begin_inset Quotes erd
+\end_inset
+
+ haul-out sites
+\series default
+ 
+\begin_inset Formula $\left(\boldsymbol{\mu}_{i}\left(t\right)\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\mu}_{i}\left(t\right)\mid\cdot\right] & \propto & \left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]\left[\boldsymbol{\mu}_{i}\left(t\right)\mid\boldsymbol{\pi}_{i},\boldsymbol{\delta}_{i}\right]\\
+ & \propto & \sum_{j=1}^{J}\pi_{ij}\delta_{\boldsymbol{\mu}_{ij}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right],
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\boldsymbol{\pi}_{i}=\left(\pi_{i1},\ldots,\pi_{iJ}\right)$
+\end_inset
+
+ and 
+\begin_inset Formula $\boldsymbol{\delta}_{i}=\left(\delta_{\mu_{i1}},\ldots,\delta_{\mu_{iJ}}\right)$
+\end_inset
+
+.
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+let 
+\begin_inset Formula $h\left(t_{s}\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+ denote the subpopulation index for locaiton at 
+\begin_inset Formula $t_{s}$
+\end_inset
+
+, with this index comonly referred to as the latent class status.
+ Mention haul-outs vary acrros subpopulations, while variance does not.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Finite mixtures areis through supposing that each of the i=1,...,n items in
+ the sample belong to one of H subpopulations, with each latent supbpopulation
+ or latent class having a different value of one or more parameters in a
+ parametric model.
+ Let 
+\begin_inset Formula $z_{i}\in(1,...,H)$
+\end_inset
+
+ denote teh subpopulaton index for item i, with this index commonly referred
+ toas teh latent class status.
+ Then the response y_i for itehm i conditionaly on z_i has the distribution...
+ with parameters phi that do not vary acorss the subpopulations and parameters
+ theta corresponding to subpopulation h, for h=1,..,H.
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+This implementation also estimates distinct values for 
+\begin_inset Formula $\mu_{j}$
+\end_inset
+
+, and then requires lable the groups
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+In this statement, we view 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+ as providing a set of distinct parameter values, together with an allocation
+ of teh 
+\begin_inset Formula $T_{s}$
+\end_inset
+
+ observed telemetry locations to those values.
+ This requires a lableing of the groups, 
+\begin_inset Formula $h\left(t_{s}\right)$
+\end_inset
+
+.
+ The latent class status 
+\begin_inset Formula $h\left(t_{s}\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+ denotes an index that associates each telemetry location with a unqiue
+ haul-out site, 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+ We introduce an indicator variable for the latent class status, 
+\begin_inset Formula $h_{i}\left(t\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+, that assigns each telemetry location 
+\begin_inset Formula $\mathbf{s}_{ic}\left(t\right)$
+\end_inset
+
+ to one of the potential haul-out sites 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+, for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+.
+ In other words, 
+\begin_inset Formula $\boldsymbol{\mu}_{i}\left(t\right)=\boldsymbol{\mu}_{i,h_{i}\left(t\right)}$
+\end_inset
+
+.
+ The update proceeds just as in multinomial sampling:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[h_{i}\left(t\right)\mid\cdot\right] & \sim & \text{Cat}\left(\frac{\pi_{i1}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i1},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i1},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}}{\sum_{j=1}^{J}\pi_{ij}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}},\cdots,\right.\\
+ &  & \qquad\left.\frac{\pi_{iJ}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{iJ},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{iJ},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}}{\sum_{j=1}^{J}\pi_{ij}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}}\right)\\
+ & \sim & \text{Cat}\left(\frac{a_{i1}}{b_{i}},\cdots,\frac{a_{iJ}}{b_{i}}\right),
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+where 
+\begin_inset Formula $a_{ij}=\pi_{ij}\times\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\times$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Formula $\qquad\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+and 
+\begin_inset Formula $b_{i}=\sum_{j=1}^{J}\left\{ \pi_{ij}\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\times\right.$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Formula $\qquad\left.\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}\right\} $
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Animal movement parameter
+\series default
+ 
+\begin_inset Formula $\left(\tau_{i}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\tau_{i}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]\left[\tau_{i}\mid\mu_{\tau},\sigma_{\tau}^{2}\right]\\
+ & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]^{1-y_{i}\left(t\right)}\left[\tau_{i}\mid\mu_{\tau},\sigma_{\tau}^{2}\right]\\
+ & \propto & \prod_{\left\{ t\in{\cal T}:y_{i}\left(t\right)=0\right\} }0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\times\\
+ &  & \qquad{\cal N}\left(\text{log}\left(\tau_{i}\right)\mid\log\left(\mu_{\tau}\right),\sigma_{\tau}^{2}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ that are recorded when the individual is at-sea (i.e., 
+\begin_inset Formula $y_{i}\left(t\right)=0$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Longitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(\sigma_{ic}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\sigma_{ic}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]^{1_{\left\{ \mathbf{s}_{ic}\left(t\right):t\in{\cal T}_{c}\right\} }}\left[\sigma_{ic}\mid l_{\sigma},u_{\sigma}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}\right\} \left[\sigma_{ic}\mid l_{\sigma},u_{\sigma}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\times\right.\\
+ &  & \qquad\left.\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}\right\} \times\\
+ &  & \qquad\text{Unif}\left(\sigma_{ic}\mid l_{\sigma},u_{\sigma}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that 
+\begin_inset Formula ${\cal T}_{c}$
+\end_inset
+
+ defines the times at which telemetry locations in Argos location class
+ 
+\begin_inset Formula $c$
+\end_inset
+
+ were recorded.
+ In other words, the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ in Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Adjustment for latitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(a_{ic}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[a_{ic}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]^{1_{\left\{ \mathbf{s}_{ic}\left(t\right):t\in{\cal T}_{c}\right\} }}\left[a_{ic}\mid l_{a},u_{a}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}\right\} \left[a_{ic}\mid l_{a},u_{a}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\times\right.\\
+ &  & \qquad\left.\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}\right\} \times\\
+ &  & \qquad\text{Unif}\left(a_{ic}\mid l_{a},u_{a}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that 
+\begin_inset Formula ${\cal T}_{c}$
+\end_inset
+
+ defines the times at which telemetry locations in Argos location class
+ 
+\begin_inset Formula $c$
+\end_inset
+
+ were recorded.
+ In other words, the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ in Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Correlation between longitudinal and latitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(\rho_{ic}\right)$
+\end_inset
+
+
+\series bold
+:
+\series default
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\rho_{ic}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),y_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic},\tau_{i}^{2}\right]^{1_{\left\{ \mathbf{s}_{ic}\left(t\right):t\in{\cal T}_{c}\right\} }}\left[\rho_{ic}\mid l_{\rho},u_{\rho}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic},\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{y_{i}\left(t\right)}\left[\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic},\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right]^{1-y_{i}\left(t\right)}\right\} \left[\rho_{ic}\mid l_{\rho},u_{\rho}\right]\\
+ & \propto & \prod_{t\in{\cal T}_{c}}\left\{ \left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{y_{i}\left(t\right)}\times\right.\\
+ &  & \qquad\left.\left(0.5\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{ic}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right),\tau_{i}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{ic}\right)\right)\right)^{1-y_{i}\left(t\right)}\right\} \times\\
+ &  & \qquad\text{Unif}\left(\rho_{ic}\mid l_{\rho},u_{\rho}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that 
+\begin_inset Formula ${\cal T}_{c}$
+\end_inset
+
+ defines the times at which telemetry locations in Argos location class
+ 
+\begin_inset Formula $c$
+\end_inset
+
+ were recorded.
+ In other words, the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ in Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+MCMC Algorithm for Parameter Estimation
+\end_layout
+
+\begin_layout Standard
+\noindent
+One can implement a MCMC algorithm to estimate the parameters of the observation
+ and process models using the sequence of steps outlined below.
+ Proposal distributions for all parameters with non-conjugate full-conditional
+ distributions (i.e., 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+, 
+\begin_inset Formula $\tau_{i}$
+\end_inset
+
+, 
+\begin_inset Formula $\sigma_{ic}$
+\end_inset
+
+, 
+\begin_inset Formula $a_{ic}$
+\end_inset
+
+, and 
+\begin_inset Formula $\rho_{ic}$
+\end_inset
+
+) are assumed to be symmetric and updates proceed using Metropolis sampling;
+ therefore, the proposal distribution is not factored into the associated
+ ratios as in Metropolis-Hastings sampling.
+ Also note that normalizing constants cancel in the Metropolis ratios and
+ thus may be omitted for clarity.
+\end_layout
+
+\begin_layout Enumerate
+Define initial values for: 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(0)}$
+\end_inset
+
+ and 
+\begin_inset Formula $\pi_{ij}^{(0)}$
+\end_inset
+
+ for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+; 
+\begin_inset Formula $\theta_{i}{}^{(0)}$
+\end_inset
+
+; 
+\begin_inset Formula $\tau_{i}^{(0)}$
+\end_inset
+
+; and 
+\begin_inset Formula $\sigma_{ic}^{(0)}$
+\end_inset
+
+, 
+\begin_inset Formula $a_{ic}^{(0)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\rho_{ic}^{(0)}$
+\end_inset
+
+ for 
+\begin_inset Formula $c=\text{3, 2, 1, 0, A, and B}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+For each Argos location quality class, let 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\boldsymbol{\Sigma}_{ic}^{(0)}=\left(\sigma_{ic}^{(0)}\right)^{2}\left[\begin{array}{cc}
+1 & \rho_{ic}^{(0)}\sqrt{a_{ic}^{(0)}}\\
+\rho_{ic}^{(0)}\sqrt{a_{ic}^{(0)}} & a_{ic}^{(0)}
+\end{array}\right]
+\]
+
+\end_inset
+
+and
+\begin_inset Formula 
+\begin{eqnarray*}
+\widetilde{\boldsymbol{\Sigma}}_{ic}^{(0)} & = & \left(\sigma_{ic}^{(0)}\right)^{2}\left[\begin{array}{cc}
+1 & -\rho_{ic}^{(0)}\sqrt{a_{ic}^{(0)}}\\
+-\rho_{ic}^{(0)}\sqrt{a_{ic}^{(0)}} & a_{ic}^{(0)}
+\end{array}\right]\\
+ & = & \mathbf{H}\boldsymbol{\Sigma}_{ic}^{(0)}\mathbf{H^{\prime}},
+\end{eqnarray*}
+
+\end_inset
+
+where
+\begin_inset Formula 
+\[
+\mathbf{H=}\left[\begin{array}{cc}
+1 & 0\\
+0 & -1
+\end{array}\right].
+\]
+
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+Also let
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\mathbf{Q}_{ic}^{(0)}=\boldsymbol{\mathbf{\Sigma}}_{ic}^{(0)}+\left(\tau_{i}^{(0)}\right)^{2}\mathbf{I}
+\]
+
+\end_inset
+
+and
+\begin_inset Formula 
+\begin{eqnarray*}
+\widetilde{\mathbf{Q}}_{ic}^{(0)} & = & \widetilde{\boldsymbol{\Sigma}}_{ic}^{(0)}+\left(\tau_{i}^{(0)}\right)^{2}\mathbf{I}\\
+ & = & \mathbf{H}\mathbf{Q}_{ic}^{(0)}\mathbf{H}^{\prime}.
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+Set 
+\begin_inset Formula $k=1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Update the spatial process model parameters (i.e., 
+\begin_inset Formula $h_{i}\left(t\right)$
+\end_inset
+
+, 
+\begin_inset Formula $\eta_{ij}$
+\end_inset
+
+, 
+\begin_inset Formula $\theta_{i}$
+\end_inset
+
+, and 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+ ).
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Sample 
+\begin_inset Formula $h_{i}\left(t\right)^{(k)}$
+\end_inset
+
+: 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[h_{i}\left(t\right)^{(k)}\mid\cdot\right] & \sim & \text{Cat}\left(\frac{a_{ij}}{b_{i}},\ldots,\frac{a_{iJ}}{b_{i}}\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $a_{ij}=\pi_{ij}^{\left(k-1\right)}\times\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\boldsymbol{\Sigma}_{ic}^{\left(k-1\right)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\boldsymbol{\widetilde{\Sigma}}_{ic}^{\left(k-1\right)}\right)\right)^{y_{i}\left(t\right)}\times$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\qquad\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\mathbf{Q}_{ic}^{\left(k-1\right)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\mathbf{H}\mathbf{Q}_{ic}^{\left(k-1\right)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+ and 
+\begin_inset Formula $b_{i}=\sum_{j=1}^{J}\left\{ \pi_{ij}^{\left(k-1\right)}\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\boldsymbol{\Sigma}_{ic}^{\left(k-1\right)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\boldsymbol{\widetilde{\Sigma}}_{ic}^{\left(k-1\right)}\right)\right)^{y_{i}\left(t\right)}\times\right.$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\qquad\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\mathbf{Q}_{ic}^{\left(k-1\right)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{\left(k-1\right)},\mathbf{H}\mathbf{Q}_{ic}^{\left(k-1\right)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} $
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Tabulate cluster membership for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+:
+\begin_inset Formula 
+\[
+n_{ij}^{(k)}=\sum_{t\in{\cal T}}1_{\left\{ h_{i}(t)^{(k)}=j\right\} }.
+\]
+
+\end_inset
+
+In other words, 
+\begin_inset Formula $n_{ij}^{(k)}$
+\end_inset
+
+ denotes the number of observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ allocated to haul-out site 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k-1)}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Enumerate
+Let 
+\begin_inset Formula ${\cal I}$
+\end_inset
+
+ be an index set 
+\begin_inset Formula $\left\{ i:i\in1,\ldots,J\right\} $
+\end_inset
+
+ that specifies the order such that 
+\begin_inset Formula $n_{j}^{(k)}$
+\end_inset
+
+ is monotonically decreasing.
+ Furthermore, let the notation 
+\begin_inset Formula $n_{(i)}^{(k)}$
+\end_inset
+
+ denote the ordered set, i.e., 
+\begin_inset Formula $n_{(i)}^{(k)}$
+\end_inset
+
+ is the 
+\begin_inset Formula $i^{\text{th }}$
+\end_inset
+
+ largest value of 
+\begin_inset Formula $\mathbf{n}^{(k)}$
+\end_inset
+
+, where 
+\begin_inset Formula $\mathbf{n}^{(k)}\equiv(n_{1}^{(k)},\ldots,n_{J}^{(k)})$
+\end_inset
+
+.
+ Consequently, 
+\begin_inset Formula $n_{(1)}^{(k)}>n_{(2)}^{(k)}>\cdots>n_{(J-1)}^{(k)}>n_{(J)}^{(k)}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Update the stick-breaking weights, 
+\begin_inset Formula $\eta_{(i)}^{(k-1)}$
+\end_inset
+
+, for 
+\begin_inset Formula $i=1,\ldots,J-1$
+\end_inset
+
+, using a Gibbs step:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\eta_{(i)}^{(k)}\mid\cdot\right] & \sim & \text{Beta}\left(1+n_{(i)}^{(k)},\theta^{(k-1)}+\sum_{l=i+1}^{J}n_{(l)}^{(k)}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Set 
+\begin_inset Formula $\eta_{(J)}^{(k)}=1$
+\end_inset
+
+.
+ 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+Update the stick-breaking probabilities, 
+\begin_inset Formula $\pi_{(i)}^{(k-1)}$
+\end_inset
+
+, which are calculated as 
+\begin_inset Formula 
+\[
+\pi_{(i)}^{(k)}=\eta_{(i)}^{(k)}\prod_{l<i}\left(1-\eta_{(l)}^{(k)}\right).
+\]
+
+\end_inset
+
+Letting 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+
+\begin_inset Formula $\eta_{(J)}^{(k)}=1$
+\end_inset
+
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ensures 
+\begin_inset Formula $\sum_{j=1}^{J}\pi_{j}^{(k)}=1$
+\end_inset
+
+.
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ Importantly, both the stick-breaking weights and probabilities are sampled
+ (or calculated) in order of decreasing cluster membership.
+ For example, if 
+\begin_inset Formula $n_{4}^{(k)}>n_{1}^{(k)}>n_{2}^{(k)}>\cdots$
+\end_inset
+
+, the stick-breaking weights would be sampled in the sequence 
+\begin_inset Formula $\eta_{4}^{(k)},\eta_{1}^{(k)},\eta_{2,}^{(k)}\ldots$
+\end_inset
+
+.
+ Similarly, the stick-breaking probabilities would be calculated in the
+ sequence 
+\begin_inset Formula $\pi_{4}^{(k)},\pi_{1,}^{(k)}\pi_{2}^{(k)},\ldots$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+Update 
+\begin_inset Formula $\eta_{ij}^{(k-1)}$
+\end_inset
+
+, for 
+\begin_inset Formula $j=1,\ldots,J-1$
+\end_inset
+
+, using a Gibbs step:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\eta_{ij}^{(k)}\mid\cdot\right] & \sim & \text{Beta}\left(1+n_{ij}^{(k)},\theta_{i}^{(k-1)}+\sum_{l=j+1}^{J}n_{il}^{(k)}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Set 
+\begin_inset Formula $\eta_{iJ}^{(k)}=1$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+Update 
+\begin_inset Formula $\pi_{ij}^{(k-1)}$
+\end_inset
+
+, for 
+\begin_inset Formula $j=1,\ldots J$
+\end_inset
+
+, which is calculated as: 
+\begin_inset Formula 
+\[
+\pi_{ij}^{(k)}=\eta_{ij}^{(k)}\prod_{l<j}\left(1-\eta_{il}^{(k)}\right).
+\]
+
+\end_inset
+
+Letting 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+
+\begin_inset Formula $\eta_{iJ}^{(k)}=1$
+\end_inset
+
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ensures 
+\begin_inset Formula $\sum_{j=1}^{J}\pi_{ij}^{(k)}=1$
+\end_inset
+
+.
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\end_layout
+
+\begin_layout Enumerate
+Update 
+\begin_inset Formula $\theta_{i}^{(k-1)}$
+\end_inset
+
+ using a Gibbs step:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\theta_{i}^{(k)}\mid\cdot\right] & \sim & \text{Gamma}\left(r_{\theta}+J-1,q_{\theta}-\sum_{j=1}^{J-1}\log\left(1-\eta_{ij}^{(k)}\right)\right).
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\noindent
+Update 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k-1)}$
+\end_inset
+
+, for each 
+\begin_inset Formula $j$
+\end_inset
+
+ such that 
+\begin_inset Formula $n_{ij}^{(k)}>0$
+\end_inset
+
+, using Metropolis sampling.
+ Sample 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}{}^{(*)}$
+\end_inset
+
+ from a proposal distribution 
+\begin_inset Formula $\left[\boldsymbol{\mu}_{ij}^{(*)}\vert\boldsymbol{\mu}_{ij}^{(k-1)}\right]$
+\end_inset
+
+.
+ Depending on the nature of 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+ (e.g., linear support like a coastline), proposals generated from 
+\begin_inset Formula ${\cal N}\left(\boldsymbol{\mu}_{ij}^{(*)}\mid\boldsymbol{\mu}_{ij}^{(k-1)},\tau_{\mu}^{2}\mathbf{I}\right)$
+\end_inset
+
+, where 
+\begin_inset Formula $\tau_{\mu}^{2}$
+\end_inset
+
+ is a tuning parameter, may rarely occur in 
+\begin_inset Formula ${\cal S}$
+\end_inset
+
+.
+ Therefore, sample all possible locations 
+\begin_inset Formula $\mathbf{M}\in{\cal S}$
+\end_inset
+
+ with probability proportional to 
+\begin_inset Formula ${\cal N}\left(\mathbf{M}\mid\boldsymbol{\mu}_{ij}^{(k-1)},\tau_{\mu}^{2}\mathbf{I}\right)$
+\end_inset
+
+, thus guaranteeing 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(*)}\in{\cal S}$
+\end_inset
+
+.
+ Calculate the Metropolis ratio as
+\begin_inset Formula 
+\begin{eqnarray*}
+r_{\mu} & = & \left(\frac{\prod_{\left\{ t\in{\cal T}:h_{i}\left(t\right)^{(k)}=j\right\} }\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(*)},\boldsymbol{\Sigma}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(*)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(k-1)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}{\prod_{\left\{ t\in{\cal T}:h_{i}\left(t\right)^{(k)}=j\right\} }\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(k-1)},\boldsymbol{\Sigma}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(k-1)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(k-1)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}\right.\\
+ &  & \qquad\times\left.\frac{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(*)},\mathbf{Q}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(*)},\mathbf{H}\mathbf{Q}_{ic}^{(k-1)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(k-1)},\mathbf{Q}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{ij}^{(k-1)},\mathbf{H}\mathbf{Q}_{ic}^{(k-1)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }\right)\\
+ &  & \qquad\times\left(\frac{\left[\boldsymbol{\mu}_{ij}^{(*)}\vert f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]}{\left[\boldsymbol{\mu}_{ij}^{(k-1)}\vert f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{ic}\left(t\right)\right)$
+\end_inset
+
+ that are allocated to haul-out site 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}$
+\end_inset
+
+ (i.e., 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $h_{i}\left(t\right)^{\left(k\right)}=j$
+\end_inset
+
+).
+ If 
+\begin_inset Formula $r_{\mu}>u$
+\end_inset
+
+, where 
+\begin_inset Formula $u\sim\text{Uniform(0,1)}$
+\end_inset
+
+, let 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k)}=\boldsymbol{\mu}_{ij}^{(*)}$
+\end_inset
+
+.
+ Otherwise, let 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k)}=\boldsymbol{\mu}_{ij}^{(k-1)}$
+\end_inset
+
+ if 
+\begin_inset Formula $r_{\mu}<u$
+\end_inset
+
+, or if 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(*)}\notin{\cal S}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\noindent
+For each 
+\begin_inset Formula $j$
+\end_inset
+
+ such that 
+\begin_inset Formula $n_{ij}^{(k)}=0$
+\end_inset
+
+ (i.e., potential haul-out sites 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k-1)}$
+\end_inset
+
+ with zero membership), sample 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}{}^{(k)}$
+\end_inset
+
+ from the prior 
+\begin_inset Formula $\left[\boldsymbol{\mu}_{ij}^{(k)}\vert f_{{\cal S}}\left(\mathbf{S}_{i}\right)\right]$
+\end_inset
+
+.
+ As in Step 4(f), sample all possible locations 
+\begin_inset Formula $\mathbf{M}\in{\cal S}$
+\end_inset
+
+ with probability proportional to 
+\begin_inset Formula $f_{{\cal S}}\left(\mathbf{S}_{i}\right)$
+\end_inset
+
+ to ensure 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k)}\in{\cal S}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Use 
+\begin_inset Formula $h_{i}\left(t\right)^{(k)}$
+\end_inset
+
+ to map the location of haul-out sites 
+\begin_inset Formula $\boldsymbol{\mu}_{ij}^{(k)}$
+\end_inset
+
+, for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+, to telemetry locations 
+\begin_inset Formula $\mathbf{s}_{ic}\left(t\right)$
+\end_inset
+
+, for times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+:
+\begin_inset Formula 
+\[
+\boldsymbol{\mu}_{i}\left(t\right)^{(k)}=\boldsymbol{\mu}_{i,h_{i}\left(t\right)^{(k)}}^{(k)}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Update 
+\begin_inset Formula $\tau_{i}^{(k-1)}$
+\end_inset
+
+ using Metropolis sampling.
+ Sample 
+\begin_inset Formula $\tau_{i}^{(*)}$
+\end_inset
+
+ from a proposal distribution 
+\begin_inset Formula $\left[\tau_{i}^{(*)}\vert\tau_{i}^{(k-1)}\right]$
+\end_inset
+
+ (e.g., 
+\begin_inset Formula ${\cal N}\left(\tau_{i}^{(*)}\vert\tau_{i}^{(k-1)},\tau_{\tau}^{2}\mathbf{I}\right)$
+\end_inset
+
+, where 
+\begin_inset Formula $\tau_{\tau}^{2}$
+\end_inset
+
+ is a tuning parameter).
+ If 
+\begin_inset Formula $\tau_{i}^{(*)}\ge0$
+\end_inset
+
+, let 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\mathbf{Q}_{ic}^{(*)}=\boldsymbol{\mathbf{\Sigma}}_{ic}^{(k-1)}+\left(\tau_{i}^{(*)}\right)^{2}\mathbf{I}
+\]
+
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+for 
+\begin_inset Formula $c=\text{3, 2, 1, 0, A, and B}$
+\end_inset
+
+.
+ Calculate the Metropolis ratio as
+\begin_inset Formula 
+\begin{eqnarray*}
+r_{\tau} & = & \left(\frac{\prod_{\left\{ t\in{\cal T}:y_{i}\left(t\right)=0\right\} }\left\{ {\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right\} }{\prod_{\left\{ t\in{\cal T}:y_{i}\left(t\right)=0\right\} }\left\{ {\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(k-1)}\mathbf{H}\right)\right\} }\right)\\
+ &  & \qquad\times\left(\frac{{\cal N}\left(\text{log}\left(\tau_{i}^{(*)}\right)\mid\log\left(\mu_{\tau}\right),\sigma_{\tau}^{2}\right)}{{\cal N}\left(\text{log}\left(\tau_{i}^{(k-1)}\right)\mid\log\left(\mu_{\tau}\right),\sigma_{\tau}^{2}\right)}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $y_{i}\left(t\right)=0$
+\end_inset
+
+.
+ If 
+\begin_inset Formula $r_{\tau}>u$
+\end_inset
+
+, where 
+\begin_inset Formula $u\sim\text{Uniform(0,1)}$
+\end_inset
+
+, let 
+\begin_inset Formula $\tau_{i}^{(k)}=\tau_{i}^{(*)}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(*)}$
+\end_inset
+
+.
+ Otherwise, let 
+\begin_inset Formula $\tau_{i}^{(k)}=\tau_{i}^{(k-1)}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(k-1)}$
+\end_inset
+
+ if 
+\begin_inset Formula $r_{\tau}<u$
+\end_inset
+
+, or if 
+\begin_inset Formula $\tau_{i}^{(*)}<0$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+For each Argos location quality class 
+\begin_inset Formula $c=3,2,1,0,A,\text{ and }B$
+\end_inset
+
+, update the observation model parameters related to telemetry measurement
+ error (i.e., 
+\begin_inset Formula $\boldsymbol{\sigma}_{i}$
+\end_inset
+
+, 
+\begin_inset Formula $\mathbf{a}_{i}$
+\end_inset
+
+, and 
+\begin_inset Formula $\boldsymbol{\rho}_{i}$
+\end_inset
+
+).
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+\noindent
+Let 
+\begin_inset Formula ${\cal T}_{c}$
+\end_inset
+
+ define the times at which telemetry locations in Argos location class 
+\begin_inset Formula $c$
+\end_inset
+
+ were recorded.
+\end_layout
+
+\begin_layout Enumerate
+Update 
+\begin_inset Formula $\sigma_{ic}^{(k-1)}$
+\end_inset
+
+ using Metropolis sampling.
+ Sample 
+\begin_inset Formula $\sigma_{ic}^{(*)}$
+\end_inset
+
+ from a proposal distribution 
+\begin_inset Formula $\left[\sigma_{ic}^{(*)}\vert\sigma_{ic}^{(k-1)}\right]$
+\end_inset
+
+ (e.g., 
+\begin_inset Formula $\text{N}\left(\sigma_{ic}^{(*)}\vert\sigma_{ic}^{(k-1)},\tau_{\sigma}^{2}\right)$
+\end_inset
+
+, where 
+\begin_inset Formula $\tau_{\sigma}^{2}$
+\end_inset
+
+ is a tuning parameter).
+ If 
+\begin_inset Formula $\sigma_{ic}^{(*)}\in\left[l_{\sigma},u_{\sigma}\right]$
+\end_inset
+
+, let 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\boldsymbol{\Sigma}_{ic}^{(*)}=\left(\sigma_{ic}^{(*)}\right)^{2}\left[\begin{array}{cc}
+1 & \rho_{ic}^{(k-1)}\sqrt{a_{ic}^{(k-1)}}\\
+\rho_{ic}^{(k-1)}\sqrt{a_{ic}^{(k-1)}} & a_{ic}^{(k-1)}
+\end{array}\right]
+\]
+
+\end_inset
+
+and 
+\begin_inset Formula 
+\[
+\mathbf{Q}_{ic}^{(*)}=\boldsymbol{\Sigma}_{ic}^{(*)}+\left(\tau_{i}^{(k)}\right)^{2}\mathbf{I}.
+\]
+
+\end_inset
+
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+Calculate the Metropolis ratio as
+\begin_inset Formula 
+\begin{eqnarray*}
+r_{\sigma} & = & \left(\frac{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(k-1)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(k-1)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}\right.\\
+ &  & \qquad\times\left.\frac{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(k)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(k)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }\right).
+\end{eqnarray*}
+
+\end_inset
+
+If 
+\begin_inset Formula $r_{\sigma}>u$
+\end_inset
+
+, where 
+\begin_inset Formula $u\sim\text{Uniform(0,1)}$
+\end_inset
+
+, let 
+\begin_inset Formula $\sigma_{ic}^{(k)}=\sigma_{ic}^{(*)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(*)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(*)}$
+\end_inset
+
+.
+ Otherwise, let 
+\begin_inset Formula $\sigma_{ic}^{(k)}=\sigma_{ic}^{(k-1)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(k-1)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(k-1)}+\left(\tau_{i}^{(k)}\right)^{2}\mathbf{I}$
+\end_inset
+
+ if 
+\begin_inset Formula $r_{\sigma}<u$
+\end_inset
+
+, or if 
+\begin_inset Formula $\sigma_{ic}^{(*)}\notin\left[l_{\sigma},u_{\sigma}\right]$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Update 
+\begin_inset Formula $a_{ic}^{(k-1)}$
+\end_inset
+
+ using Metropolis sampling.
+ Sample 
+\begin_inset Formula $a_{ic}^{(*)}$
+\end_inset
+
+ from a proposal distribution 
+\begin_inset Formula $\left[a_{ic}^{(*)}\vert a_{ic}^{(k-1)}\right]$
+\end_inset
+
+ (e.g., 
+\begin_inset Formula $\text{N}\left(a_{ic}^{(*)}\vert a_{ic}^{(k-1)},\tau_{a}^{2}\right)$
+\end_inset
+
+, where 
+\begin_inset Formula $\tau_{a}^{2}$
+\end_inset
+
+ is a tuning parameter).
+ If 
+\begin_inset Formula $a_{ic}^{(*)}\in\left[l_{a},u_{a}\right]$
+\end_inset
+
+, let 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\boldsymbol{\Sigma}_{ic}^{(*)}=\left(\sigma_{ic}^{(k)}\right)^{2}\left[\begin{array}{cc}
+1 & \rho_{ic}^{(k-1)}\sqrt{a_{ic}^{(*)}}\\
+\rho_{ic}^{(k-1)}\sqrt{a_{ic}^{(*)}} & a_{ic}^{(*)}
+\end{array}\right]
+\]
+
+\end_inset
+
+and 
+\begin_inset Formula 
+\[
+\mathbf{Q}_{ic}^{(*)}=\boldsymbol{\Sigma}_{ic}^{(*)}+\left(\tau_{i}^{(k)}\right)^{2}\mathbf{I}.
+\]
+
+\end_inset
+
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+Calculate the Metropolis ratio as
+\begin_inset Formula 
+\begin{eqnarray*}
+r_{a} & = & \left(\frac{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(k)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(k)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}\right.\\
+ &  & \qquad\times\left.\frac{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(k)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(k)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }\right).
+\end{eqnarray*}
+
+\end_inset
+
+If 
+\begin_inset Formula $r_{a}>u$
+\end_inset
+
+, where 
+\begin_inset Formula $u\sim\text{Uniform(0,1)}$
+\end_inset
+
+, let 
+\begin_inset Formula $a_{ic}^{(k)}=a_{ic}^{(*)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(*)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(*)}$
+\end_inset
+
+.
+ Otherwise, let 
+\begin_inset Formula $a_{ic}^{(k)}=a_{ic}^{(k-1)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(k)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(k)}$
+\end_inset
+
+ if 
+\begin_inset Formula $r_{a}<u$
+\end_inset
+
+, or if 
+\begin_inset Formula $a_{ic}^{(*)}\notin\left[l_{a},u_{a}\right]$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Update 
+\begin_inset Formula $\rho_{ic}^{(k-1)}$
+\end_inset
+
+ using Metropolis sampling.
+ Sample 
+\begin_inset Formula $\rho_{ic}^{(*)}$
+\end_inset
+
+ from a proposal distribution 
+\begin_inset Formula $\left[\rho_{ic}^{(*)}\vert\rho_{ic}^{(k-1)}\right]$
+\end_inset
+
+ (e.g., 
+\begin_inset Formula $\text{N}\left(\rho_{ic}^{(*)}\vert\rho_{ic}^{(k-1)},\tau_{\rho}^{2}\right)$
+\end_inset
+
+, where 
+\begin_inset Formula $\tau_{\rho}^{2}$
+\end_inset
+
+ is a tuning parameter).
+ If 
+\begin_inset Formula $\rho_{ic}^{(*)}\in\left[l_{\rho},u_{\rho}\right]$
+\end_inset
+
+, let 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula 
+\[
+\boldsymbol{\Sigma}_{ic}^{(*)}=\left(\sigma_{ic}^{(k)}\right)^{2}\left[\begin{array}{cc}
+1 & \rho_{ic}^{(*)}\sqrt{a_{ic}^{(k)}}\\
+\rho_{ic}^{(*)}\sqrt{a_{ic}^{(k)}} & a_{ic}^{(k)}
+\end{array}\right]
+\]
+
+\end_inset
+
+and 
+\begin_inset Formula 
+\[
+\mathbf{Q}_{ic}^{(*)}=\boldsymbol{\Sigma}_{ic}^{(*)}+\left(\tau_{i}^{(k)}\right)^{2}\mathbf{I}.
+\]
+
+\end_inset
+
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+Calculate the Metropolis ratio as
+\begin_inset Formula 
+\begin{eqnarray*}
+r_{\rho} & = & \left(\frac{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}{\prod_{t\in{\cal T}_{c}}\left\{ \left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\boldsymbol{\Sigma}_{ic}^{(k)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\boldsymbol{\Sigma}_{ic}^{(k)}\mathbf{H}^{\prime}\right)\right)^{y_{i}\left(t\right)}\right.}\right.\\
+ &  & \qquad\times\left.\frac{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(*)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(*)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }{\left.\left({\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{Q}_{ic}^{(k)}\right)+{\cal N}\left(\mathbf{s}_{ic}\left(t\right)\mid\boldsymbol{\mu}_{i}\left(t\right)^{(k)},\mathbf{H}\mathbf{Q}_{ic}^{(k)}\mathbf{H}^{\prime}\right)\right)^{1-y_{i}\left(t\right)}\right\} }\right).
+\end{eqnarray*}
+
+\end_inset
+
+If 
+\begin_inset Formula $r_{\rho}>u$
+\end_inset
+
+, where 
+\begin_inset Formula $u\sim\text{Uniform(0,1)}$
+\end_inset
+
+, let 
+\begin_inset Formula $\rho_{ic}^{(k)}=\rho_{ic}^{(*)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(*)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(*)}$
+\end_inset
+
+.
+ Otherwise, let 
+\begin_inset Formula $\rho_{ic}^{(k)}=\rho_{ic}^{(k-1)}$
+\end_inset
+
+, 
+\begin_inset Formula $\boldsymbol{\Sigma}_{ic}^{(k)}=\boldsymbol{\Sigma}_{ic}^{(k)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathbf{Q}_{ic}^{(k)}=\mathbf{Q}_{ic}^{(k)}$
+\end_inset
+
+ if 
+\begin_inset Formula $r_{\rho}<u$
+\end_inset
+
+, or if 
+\begin_inset Formula $\rho_{ic}^{(*)}\notin\left[l_{\rho},u_{\rho}\right]$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Repeat Steps 6(a) through 6(d) for each error class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Save 
+\begin_inset Formula $\boldsymbol{\mu}_{i}\left(t\right)^{(k)}$
+\end_inset
+
+ for 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+; 
+\begin_inset Formula $\theta_{i}^{(k)}$
+\end_inset
+
+; 
+\begin_inset Formula $\tau_{i}^{(k)}$
+\end_inset
+
+; 
+\begin_inset Formula $\pi_{ij}$
+\end_inset
+
+ for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+; and 
+\begin_inset Formula $\sigma_{ic}^{(k)}$
+\end_inset
+
+, 
+\begin_inset Formula $a_{ic}^{(0)}$
+\end_inset
+
+, and 
+\begin_inset Formula $\rho_{ic}^{(0)}$
+\end_inset
+
+ for 
+\begin_inset Formula $c=\text{3, 2, 1, 0, A, and B}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Set 
+\begin_inset Formula $k=k+1$
+\end_inset
+
+ and return to Step 4.
+ The algorithm is iterated by repeating Steps 4 through 7 until a sufficiently
+ large sample has been obtained from which to approximate the posterior
+ distribution.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+References
+\end_layout
+
+\begin_layout Hanging
+Ishwaran, H., and L.
+ F.
+ James.
+ 2001.
+ Gibbs sampling methods for stick-breaking priors.
+ Journal of the American Statistical Association 
+\series bold
+96
+\series default
+:161–173.
+\end_layout
+
+\begin_layout Hanging
+Sethuraman, J.
+ 1994.
+ A constructive definition of Dirichlet priors.
+ Statistica Sinica 
+\series bold
+4
+\series default
+:639–650.
+\end_layout
+
+\end_body
+\end_document
