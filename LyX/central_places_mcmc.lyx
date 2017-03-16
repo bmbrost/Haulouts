@@ -1,0 +1,1122 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{setspace}
+%\pagestyle{empty}
+\end_preamble
+\use_default_options true
+\begin_modules
+hanging
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 10
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2.54cm
+\topmargin 2.54cm
+\rightmargin 2.54cm
+\bottommargin 2.54cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\noindent
+Brost, B.
+ M., M.
+ B.
+ Hooten, and R.
+ J.
+ Small.
+ 2017.
+ Leveraging constraints and biotelemetry data to pinpoint repetitively used
+ spatial features.
+ Ecology.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Appendix S1.
+ Model statement, posterior distribution, and full-conditional distributions.
+ 
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+The model we propose is well-suited to a Bayesian analysis using Markov
+ chain Monte Carlo methods.
+ Such an approach estimates the joint posterior distribution by sampling
+ iteratively from the full-conditional distributions.
+ In the posterior and full-conditional distributions below, we use bracket
+ notation to denote a probability distribution.
+ For example, 
+\begin_inset Formula $[\text{x}]$
+\end_inset
+
+ indicates the probability distribution of x.
+ Similarly, 
+\begin_inset Formula $[\text{x}\vert\text{y}]$
+\end_inset
+
+ indicates the probability distribution of x given the parameter y.
+ The notation 
+\begin_inset Quotes eld
+\end_inset
+
+
+\begin_inset Formula $\cdot$
+\end_inset
+
+
+\begin_inset Quotes erd
+\end_inset
+
+ represents the data and other parameters in the model.
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+In addition to the notation introduced in the main document, let 
+\begin_inset Formula $c$
+\end_inset
+
+ index Argos location quality class (i.e., 
+\begin_inset Formula $c\in\left\{ \text{3, 2, 1, 0, A, and B}\right\} $
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Model Statement
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\mathbf{s}_{c}\left(t\right) & \sim & \begin{cases}
+{\cal N}(\boldsymbol{\mu}\left(t\right),\boldsymbol{\Sigma}_{c}), & \text{with prob. }p\left(t\right),\, y\left(t\right)=1\\
+{\cal N}(\boldsymbol{\mu}\left(t\right),\boldsymbol{\widetilde{\Sigma}}_{c}), & \text{with prob. }1-p\left(t\right),\, y\left(t\right)=1\\
+{\cal N}(\boldsymbol{\mu}\left(t\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}), & \text{with prob. }p\left(t\right),\, y\left(t\right)=0\\
+{\cal N}(\boldsymbol{\mu}\left(t\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}), & \text{with prob. }1-p\left(t\right),\, y\left(t\right)=0
+\end{cases}\\
+\boldsymbol{\Sigma}_{c} & = & \sigma_{c}^{2}\begin{bmatrix}1 & \rho_{c}\sqrt{a_{c}}\\
+\rho_{c}\sqrt{a_{c}} & a_{c}
+\end{bmatrix}\\
+\widetilde{\boldsymbol{\Sigma}}_{c} & = & \sigma_{c}^{2}\begin{bmatrix}1 & -\rho_{c}\sqrt{a_{c}}\\
+-\rho_{c}\sqrt{a_{c}} & a_{c}
+\end{bmatrix}\\
+\boldsymbol{\mu}\left(t\right) & \sim & \sum_{j=1}^{J}\pi_{j}\delta_{\mu_{j}}\\
+\pi_{j} & = & \eta_{j}\prod_{l<j}\left(1-\eta_{l}\right)\\
+\eta_{j} & \sim & \text{Beta}\left(1,\theta\right)\\
+y\left(t\right) & = & \begin{cases}
+0, & v\left(t\right)\le0\\
+1, & v\left(t\right)>0
+\end{cases}\\
+v\left(t\right) & \sim & {\cal N}\left(\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},1\right)\\
+\boldsymbol{\mu}_{j} & \sim & f_{\widetilde{{\cal S}}}\left(\mathbf{S}\right)\\
+\theta & \sim & \text{Gamma}\left(r_{\theta},q_{\theta}\right)\\
+\boldsymbol{\beta} & \sim & {\cal N}\left(\boldsymbol{\mu}_{\beta},\sigma_{\beta}^{2}\mathbf{I}\right)\\
+\boldsymbol{\alpha} & \sim & {\cal N}\left(\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I}\right)\\
+\log\left(\sigma_{\mu}\right) & \sim & {\cal N}\left(\mu_{\sigma},\sigma_{\sigma}^{2}\right)\\
+\sigma_{\alpha}^{2} & \sim & \text{IG}\left(r_{\alpha},q_{\alpha}\right)\\
+\sigma_{c} & \sim & \text{Unif}\left(l_{\sigma},u_{\sigma}\right)\\
+a_{c} & \sim & \text{Unif}\left(l_{a},u_{a}\right)\\
+\rho_{c} & \sim & \text{Unif}\left(l_{\rho},u_{\rho}\right)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Note that 
+\begin_inset Formula $f_{\widetilde{{\cal S}}}\left(\mathbf{S}\right)$
+\end_inset
+
+ represents the kernel density estimate of the observed telemetry locations
+ 
+\begin_inset Formula $\mathbf{S}\equiv\left\{ \mathbf{s}_{c}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ at location 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+, where 
+\begin_inset Formula $f_{\widetilde{{\cal S}}}\left(\mathbf{S}\right)$
+\end_inset
+
+ is truncated and normalized over 
+\begin_inset Formula $\widetilde{{\cal S}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Posterior Distribution
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\mathbf{M}_{t},\boldsymbol{\eta},\mathbf{v},\boldsymbol{\alpha},\mathbf{M}_{j},\theta,\boldsymbol{\beta},\sigma_{\mu},\sigma_{\alpha}^{2},\boldsymbol{\sigma},\mathbf{a},\boldsymbol{\rho}\mid\mathbf{S},\mathbf{y}\right] & \propto & \prod_{t\in{\cal T}}\prod_{j=1}^{J}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),y\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[\boldsymbol{\mu}\left(t\right)\mid\boldsymbol{\mu}_{j},\eta_{j}\right]\left[\eta_{j}\mid\theta\right]\\
+ &  & \qquad\times\left[y\left(t\right)\mid v\left(t\right)\right]\left[v\left(t\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\left[\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}\right]\\
+ &  & \qquad\times\left[\boldsymbol{\mu}_{j}\right]\left[\theta\right]\left[\boldsymbol{\beta}\right]\left[\sigma_{\mu}\right]\left[\sigma_{\alpha}^{2}\right]\left[\boldsymbol{\sigma}\right]\left[\mathbf{a}\right]\left[\boldsymbol{\mathbf{\rho}}\right],
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\mathbf{M}_{t}\equiv\left\{ \boldsymbol{\mu}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a matrix of functional central places 
+\begin_inset Formula $\boldsymbol{\mu}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+; 
+\begin_inset Formula $\boldsymbol{\eta}\equiv\left(\eta_{1},\ldots,\eta_{J}\right)^{\prime}$
+\end_inset
+
+ is a vector of stick-breaking weights 
+\begin_inset Formula $\eta_{j}$
+\end_inset
+
+ for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+; 
+\begin_inset Formula $\mathbf{v}\equiv\left\{ v\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a vector of latent auxiliary variables 
+\begin_inset Formula $v\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+; 
+\begin_inset Formula $\mathbf{M}_{j}\equiv\left\{ \boldsymbol{\mu}_{j}:j=1,\ldots,J\right\} $
+\end_inset
+
+ is a matrix of potential central places 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+ for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+; 
+\begin_inset Formula $\boldsymbol{\sigma}\equiv\left(\sigma_{3},\sigma_{2},\sigma_{1},\sigma_{0},\sigma_{A},\sigma_{B}\right)^{\prime}$
+\end_inset
+
+, 
+\begin_inset Formula $\mathbf{a}\equiv\left(a_{3},a_{2},a_{1},a_{0},a_{A},a_{B}\right)^{\prime}$
+\end_inset
+
+, and 
+\begin_inset Formula $\boldsymbol{\rho}\equiv\left(\rho_{3},\rho_{2},\rho_{1},\rho_{0},\rho_{A},\rho_{B}\right)^{\prime}$
+\end_inset
+
+ are vectors of parameters describing telemetry measurement error for each
+ Argos location quality class; 
+\begin_inset Formula $\mathbf{S}\equiv\left\{ \mathbf{s}_{c}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a matrix of observed telemetry locations 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+; and 
+\begin_inset Formula $\mathbf{y}\equiv\left\{ y\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a vector of ancillary behavioral data 
+\begin_inset Formula $y\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+
+\shape smallcaps
+Full-Conditional Distributions
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Locations of functional central places
+\series default
+ 
+\begin_inset Formula $\left(\boldsymbol{\mu}\left(t\right)\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\mu}\left(t\right)\mid\cdot\right] & \propto & \left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),y\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[\boldsymbol{\mu}\left(t\right)\mid\boldsymbol{\pi}\right]\\
+ & \propto & \sum_{j=1}^{J}\pi_{j}\delta_{\boldsymbol{\mu}_{j}}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},y\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right].
+\end{eqnarray*}
+
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+let 
+\begin_inset Formula $h\left(t_{s}\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+ denote the subpopulation index for locaiton at 
+\begin_inset Formula $t_{s}$
+\end_inset
+
+, with this index comonly referred to as the latent class status.
+ Mention haul-outs vary acrros subpopulations, while variance does not.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Finite mixtures areis through supposing that each of the i=1,...,n items in
+ the sample belong to one of H subpopulations, with each latent supbpopulation
+ or latent class having a different value of one or more parameters in a
+ parametric model.
+ Let 
+\begin_inset Formula $z_{i}\in(1,...,H)$
+\end_inset
+
+ denote teh subpopulaton index for item i, with this index commonly referred
+ toas teh latent class status.
+ Then the response y_i for itehm i conditionaly on z_i has the distribution...
+ with parameters phi that do not vary acorss the subpopulations and parameters
+ theta corresponding to subpopulation h, for h=1,..,H.
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+This implementation also estimates distinct values for 
+\begin_inset Formula $\mu_{j}$
+\end_inset
+
+, and then requires lable the groups
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+In this statement, we view 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+ as providing a set of distinct parameter values, together with an allocation
+ of teh 
+\begin_inset Formula $T_{s}$
+\end_inset
+
+ observed telemetry locations to those values.
+ This requires a lableing of the groups, 
+\begin_inset Formula $h\left(t_{s}\right)$
+\end_inset
+
+.
+ The latent class status 
+\begin_inset Formula $h\left(t_{s}\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+ denotes an index that associates each telemetry location with a unqiue
+ haul-out site, 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+Here, we introduce a variable for the latent class status, 
+\begin_inset Formula $h\left(t\right)\in\left\{ 1,\ldots,J\right\} $
+\end_inset
+
+, that assigns each observed telemetry location 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ to one of the central places 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+, for 
+\begin_inset Formula $j=1,\ldots,J$
+\end_inset
+
+ (i.e., 
+\begin_inset Formula $\boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{h\left(t\right)}$
+\end_inset
+
+).
+ The update proceeds just as in multinomial sampling: 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[h\left(t\right)\mid\cdot\right] & \sim & \text{Cat}\left(\frac{\pi_{1}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{1},\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(t\right)}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{1},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(t\right)}}{\sum_{j=1}^{J}\pi_{j}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(t\right)}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(t\right)}},\cdots,\right.\\
+ &  & \qquad\left.\frac{\pi_{J}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{J},\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(t\right)}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{J},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(t\right)}}{\sum_{j=1}^{J}\pi_{j}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(t\right)}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(t\right)}}\right)\\
+ & \sim & \text{Cat}\left(\frac{a_{1}}{b},\cdots,\frac{a_{j}}{b}\right),
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+where 
+\begin_inset Formula $a_{j}=\pi_{j}\times\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(t\right)}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Formula $\qquad\times\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(t\right)}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+and 
+\begin_inset Formula $b=\sum_{j=1}^{J}\left\{ \pi_{j}\times\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(t\right)}\right.$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Formula $\qquad\left.\times\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(t\right)}\right\} $
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Stick-breaking weights
+\series default
+ 
+\begin_inset Formula $\left(\eta_{j}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\eta_{j}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\boldsymbol{\mu}\left(t\right)\mid\pi_{j}\right]^{1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }}\prod_{i=j+1}^{J}\prod_{t\in{\cal T}}\left[\boldsymbol{\mu}\left(t\right)\mid\pi_{i}\right]^{1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{i}\right\} }}\left[\eta_{j}\mid1,\theta\right]\\
+ & \propto & \prod_{t\in{\cal T}}\pi_{j}^{1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }}\prod_{i=j+1}^{J}\prod_{t\in{\cal T}}\pi_{i}^{1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{i}\right\} }}\text{Beta}\left(\eta_{j}\mid1,\theta\right)\\
+ & \propto & \pi_{j}^{\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }\right)}\prod_{i=j+1}^{J}\pi_{i}^{\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{i}\right\} }\right)}\eta_{j}^{1-1}\left(1-\eta_{j}\right)^{\theta-1}\\
+ & \propto & \left(\eta_{j}\prod_{l<j}\left(1-\eta_{l}\right)\right)^{m_{j}}\prod_{i=j+1}^{J}\left(\eta_{i}\prod_{l<i}\left(1-\eta_{l}\right)\right)^{m_{i}}\left(1-\eta_{j}\right)^{\theta-1}\\
+ & \propto & \eta_{j}{}^{m_{j}}\prod_{i=j+1}^{J}\left(\prod_{l<i}\left(1-\eta_{l}\right)\right)^{m_{i}}\left(1-\eta_{j}\right)^{\theta-1}\\
+ & \propto & \eta_{j}{}^{m_{j}}\left(1-\eta_{j}\right)^{\sum_{i=j+1}^{J}m_{i}}\left(1-\eta_{j}\right)^{\theta-1}\\
+ & \propto & \eta_{j}{}^{m_{j}}\left(1-\eta_{j}\right)^{\sum_{i=j+1}^{J}m_{i}+\theta-1}\\
+ & = & \text{Beta}\left(m_{j}+1,\sum_{i=j+1}^{J}m_{i}+\theta\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $m_{j}=\sum_{t\in{\cal T}}\left(1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }\right)$
+\end_inset
+
+, i.e., the number of observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{c}\left(t\right)\right)$
+\end_inset
+
+ allocated to central place 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Auxiliary variable for temporal process model
+\series default
+ 
+\begin_inset Formula $\left(v\left(t\right)\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[v\left(t\right)\mid\cdot\right] & \propto & \left[y\left(t\right)\mid v\left(t\right)\right]\left[v\left(t\right)\mid\boldsymbol{\alpha},\boldsymbol{\beta}\right]\\
+ & \propto & \left(1_{\left\{ y\left(t\right)=0\right\} }1_{\left\{ v\left(t\right)\le0\right\} }+1_{\left\{ y\left(t\right)=1\right\} }1_{\left\{ v\left(t\right)>0\right\} }\right)\times{\cal N}\left(v\left(t\right)\mid\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right)\\
+ & = & \begin{cases}
+{\cal TN}\left(\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{-\infty}^{0}, & y\left(t\right)=0\\
+{\cal TN}\left(\mathbf{x}\left(t\right)^{\prime}\boldsymbol{\beta}+\mathbf{w}\left(t\right)^{\prime}\boldsymbol{\alpha},\mathbf{1}\right){}_{0}^{\infty}, & y\left(t\right)=1
+\end{cases}.
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Basis coefficients in temporal process model
+\series default
+ 
+\begin_inset Formula $\left(\boldsymbol{\alpha}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\alpha}\mid\cdot\right] & \propto & \left[\mathbf{v}\mid\boldsymbol{\beta},\boldsymbol{\alpha}\right][\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \\
+ &  & \qquad\times\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\alpha}-\mathbf{0}\right)^{\prime}\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\alpha}-\mathbf{0}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)-\mathbf{W}\boldsymbol{\alpha}\right)^{\prime}\left(\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)-\mathbf{W}\boldsymbol{\alpha}\right)\right\} \\
+ &  & \qquad\times\exp\left\{ -\frac{1}{2}\boldsymbol{\alpha}^{\prime}\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}\boldsymbol{\alpha}\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}\right)\boldsymbol{\alpha}+\boldsymbol{\alpha}^{\prime}\left(\mathbf{W}^{\prime}\mathbf{W}+\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\alpha}\right)\right\} \\
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\mathbf{A}=\mathbf{W}{}^{\prime}\mathbf{W}+\left(\sigma_{\alpha}^{2}\mathbf{I}\right)^{-1}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\mathbf{W}$
+\end_inset
+
+.
+ Note that the matrix 
+\begin_inset Formula $\mathbf{X}\equiv\left\{ \mathbf{x}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ contains the vectors 
+\begin_inset Formula $\mathbf{x}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+.
+ Similarly, 
+\begin_inset Formula $\mathbf{W}\equiv\left\{ \mathbf{w}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a matrix containing the vectors 
+\begin_inset Formula $\mathbf{w}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Locations of potential central places 
+\series default
+
+\begin_inset Formula $\left(\boldsymbol{\mu}_{j}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\mu}_{j}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),y\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]^{1_{\left\{ \boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }}\left[\boldsymbol{\mu}_{j}\right]\\
+ & \propto & \prod_{\left\{ t:\boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }\left\{ \left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(t\right)}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(t\right)}\right\} \left[\boldsymbol{\mu}_{j}\right]\\
+ & \propto & \prod_{\left\{ t:\boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}\right\} }\left\{ \left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(t\right)}\right.\\
+ &  & \qquad\left.\times\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}_{j},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(t\right)}\right\} \left[\boldsymbol{\mu}_{j}\right].
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ is allocated to central place 
+\begin_inset Formula $\boldsymbol{\mu}_{j}$
+\end_inset
+
+ (i.e., instances where 
+\begin_inset Formula $\boldsymbol{\mu}\left(t\right)=\boldsymbol{\mu}_{j}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Dirichlet process concentration parameter
+\series default
+ 
+\begin_inset Formula $\left(\theta\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\theta|\cdot\right] & \propto & \prod_{j=1}^{J-1}\left[\eta_{j}\mid1,\theta\right]\left[\theta\right]\\
+ & \propto & \prod_{j=1}^{J-1}\text{Beta}\left(\eta_{j}\mid1,\theta\right)\text{Gamma}\left(\theta\mid r_{\theta},q_{\theta}\right)\\
+ & \propto & \prod_{j=1}^{J-1}\frac{\Gamma\left(1+\theta\right)}{\Gamma\left(1\right)\Gamma\left(\theta\right)}\eta_{j}^{1-1}\left(1-\eta_{j}\right)^{\theta-1}\theta^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta\right\} \\
+ & \propto & \left(\frac{\theta\Gamma\left(\theta\right)}{\Gamma\left(1\right)\Gamma\left(\theta\right)}\right)^{J-1}\theta^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta+\log\left(\prod_{j=1}^{J-1}\left(1-\eta_{j}\right)^{\theta-1}\right)\right\} \\
+ & \propto & \left(\frac{\theta\Gamma\left(\theta\right)}{\Gamma\left(1\right)\Gamma\left(\theta\right)}\right)^{J-1}\theta^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta+\log\left(\prod_{j=1}^{J-1}\left(1-\eta_{j}\right)^{\theta}\left(1-\eta_{j}\right)^{-1}\right)\right\} \\
+ & \propto & \left(\frac{\theta\Gamma\left(\theta\right)}{\Gamma\left(1\right)\Gamma\left(\theta\right)}\right)^{J-1}\theta^{r_{\theta}-1}\exp\left\{ -q_{\theta}\theta+\log\left(\prod_{j=1}^{J-1}\left(1-\eta_{j}\right)^{\theta}\right)\right\} \\
+ & \propto & \theta^{J-1+r_{\theta}-1}\exp\left\{ -q_{\theta}\theta+\sum_{j=1}^{J-1}\log\left(1-\eta_{j}\right)^{\theta}\right\} \\
+ & \propto & \theta^{J-1+r_{\theta}-1}\exp\left\{ -q_{\theta}\theta+\theta\sum_{j=1}^{J-1}\log\left(1-\eta_{j}\right)\right\} \\
+ & \propto & \theta^{J-1+r_{\theta}-1}\exp\left\{ -\theta\left(q_{\theta}-\sum_{j=1}^{J-1}\log\left(1-\eta_{j}\right)\right)\right\} \\
+ & = & \text{Gamma}\left(r_{\theta}+J-1,q_{\theta}-\sum_{j=1}^{J-1}\log\left(1-\eta_{j}\right)\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over 
+\begin_inset Formula $j=1,\ldots,J-1$
+\end_inset
+
+ because 
+\begin_inset Formula $\eta_{J}=1$
+\end_inset
+
+ in the truncation approximation of a Dirichlet process.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Fixed effects in temporal process model
+\series default
+ 
+\begin_inset Formula $\left(\boldsymbol{\beta}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\boldsymbol{\beta\mid}\cdot\right] & \propto & \left[\mathbf{v}\mid\boldsymbol{\beta},\boldsymbol{\alpha}\right]\left[\boldsymbol{\beta}\right]\\
+ & \propto & {\cal N}\left(\mathbf{v}\mid\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha},\mathbf{1}\right){\cal N}(\boldsymbol{\beta}\mid\mathbf{\boldsymbol{\mu}_{\beta}},\sigma_{\beta}^{2}\mathbf{I})\\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)^{\prime}\left(\mathbf{v}-\left(\mathbf{X}\boldsymbol{\beta}+\mathbf{W}\boldsymbol{\alpha}\right)\right)\right\} \\
+ &  & \qquad\times\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)^{\prime}\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)-\mathbf{X}\boldsymbol{\beta}\right)\right\} \\
+ &  & \qquad\times\exp\left\{ -\frac{1}{2}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\left(\boldsymbol{\beta}-\boldsymbol{\mu}_{\beta}\right)\right\} \\
+ & \propto & \exp\left\{ -\frac{1}{2}\left(-2\left(\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right)^{\prime}\mathbf{X}+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}+\boldsymbol{\beta}^{\prime}\left(\mathbf{X}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}\right)\boldsymbol{\beta}\right)\right\} \\
+ & = & {\cal N}(\mathbf{A}^{-1}\mathbf{b},\mathbf{A}^{-1}),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\mathbf{A}=\mathbf{X}{}^{\prime}\mathbf{X}+\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{b}^{\prime}=\left(\mathbf{v}-\mathbf{W}\boldsymbol{\alpha}\right){}^{\prime}\mathbf{X}+\boldsymbol{\mu}_{\beta}^{\prime}\left(\sigma_{\beta}^{2}\mathbf{I}\right)^{-1}$
+\end_inset
+
+.
+ Note that the matrix 
+\begin_inset Formula $\mathbf{X}\equiv\left\{ \mathbf{x}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ contains the vectors 
+\begin_inset Formula $\mathbf{x}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+.
+ Similarly, 
+\begin_inset Formula $\mathbf{W}\equiv\left\{ \mathbf{w}\left(t\right):t\in{\cal T}\right\} $
+\end_inset
+
+ is a matrix containing the vectors 
+\begin_inset Formula $\mathbf{w}\left(t\right)$
+\end_inset
+
+ for all times 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Animal movement parameter
+\series default
+ 
+\begin_inset Formula $\left(\sigma_{\mu}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\sigma_{\mu}\mid\cdot\right] & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),y\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[\sigma_{\mu}\right]\\
+ & \propto & \prod_{t\in{\cal T}}\left[\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}^{2}\right]^{1-y\left(t\right)}\left[\sigma_{\mu}\right]\\
+ & \propto & \prod_{\left\{ t:y\left(t\right)=0\right\} }\left(p\left(t\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(t\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(t\right)\mid\boldsymbol{\mu}\left(t\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)\\
+ &  & \qquad\times{\cal N}\left(\text{log}\left(\sigma_{\mu}\right)\mid\log\left(\mu_{\sigma}\right),\sigma_{\sigma}^{2}\right).
+\end{eqnarray*}
+
+\end_inset
+
+Note that the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $y\left(t\right)=0$
+\end_inset
+
+ (i.e., all observed telemetry locations 
+\begin_inset Formula $\left(\mathbf{s}_{c}\left(t\right)\right)$
+\end_inset
+
+ collected when the individual is not at the central place).
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Variance of basis coefficients
+\series default
+ (
+\begin_inset Formula $\sigma_{\alpha}^{2}$
+\end_inset
+
+):
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\sigma_{\alpha}^{2}\mid\cdot\right] & \propto & \left[\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}\right]\left[\sigma_{\alpha}^{2}\right]\\
+ & \propto & {\cal N}\left(\boldsymbol{\alpha}\mid\mathbf{0},\sigma_{\alpha}^{2}\mathbf{I}\right)\text{IG}\left(\sigma_{\alpha}^{2}\mid r_{\alpha},q_{\alpha}\right)\\
+ & \propto & \left|\sigma_{\alpha}^{2}\mathbf{\text{\textbf{I}}}\right|^{-1/2}\exp\left\{ -\frac{1}{2}\left(\left(\boldsymbol{\alpha}-\mathbf{0}\right)^{\prime}\left(\sigma_{\alpha}^{2}\text{\textbf{I}}\right)^{-1}\left(\boldsymbol{\alpha}-\mathbf{0}\right)\right)\right\} \left(\sigma_{\alpha}^{2}\right)^{-\left(q_{\alpha}+1\right)}\exp\left\{ -\frac{1}{r_{\alpha}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-M/2}\exp\left\{ -\frac{1}{2\sigma_{\alpha}^{2}}\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}\right\} \left(\sigma_{\alpha}^{2}\right)^{-\left(q_{\alpha}+1\right)}\exp\left\{ -\frac{1}{r_{\alpha}\sigma_{\alpha}^{2}}\right\} \\
+ & \propto & \left(\sigma_{\alpha}^{2}\right)^{-\left(M/2+q_{\alpha}+1\right)}\exp\left\{ -\frac{1}{\sigma_{\alpha}^{2}}\left(\frac{\boldsymbol{\alpha}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\alpha}}\right)\right\} \\
+ & = & \text{IG}\left(\left(\frac{\boldsymbol{\alpha}{}^{\prime}\boldsymbol{\alpha}}{2}+\frac{1}{r_{\alpha}}\right)^{-1},\frac{M}{2}+q_{\alpha}\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $M$
+\end_inset
+
+ is the length of 
+\begin_inset Formula $\boldsymbol{\alpha}$
+\end_inset
+
+ (or column dimension of 
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Longitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(\sigma_{c}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\sigma_{c}\mid\cdot\right] & \propto & \prod_{\tilde{t}\in{\cal T}}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),y\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[\sigma_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(\tilde{t}\right)}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(\tilde{t}\right)}\right\} \left[\sigma_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(\tilde{t}\right)}\right.\\
+ &  & \qquad\left.\times\left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(\tilde{t}\right)}\right\} \\
+ &  & \qquad\times\text{Unif}\left(\sigma_{c}\mid l_{\sigma},u_{\sigma}\right),
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\tilde{t}\in{\cal T}$
+\end_inset
+
+ is the subset of times for all observed telemetry locations (
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+) belonging to Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+ In other words, the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ is allocated to location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Adjustment for latitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(a_{c}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[a_{c}\mid\cdot\right] & \propto & \prod_{\tilde{t}\in{\cal T}}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),y\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[a_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(\tilde{t}\right)}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(\tilde{t}\right)}\right\} \left[a_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(\tilde{t}\right)}\right.\\
+ &  & \qquad\left.\times\left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(\tilde{t}\right)}\right\} \\
+ &  & \qquad\times\text{Unif}\left(a_{c}\mid l_{a},u_{a}\right).
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\tilde{t}\in{\cal T}$
+\end_inset
+
+ is the subset of times for all observed telemetry locations (
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+) belonging to Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+ In other words, the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ is allocated to location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\emph on
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+
+\series bold
+Correlation between longitudinal and latitudinal telemetry measurement error
+\series default
+ 
+\begin_inset Formula $\left(\sigma_{c}\right)$
+\end_inset
+
+:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left[\rho_{c}\mid\cdot\right] & \propto & \prod_{\tilde{t}\in{\cal T}}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),y\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c},\sigma_{\mu}\right]\left[\rho_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c},\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{y\left(\tilde{t}\right)}\left[\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c},\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right]^{1-y\left(\tilde{t}\right)}\right\} \left[\rho_{c}\right]\\
+ & \propto & \prod_{\tilde{t}\in{\cal T}}\left\{ \left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{y\left(\tilde{t}\right)}\right.\\
+ &  & \qquad\left.\times\left(p\left(\tilde{t}\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\Sigma}_{c}\right)+\left(1-p\left(\tilde{t}\right)\right)\times{\cal N}\left(\mathbf{s}_{c}\left(\tilde{t}\right)\mid\boldsymbol{\mu}\left(\tilde{t}\right),\sigma_{\mu}^{2}\mathbf{I}+\boldsymbol{\widetilde{\Sigma}}_{c}\right)\right)^{1-y\left(\tilde{t}\right)}\right\} \\
+ &  & \qquad\times\text{Unif}\left(\rho_{c}\mid l_{\rho},u_{\rho}\right).
+\end{eqnarray*}
+
+\end_inset
+
+where 
+\begin_inset Formula $\tilde{t}\in{\cal T}$
+\end_inset
+
+ is the subset of times for all observed telemetry locations (
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+) belonging to Argos location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+ In other words, the product is over all 
+\begin_inset Formula $t\in{\cal T}$
+\end_inset
+
+ such that 
+\begin_inset Formula $\mathbf{s}_{c}\left(t\right)$
+\end_inset
+
+ is allocated to location quality class 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\end_body
+\end_document
